@@ -1,13 +1,13 @@
-# 线性回归的从零开始实现
+# 線性迴歸的從零開始實現
 :label:`sec_linear_scratch`
 
-在了解线性回归的关键思想之后，我们可以开始通过代码来动手实现线性回归了。
-在这一节中，(**我们将从零开始实现整个方法，
-包括数据流水线、模型、损失函数和小批量随机梯度下降优化器**)。
-虽然现代的深度学习框架几乎可以自动化地进行所有这些工作，但从零开始实现可以确保我们真正知道自己在做什么。
-同时，了解更细致的工作原理将方便我们自定义模型、自定义层或自定义损失函数。
-在这一节中，我们将只使用张量和自动求导。
-在之后的章节中，我们会充分利用深度学习框架的优势，介绍更简洁的实现方式。
+在瞭解線性迴歸的關鍵思想之後，我們可以開始透過程式碼來動手實現線性迴歸了。
+在這一節中，(**我們將從零開始實現整個方法，
+包括資料流水線、模型、損失函式和小批次隨機梯度下降最佳化器**)。
+雖然現代的深度學習框架幾乎可以自動化地進行所有這些工作，但從零開始實現可以確保我們真正知道自己在做什麼。
+同時，瞭解更細緻的工作原理將方便我們自定義模型、自定義層或自定義損失函式。
+在這一節中，我們將只使用張量和自動求導。
+在之後的章節中，我們會充分利用深度學習框架的優勢，介紹更簡潔的實現方式。
 
 ```{.python .input}
 %matplotlib inline
@@ -43,30 +43,30 @@ import random
 import paddle
 ```
 
-## 生成数据集
+## 生成資料集
 
-为了简单起见，我们将[**根据带有噪声的线性模型构造一个人造数据集。**]
-我们的任务是使用这个有限样本的数据集来恢复这个模型的参数。
-我们将使用低维数据，这样可以很容易地将其可视化。
-在下面的代码中，我们生成一个包含1000个样本的数据集，
-每个样本包含从标准正态分布中采样的2个特征。
-我们的合成数据集是一个矩阵$\mathbf{X}\in \mathbb{R}^{1000 \times 2}$。
+為了簡單起見，我們將[**根據帶有噪聲的線性模型構造一個人造資料集。**]
+我們的任務是使用這個有限樣本的資料集來恢復這個模型的引數。
+我們將使用低維資料，這樣可以很容易地將其視覺化。
+在下面的程式碼中，我們生成一個包含1000個樣本的資料集，
+每個樣本包含從標準常態分佈中取樣的2個特徵。
+我們的合成數據集是一個矩陣$\mathbf{X}\in \mathbb{R}^{1000 \times 2}$。
 
-(**我们使用线性模型参数$\mathbf{w} = [2, -3.4]^\top$、$b = 4.2$
-和噪声项$\epsilon$生成数据集及其标签：
+(**我們使用線性模型引數$\mathbf{w} = [2, -3.4]^\top$、$b = 4.2$
+和噪聲項$\epsilon$生成資料集及其標籤：
 
 $$\mathbf{y}= \mathbf{X} \mathbf{w} + b + \mathbf\epsilon.$$
 **)
 
-$\epsilon$可以视为模型预测和标签时的潜在观测误差。
-在这里我们认为标准假设成立，即$\epsilon$服从均值为0的正态分布。
-为了简化问题，我们将标准差设为0.01。
-下面的代码生成合成数据集。
+$\epsilon$可以視為模型預測和標籤時的潛在觀測誤差。
+在這裡我們認為標準假設成立，即$\epsilon$服從均值為0的常態分佈。
+為了簡化問題，我們將標準差設為0.01。
+下面的程式碼生成合成數據集。
 
 ```{.python .input}
 #@tab mxnet, pytorch, paddle
 def synthetic_data(w, b, num_examples):  #@save
-    """生成y=Xw+b+噪声"""
+    """生成y=Xw+b+噪聲"""
     X = d2l.normal(0, 1, (num_examples, len(w)))
     y = d2l.matmul(X, w) + b
     y += d2l.normal(0, 0.01, y.shape)
@@ -76,7 +76,7 @@ def synthetic_data(w, b, num_examples):  #@save
 ```{.python .input}
 #@tab tensorflow
 def synthetic_data(w, b, num_examples):  #@save
-    """生成y=Xw+b+噪声"""
+    """生成y=Xw+b+噪聲"""
     X = d2l.zeros((num_examples, w.shape[0]))
     X += tf.random.normal(shape=X.shape)
     y = d2l.matmul(X, tf.reshape(w, (-1, 1))) + b
@@ -92,16 +92,16 @@ true_b = 4.2
 features, labels = synthetic_data(true_w, true_b, 1000)
 ```
 
-注意，[**`features`中的每一行都包含一个二维数据样本，
-`labels`中的每一行都包含一维标签值（一个标量）**]。
+注意，[**`features`中的每一行都包含一個二維資料樣本，
+`labels`中的每一行都包含一維標籤值（一個標量）**]。
 
 ```{.python .input}
 #@tab all
 print('features:', features[0],'\nlabel:', labels[0])
 ```
 
-通过生成第二个特征`features[:, 1]`和`labels`的散点图，
-可以直观观察到两者之间的线性关系。
+透過生成第二個特徵`features[:, 1]`和`labels`的散點圖，
+可以直觀觀察到兩者之間的線性關係。
 
 ```{.python .input}
 #@tab all
@@ -109,22 +109,22 @@ d2l.set_figsize()
 d2l.plt.scatter(d2l.numpy(features[:, 1]), d2l.numpy(labels), 1);
 ```
 
-## 读取数据集
+## 讀取資料集
 
-回想一下，训练模型时要对数据集进行遍历，每次抽取一小批量样本，并使用它们来更新我们的模型。
-由于这个过程是训练机器学习算法的基础，所以有必要定义一个函数，
-该函数能打乱数据集中的样本并以小批量方式获取数据。
+回想一下，訓練模型時要對資料集進行遍歷，每次抽取一小批次樣本，並使用它們來更新我們的模型。
+由於這個過程是訓練機器學習演算法的基礎，所以有必要定義一個函式，
+該函式能打亂數據集中的樣本並以小批次方式獲取資料。
 
-在下面的代码中，我们[**定义一个`data_iter`函数，
-该函数接收批量大小、特征矩阵和标签向量作为输入，生成大小为`batch_size`的小批量**]。
-每个小批量包含一组特征和标签。
+在下面的程式碼中，我們[**定義一個`data_iter`函式，
+該函式接收批次大小、特徵矩陣和標籤向量作為輸入，生成大小為`batch_size`的小批次**]。
+每個小批次包含一組特徵和標籤。
 
 ```{.python .input}
 #@tab mxnet, pytorch, paddle
 def data_iter(batch_size, features, labels):
     num_examples = len(features)
     indices = list(range(num_examples))
-    # 这些样本是随机读取的，没有特定的顺序
+    # 這些樣本是隨機讀取的，沒有特定的順序
     random.shuffle(indices)
     for i in range(0, num_examples, batch_size):
         batch_indices = d2l.tensor(
@@ -137,20 +137,20 @@ def data_iter(batch_size, features, labels):
 def data_iter(batch_size, features, labels):
     num_examples = len(features)
     indices = list(range(num_examples))
-    # 这些样本是随机读取的，没有特定的顺序
+    # 這些樣本是隨機讀取的，沒有特定的順序
     random.shuffle(indices)
     for i in range(0, num_examples, batch_size):
         j = tf.constant(indices[i: min(i + batch_size, num_examples)])
         yield tf.gather(features, j), tf.gather(labels, j)
 ```
 
-通常，我们利用GPU并行运算的优势，处理合理大小的“小批量”。
-每个样本都可以并行地进行模型计算，且每个样本损失函数的梯度也可以被并行计算。
-GPU可以在处理几百个样本时，所花费的时间不比处理一个样本时多太多。
+通常，我們利用GPU並行運算的優勢，處理合理大小的『小批次』。
+每個樣本都可以並行地進行模型計算，且每個樣本損失函式的梯度也可以被並行計算。
+GPU可以在處理幾百個樣本時，所花費的時間不比處理一個樣本時多太多。
 
-我们直观感受一下小批量运算：读取第一个小批量数据样本并打印。
-每个批量的特征维度显示批量大小和输入特征数。
-同样的，批量的标签形状与`batch_size`相等。
+我們直觀感受一下小批次運算：讀取第一個小批次資料樣本並列印。
+每個批次的特徵維度顯示批次大小和輸入特徵數。
+同樣的，批次的標籤形狀與`batch_size`相等。
 
 ```{.python .input}
 #@tab all
@@ -161,18 +161,18 @@ for X, y in data_iter(batch_size, features, labels):
     break
 ```
 
-当我们运行迭代时，我们会连续地获得不同的小批量，直至遍历完整个数据集。
-上面实现的迭代对教学来说很好，但它的执行效率很低，可能会在实际问题上陷入麻烦。
-例如，它要求我们将所有数据加载到内存中，并执行大量的随机内存访问。
-在深度学习框架中实现的内置迭代器效率要高得多，
-它可以处理存储在文件中的数据和数据流提供的数据。
+當我們執行迭代時，我們會連續地獲得不同的小批次，直至遍歷完整個數據集。
+上面實現的迭代對教學來說很好，但它的執行效率很低，可能會在實際問題上陷入麻煩。
+例如，它要求我們將所有資料載入到記憶體中，並執行大量的隨機記憶體訪問。
+在深度學習框架中實現的內建迭代器效率要高得多，
+它可以處理儲存在檔案中的資料和數據流提供的資料。
 
-## 初始化模型参数
+## 初始化模型引數
 
-[**在我们开始用小批量随机梯度下降优化我们的模型参数之前**]，
-(**我们需要先有一些参数**)。
-在下面的代码中，我们通过从均值为0、标准差为0.01的正态分布中采样随机数来初始化权重，
-并将偏置初始化为0。
+[**在我們開始用小批次隨機梯度下降最佳化我們的模型引數之前**]，
+(**我們需要先有一些引數**)。
+在下面的程式碼中，我們透過從均值為0、標準差為0.01的常態分佈中取樣隨機數來初始化權重，
+並將偏置初始化為0。
 
 ```{.python .input}
 w = np.random.normal(0, 0.01, (2, 1))
@@ -198,63 +198,63 @@ b = tf.Variable(tf.zeros(1), trainable=True)
 #@tab paddle
 w = d2l.normal(0, 0.01, shape=(2,1))
 b = d2l.zeros(shape=[1])
-# w和b为创建的模型参数，stop_gradient默认为True，即梯度不更新，因此需要指定为False已更新梯度
+# w和b為建立的模型引數，stop_gradient預設為True，即梯度不更新，因此需要指定為False已更新梯度
 w.stop_gradient = False
 b.stop_gradient = False
 ```
 
-在初始化参数之后，我们的任务是更新这些参数，直到这些参数足够拟合我们的数据。
-每次更新都需要计算损失函数关于模型参数的梯度。
-有了这个梯度，我们就可以向减小损失的方向更新每个参数。
-因为手动计算梯度很枯燥而且容易出错，所以没有人会手动计算梯度。
-我们使用 :numref:`sec_autograd`中引入的自动微分来计算梯度。
+在初始化引數之後，我們的任務是更新這些引數，直到這些引數足夠擬合我們的資料。
+每次更新都需要計算損失函式關於模型引數的梯度。
+有了這個梯度，我們就可以向減小損失的方向更新每個引數。
+因為手動計算梯度很枯燥而且容易出錯，所以沒有人會手動計算梯度。
+我們使用 :numref:`sec_autograd`中引入的自動微分來計算梯度。
 
-## 定义模型
+## 定義模型
 
-接下来，我们必须[**定义模型，将模型的输入和参数同模型的输出关联起来。**]
-回想一下，要计算线性模型的输出，
-我们只需计算输入特征$\mathbf{X}$和模型权重$\mathbf{w}$的矩阵-向量乘法后加上偏置$b$。
-注意，上面的$\mathbf{Xw}$是一个向量，而$b$是一个标量。
-回想一下 :numref:`subsec_broadcasting`中描述的广播机制：
-当我们用一个向量加一个标量时，标量会被加到向量的每个分量上。
+接下來，我們必須[**定義模型，將模型的輸入和引數同模型的輸出關聯起來。**]
+回想一下，要計算線性模型的輸出，
+我們只需計算輸入特徵$\mathbf{X}$和模型權重$\mathbf{w}$的矩陣-向量乘法後加上偏置$b$。
+注意，上面的$\mathbf{Xw}$是一個向量，而$b$是一個標量。
+回想一下 :numref:`subsec_broadcasting`中描述的廣播機制：
+當我們用一個向量加一個標量時，標量會被加到向量的每個分量上。
 
 ```{.python .input}
 #@tab all
 def linreg(X, w, b):  #@save
-    """线性回归模型"""
+    """線性迴歸模型"""
     return d2l.matmul(X, w) + b
 ```
 
-## [**定义损失函数**]
+## [**定義損失函式**]
 
-因为需要计算损失函数的梯度，所以我们应该先定义损失函数。
-这里我们使用 :numref:`sec_linear_regression`中描述的平方损失函数。
-在实现中，我们需要将真实值`y`的形状转换为和预测值`y_hat`的形状相同。
+因為需要計算損失函式的梯度，所以我們應該先定義損失函式。
+這裡我們使用 :numref:`sec_linear_regression`中描述的平方損失函式。
+在實現中，我們需要將真實值`y`的形狀轉換為和預測值`y_hat`的形狀相同。
 
 ```{.python .input}
 #@tab all
 def squared_loss(y_hat, y):  #@save
-    """均方损失"""
+    """均方損失"""
     return (y_hat - d2l.reshape(y, y_hat.shape)) ** 2 / 2
 ```
 
-## (**定义优化算法**)
+## (**定義最佳化演算法**)
 
-正如我们在 :numref:`sec_linear_regression`中讨论的，线性回归有解析解。
-尽管线性回归有解析解，但本书中的其他模型却没有。
-这里我们介绍小批量随机梯度下降。
+正如我們在 :numref:`sec_linear_regression`中討論的，線性迴歸有解析解。
+儘管線性迴歸有解析解，但本書中的其他模型卻沒有。
+這裡我們介紹小批次隨機梯度下降。
 
-在每一步中，使用从数据集中随机抽取的一个小批量，然后根据参数计算损失的梯度。
-接下来，朝着减少损失的方向更新我们的参数。
-下面的函数实现小批量随机梯度下降更新。
-该函数接受模型参数集合、学习速率和批量大小作为输入。每
-一步更新的大小由学习速率`lr`决定。
-因为我们计算的损失是一个批量样本的总和，所以我们用批量大小（`batch_size`）
-来规范化步长，这样步长大小就不会取决于我们对批量大小的选择。
+在每一步中，使用從資料集中隨機抽取的一個小批次，然後根據引數計算損失的梯度。
+接下來，朝著減少損失的方向更新我們的引數。
+下面的函式實現小批次隨機梯度下降更新。
+該函式接受模型引數集合、學習速率和批次大小作為輸入。每
+一步更新的大小由學習速率`lr`決定。
+因為我們計算的損失是一個批次樣本的總和，所以我們用批次大小（`batch_size`）
+來規範化步長，這樣步長大小就不會取決於我們對批次大小的選擇。
 
 ```{.python .input}
 def sgd(params, lr, batch_size):  #@save
-    """小批量随机梯度下降"""
+    """小批次隨機梯度下降"""
     for param in params:
         param[:] = param - lr * param.grad / batch_size
 ```
@@ -262,7 +262,7 @@ def sgd(params, lr, batch_size):  #@save
 ```{.python .input}
 #@tab pytorch
 def sgd(params, lr, batch_size):  #@save
-    """小批量随机梯度下降"""
+    """小批次隨機梯度下降"""
     with torch.no_grad():
         for param in params:
             param -= lr * param.grad / batch_size
@@ -272,7 +272,7 @@ def sgd(params, lr, batch_size):  #@save
 ```{.python .input}
 #@tab tensorflow
 def sgd(params, grads, lr, batch_size):  #@save
-    """小批量随机梯度下降"""
+    """小批次隨機梯度下降"""
     for param, grad in zip(params, grads):
         param.assign_sub(lr*grad/batch_size)
 ```
@@ -281,7 +281,7 @@ def sgd(params, grads, lr, batch_size):  #@save
 #@tab paddle
 #@save
 def sgd(params, lr, batch_size):
-    """小批量随机梯度下降"""
+    """小批次隨機梯度下降"""
     with paddle.no_grad():
         for i, param in enumerate(params):
             param -= lr * params[i].grad / batch_size
@@ -289,27 +289,27 @@ def sgd(params, lr, batch_size):
             params[i].clear_gradient()
 ```
 
-## 训练
+## 訓練
 
-现在我们已经准备好了模型训练所有需要的要素，可以实现主要的[**训练过程**]部分了。
-理解这段代码至关重要，因为从事深度学习后，
-相同的训练过程几乎一遍又一遍地出现。
-在每次迭代中，我们读取一小批量训练样本，并通过我们的模型来获得一组预测。
-计算完损失后，我们开始反向传播，存储每个参数的梯度。
-最后，我们调用优化算法`sgd`来更新模型参数。
+現在我們已經準備好了模型訓練所有需要的要素，可以實現主要的[**訓練過程**]部分了。
+理解這段程式碼至關重要，因為從事深度學習後，
+相同的訓練過程幾乎一遍又一遍地出現。
+在每次迭代中，我們讀取一小批次訓練樣本，並透過我們的模型來獲得一組預測。
+計算完損失後，我們開始反向傳播，儲存每個引數的梯度。
+最後，我們呼叫最佳化演算法`sgd`來更新模型引數。
 
-概括一下，我们将执行以下循环：
+概括一下，我們將執行以下迴圈：
 
-* 初始化参数
-* 重复以下训练，直到完成
-    * 计算梯度$\mathbf{g} \leftarrow \partial_{(\mathbf{w},b)} \frac{1}{|\mathcal{B}|} \sum_{i \in \mathcal{B}} l(\mathbf{x}^{(i)}, y^{(i)}, \mathbf{w}, b)$
-    * 更新参数$(\mathbf{w}, b) \leftarrow (\mathbf{w}, b) - \eta \mathbf{g}$
+* 初始化引數
+* 重複以下訓練，直到完成
+    * 計算梯度$\mathbf{g} \leftarrow \partial_{(\mathbf{w},b)} \frac{1}{|\mathcal{B}|} \sum_{i \in \mathcal{B}} l(\mathbf{x}^{(i)}, y^{(i)}, \mathbf{w}, b)$
+    * 更新引數$(\mathbf{w}, b) \leftarrow (\mathbf{w}, b) - \eta \mathbf{g}$
 
-在每个*迭代周期*（epoch）中，我们使用`data_iter`函数遍历整个数据集，
-并将训练数据集中所有样本都使用一次（假设样本数能够被批量大小整除）。
-这里的迭代周期个数`num_epochs`和学习率`lr`都是超参数，分别设为3和0.03。
-设置超参数很棘手，需要通过反复试验进行调整。
-我们现在忽略这些细节，以后会在 :numref:`chap_optimization`中详细介绍。
+在每個*迭代週期*（epoch）中，我們使用`data_iter`函式遍歷整個資料集，
+並將訓練資料集中所有樣本都使用一次（假設樣本數能夠被批次大小整除）。
+這裡的迭代週期個數`num_epochs`和學習率`lr`都是超引數，分別設為3和0.03。
+設定超引數很棘手，需要透過反覆試驗進行調整。
+我們現在忽略這些細節，以後會在 :numref:`chap_optimization`中詳細介紹。
 
 ```{.python .input}
 #@tab all
@@ -323,10 +323,10 @@ loss = squared_loss
 for epoch in range(num_epochs):
     for X, y in data_iter(batch_size, features, labels):
         with autograd.record():
-            l = loss(net(X, w, b), y)  # X和y的小批量损失
-        # 计算l关于[w,b]的梯度
+            l = loss(net(X, w, b), y)  # X和y的小批次損失
+        # 計算l關於[w,b]的梯度
         l.backward()
-        sgd([w, b], lr, batch_size)  # 使用参数的梯度更新参数
+        sgd([w, b], lr, batch_size)  # 使用引數的梯度更新引數
     train_l = loss(net(features, w, b), labels)
     print(f'epoch {epoch + 1}, loss {float(train_l.mean()):f}')
 ```
@@ -335,11 +335,11 @@ for epoch in range(num_epochs):
 #@tab pytorch
 for epoch in range(num_epochs):
     for X, y in data_iter(batch_size, features, labels):
-        l = loss(net(X, w, b), y)  # X和y的小批量损失
-        # 因为l形状是(batch_size,1)，而不是一个标量。l中的所有元素被加到一起，
-        # 并以此计算关于[w,b]的梯度
+        l = loss(net(X, w, b), y)  # X和y的小批次損失
+        # 因為l形狀是(batch_size,1)，而不是一個標量。l中的所有元素被加到一起，
+        # 並以此計算關於[w,b]的梯度
         l.sum().backward()
-        sgd([w, b], lr, batch_size)  # 使用参数的梯度更新参数
+        sgd([w, b], lr, batch_size)  # 使用引數的梯度更新引數
     with torch.no_grad():
         train_l = loss(net(features, w, b), labels)
         print(f'epoch {epoch + 1}, loss {float(train_l.mean()):f}')
@@ -350,10 +350,10 @@ for epoch in range(num_epochs):
 for epoch in range(num_epochs):
     for X, y in data_iter(batch_size, features, labels):
         with tf.GradientTape() as g:
-            l = loss(net(X, w, b), y)  # X和y的小批量损失
-        # 计算l关于[w,b]的梯度
+            l = loss(net(X, w, b), y)  # X和y的小批次損失
+        # 計算l關於[w,b]的梯度
         dw, db = g.gradient(l, [w, b])
-        # 使用参数的梯度更新参数
+        # 使用引數的梯度更新引數
         sgd([w, b], [dw, db], lr, batch_size)
     train_l = loss(net(features, w, b), labels)
     print(f'epoch {epoch + 1}, loss {float(tf.reduce_mean(train_l)):f}')
@@ -363,45 +363,45 @@ for epoch in range(num_epochs):
 #@tab paddle
 for epoch in range(num_epochs):
     for X, y in data_iter(batch_size, features, labels):
-        l = loss(net(X, w, b), y)  # X和y的小批量损失
-        # 因为l形状是(batch_size,1)，而不是一个标量。l中的所有元素被加到一起，
-        # 并以此计算关于[w,b]的梯度
+        l = loss(net(X, w, b), y)  # X和y的小批次損失
+        # 因為l形狀是(batch_size,1)，而不是一個標量。l中的所有元素被加到一起，
+        # 並以此計算關於[w,b]的梯度
         l.sum().backward()
-        sgd([w, b], lr, batch_size)  # 使用参数的梯度更新参数
+        sgd([w, b], lr, batch_size)  # 使用引數的梯度更新引數
     with paddle.no_grad():
         train_l = loss(net(features, w, b), labels)
         print(f'epoch {epoch + 1}, loss {float(train_l.mean()):f}')
 ```
 
-因为我们使用的是自己合成的数据集，所以我们知道真正的参数是什么。
-因此，我们可以通过[**比较真实参数和通过训练学到的参数来评估训练的成功程度**]。
-事实上，真实参数和通过训练学到的参数确实非常接近。
+因為我們使用的是自己合成的資料集，所以我們知道真正的引數是什麼。
+因此，我們可以透過[**比較真實引數和透過訓練學到的引數來評估訓練的成功程度**]。
+事實上，真實引數和透過訓練學到的引數確實非常接近。
 
 ```{.python .input}
 #@tab all
-print(f'w的估计误差: {true_w - d2l.reshape(w, true_w.shape)}')
-print(f'b的估计误差: {true_b - b}')
+print(f'w的估計誤差: {true_w - d2l.reshape(w, true_w.shape)}')
+print(f'b的估計誤差: {true_b - b}')
 ```
 
-注意，我们不应该想当然地认为我们能够完美地求解参数。
-在机器学习中，我们通常不太关心恢复真正的参数，而更关心如何高度准确预测参数。
-幸运的是，即使是在复杂的优化问题上，随机梯度下降通常也能找到非常好的解。
-其中一个原因是，在深度网络中存在许多参数组合能够实现高度精确的预测。
+注意，我們不應該想當然地認為我們能夠完美地求解引數。
+在機器學習中，我們通常不太關心恢復真正的引數，而更關心如何高度準確預測引數。
+幸運的是，即使是在複雜的最佳化問題上，隨機梯度下降通常也能找到非常好的解。
+其中一個原因是，在深度網路中存在許多引數組合能夠實現高度精確的預測。
 
-## 小结
+## 小結
 
-* 我们学习了深度网络是如何实现和优化的。在这一过程中只使用张量和自动微分，不需要定义层或复杂的优化器。
-* 这一节只触及到了表面知识。在下面的部分中，我们将基于刚刚介绍的概念描述其他模型，并学习如何更简洁地实现其他模型。
+* 我們學習了深度網路是如何實現和最佳化的。在這一過程中只使用張量和自動微分，不需要定義層或複雜的最佳化器。
+* 這一節只觸及到了表面知識。在下面的部分中，我們將基於剛剛介紹的概念描述其他模型，並學習如何更簡潔地實現其他模型。
 
-## 练习
+## 練習
 
-1. 如果我们将权重初始化为零，会发生什么。算法仍然有效吗？
-1. 假设试图为电压和电流的关系建立一个模型。自动微分可以用来学习模型的参数吗?
-1. 能基于[普朗克定律](https://en.wikipedia.org/wiki/Planck%27s_law)使用光谱能量密度来确定物体的温度吗？
-1. 计算二阶导数时可能会遇到什么问题？这些问题可以如何解决？
-1. 为什么在`squared_loss`函数中需要使用`reshape`函数？
-1. 尝试使用不同的学习率，观察损失函数值下降的快慢。
-1. 如果样本个数不能被批量大小整除，`data_iter`函数的行为会有什么变化？
+1. 如果我們將權重初始化為零，會發生什麼。演算法仍然有效嗎？
+1. 假設試圖為電壓和電流的關係建立一個模型。自動微分可以用來學習模型的引數嗎?
+1. 能基於[普朗克定律](https://en.wikipedia.org/wiki/Planck%27s_law)使用光譜能量密度來確定物體的溫度嗎？
+1. 計算二階導數時可能會遇到什麼問題？這些問題可以如何解決？
+1. 為什麼在`squared_loss`函式中需要使用`reshape`函式？
+1. 嘗試使用不同的學習率，觀察損失函式值下降的快慢。
+1. 如果樣本個數不能被批次大小整除，`data_iter`函式的行為會有什麼變化？
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/1779)

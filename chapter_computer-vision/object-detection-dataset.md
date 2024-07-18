@@ -1,15 +1,15 @@
-# 目标检测数据集
+# 目標檢測資料集
 :label:`sec_object-detection-dataset`
 
-目标检测领域没有像MNIST和Fashion-MNIST那样的小数据集。
-为了快速测试目标检测模型，[**我们收集并标记了一个小型数据集**]。
-首先，我们拍摄了一组香蕉的照片，并生成了1000张不同角度和大小的香蕉图像。
-然后，我们在一些背景图片的随机位置上放一张香蕉的图像。
-最后，我们在图片上为这些香蕉标记了边界框。
+目標檢測領域沒有像MNIST和Fashion-MNIST那樣的小數據集。
+為了快速測試目標檢測模型，[**我們收集並標記了一個小型資料集**]。
+首先，我們拍攝了一組香蕉的照片，並生成了1000張不同角度和大小的香蕉影象。
+然後，我們在一些背景圖片的隨機位置上放一張香蕉的影象。
+最後，我們在圖片上為這些香蕉標記了邊界框。
 
-## [**下载数据集**]
+## [**下載資料集**]
 
-包含所有图像和CSV标签文件的香蕉检测数据集可以直接从互联网下载。
+包含所有影象和CSV標籤檔案的香蕉檢測資料集可以直接從網際網路下載。
 
 ```{.python .input}
 %matplotlib inline
@@ -51,15 +51,15 @@ d2l.DATA_HUB['banana-detection'] = (
     '5de26c8fce5ccdea9f91267273464dc968d20d72')
 ```
 
-## 读取数据集
+## 讀取資料集
 
-通过`read_data_bananas`函数，我们[**读取香蕉检测数据集**]。
-该数据集包括一个的CSV文件，内含目标类别标签和位于左上角和右下角的真实边界框坐标。
+透過`read_data_bananas`函式，我們[**讀取香蕉檢測資料集**]。
+該資料集包括一個的CSV檔案，內含目標類別別標籤和位於左上角和右下角的真實邊界框坐標。
 
 ```{.python .input}
 #@save
 def read_data_bananas(is_train=True):
-    """读取香蕉检测数据集中的图像和标签"""
+    """讀取香蕉檢測資料集中的影象和標籤"""
     data_dir = d2l.download_extract('banana-detection')
     csv_fname = os.path.join(data_dir, 'bananas_train' if is_train
                              else 'bananas_val', 'label.csv')
@@ -70,8 +70,8 @@ def read_data_bananas(is_train=True):
         images.append(image.imread(
             os.path.join(data_dir, 'bananas_train' if is_train else
                          'bananas_val', 'images', f'{img_name}')))
-        # 这里的target包含（类别，左上角x，左上角y，右下角x，右下角y），
-        # 其中所有图像都具有相同的香蕉类（索引为0）
+        # 這裡的target包含（類別，左上角x，左上角y，右下角x，右下角y），
+        # 其中所有影象都具有相同的香蕉類（索引為0）
         targets.append(list(target))
     return images, np.expand_dims(np.array(targets), 1) / 256
 ```
@@ -80,7 +80,7 @@ def read_data_bananas(is_train=True):
 #@tab pytorch
 #@save
 def read_data_bananas(is_train=True):
-    """读取香蕉检测数据集中的图像和标签"""
+    """讀取香蕉檢測資料集中的影象和標籤"""
     data_dir = d2l.download_extract('banana-detection')
     csv_fname = os.path.join(data_dir, 'bananas_train' if is_train
                              else 'bananas_val', 'label.csv')
@@ -91,8 +91,8 @@ def read_data_bananas(is_train=True):
         images.append(torchvision.io.read_image(
             os.path.join(data_dir, 'bananas_train' if is_train else
                          'bananas_val', 'images', f'{img_name}')))
-        # 这里的target包含（类别，左上角x，左上角y，右下角x，右下角y），
-        # 其中所有图像都具有相同的香蕉类（索引为0）
+        # 這裡的target包含（類別，左上角x，左上角y，右下角x，右下角y），
+        # 其中所有影象都具有相同的香蕉類（索引為0）
         targets.append(list(target))
     return images, torch.tensor(targets).unsqueeze(1) / 256
 ```
@@ -101,7 +101,7 @@ def read_data_bananas(is_train=True):
 #@tab paddle
 #@save
 def read_data_bananas(is_train=True):
-    """读取香蕉检测数据集中的图像和标签"""
+    """讀取香蕉檢測資料集中的影象和標籤"""
     data_dir = d2l.download_extract('banana-detection')
     csv_fname = os.path.join(data_dir, 'bananas_train' if is_train
                              else 'bananas_val', 'label.csv')
@@ -112,18 +112,18 @@ def read_data_bananas(is_train=True):
         paddle.vision.set_image_backend('cv2')
         images.append(paddlevision.image_load(os.path.join(data_dir, 'bananas_train' if is_train else
         'bananas_val', 'images', f'{img_name}'))[..., ::-1])
-        # 这里的target包含（类别，左上角x，左上角y，右下角x，右下角y）
-        # 其中所有图像都具有相同的香蕉类（索引为0）
+        # 這裡的target包含（類別，左上角x，左上角y，右下角x，右下角y）
+        # 其中所有影象都具有相同的香蕉類（索引為0）
         targets.append(list(target))
     return images, paddle.to_tensor(targets).unsqueeze(1) / 256
 ```
 
-通过使用`read_data_bananas`函数读取图像和标签，以下`BananasDataset`类别将允许我们[**创建一个自定义`Dataset`实例**]来加载香蕉检测数据集。
+透過使用`read_data_bananas`函式讀取影象和標籤，以下`BananasDataset`類別將允許我們[**建立一個自定義`Dataset`實例**]來載入香蕉檢測資料集。
 
 ```{.python .input}
 #@save
 class BananasDataset(gluon.data.Dataset):
-    """一个用于加载香蕉检测数据集的自定义数据集"""
+    """一個用於載入香蕉檢測資料集的自定義資料集"""
     def __init__(self, is_train):
         self.features, self.labels = read_data_bananas(is_train)
         print('read ' + str(len(self.features)) + (f' training examples' if
@@ -141,7 +141,7 @@ class BananasDataset(gluon.data.Dataset):
 #@tab pytorch
 #@save
 class BananasDataset(torch.utils.data.Dataset):
-    """一个用于加载香蕉检测数据集的自定义数据集"""
+    """一個用於載入香蕉檢測資料集的自定義資料集"""
     def __init__(self, is_train):
         self.features, self.labels = read_data_bananas(is_train)
         print('read ' + str(len(self.features)) + (f' training examples' if
@@ -158,7 +158,7 @@ class BananasDataset(torch.utils.data.Dataset):
 #@tab paddle
 #@save
 class BananasDataset(paddle.io.Dataset):
-    """一个用于加载香蕉检测数据集的自定义数据集"""
+    """一個用於載入香蕉檢測資料集的自定義資料集"""
     def __init__(self, is_train):
         self.features, self.labels = read_data_bananas(is_train)
         print('read ' + str(len(self.features)) + (f' training examples' if
@@ -171,12 +171,12 @@ class BananasDataset(paddle.io.Dataset):
         return len(self.features)
 ```
 
-最后，我们定义`load_data_bananas`函数，来[**为训练集和测试集返回两个数据加载器实例**]。对于测试集，无须按随机顺序读取它。
+最後，我們定義`load_data_bananas`函式，來[**為訓練集和測試集回傳兩個資料載入器實例**]。對於測試集，無須按隨機順序讀取它。
 
 ```{.python .input}
 #@save
 def load_data_bananas(batch_size):
-    """加载香蕉检测数据集"""
+    """載入香蕉檢測資料集"""
     train_iter = gluon.data.DataLoader(BananasDataset(is_train=True),
                                        batch_size, shuffle=True)
     val_iter = gluon.data.DataLoader(BananasDataset(is_train=False),
@@ -188,7 +188,7 @@ def load_data_bananas(batch_size):
 #@tab pytorch
 #@save
 def load_data_bananas(batch_size):
-    """加载香蕉检测数据集"""
+    """載入香蕉檢測資料集"""
     train_iter = torch.utils.data.DataLoader(BananasDataset(is_train=True),
                                              batch_size, shuffle=True)
     val_iter = torch.utils.data.DataLoader(BananasDataset(is_train=False),
@@ -200,7 +200,7 @@ def load_data_bananas(batch_size):
 #@tab paddle
 #@save
 def load_data_bananas(batch_size):
-    """加载香蕉检测数据集"""
+    """載入香蕉檢測資料集"""
     train_iter = paddle.io.DataLoader(BananasDataset(is_train=True),
                                       batch_size=batch_size, return_list=True, shuffle=True)
     val_iter = paddle.io.DataLoader(BananasDataset(is_train=False),
@@ -208,16 +208,16 @@ def load_data_bananas(batch_size):
     return train_iter, val_iter
 ```
 
-让我们[**读取一个小批量，并打印其中的图像和标签的形状**]。
-图像的小批量的形状为（批量大小、通道数、高度、宽度），看起来很眼熟：它与我们之前图像分类任务中的相同。
-标签的小批量的形状为（批量大小，$m$，5），其中$m$是数据集的任何图像中边界框可能出现的最大数量。
+讓我們[**讀取一個小批次，並列印其中的影象和標籤的形狀**]。
+影象的小批次的形狀為（批次大小、通道數、高度、寬度），看起來很眼熟：它與我們之前影象分類任務中的相同。
+標籤的小批次的形狀為（批次大小，$m$，5），其中$m$是資料集的任何影象中邊界框可能出現的最大數量。
 
-小批量计算虽然高效，但它要求每张图像含有相同数量的边界框，以便放在同一个批量中。
-通常来说，图像可能拥有不同数量个边界框；因此，在达到$m$之前，边界框少于$m$的图像将被非法边界框填充。
-这样，每个边界框的标签将被长度为5的数组表示。
-数组中的第一个元素是边界框中对象的类别，其中-1表示用于填充的非法边界框。
-数组的其余四个元素是边界框左上角和右下角的（$x$，$y$）坐标值（值域在0～1之间）。
-对于香蕉数据集而言，由于每张图像上只有一个边界框，因此$m=1$。
+小批次計算雖然高效，但它要求每張影象含有相同數量的邊界框，以便放在同一個批次中。
+通常來說，影象可能擁有不同數量個邊界框；因此，在達到$m$之前，邊界框少於$m$的影象將被非法邊界框填充。
+這樣，每個邊界框的標籤將被長度為5的陣列表示。
+陣列中的第一個元素是邊界框中物件的類別，其中-1表示用於填充的非法邊界框。
+陣列的其餘四個元素是邊界框左上角和右下角的（$x$，$y$）坐標值（值域在0～1之間）。
+對於香蕉資料集而言，由於每張影象上只有一個邊界框，因此$m=1$。
 
 ```{.python .input}
 #@tab all
@@ -227,11 +227,11 @@ batch = next(iter(train_iter))
 batch[0].shape, batch[1].shape
 ```
 
-## [**演示**]
+## [**示範**]
 
-让我们展示10幅带有真实边界框的图像。
-我们可以看到在所有这些图像中香蕉的旋转角度、大小和位置都有所不同。
-当然，这只是一个简单的人工数据集，实践中真实世界的数据集通常要复杂得多。
+讓我們展示10幅帶有真實邊界框的影象。
+我們可以看到在所有這些影象中香蕉的旋轉角度、大小和位置都有所不同。
+當然，這只是一個簡單的人工資料集，實踐中真實世界的資料集通常要複雜得多。
 
 ```{.python .input}
 imgs = (batch[0][0:10].transpose(0, 2, 3, 1)) / 255
@@ -256,15 +256,15 @@ for ax, label in zip(axes, batch[1][0:10]):
     d2l.show_bboxes(ax, [label[0][1:5] * edge_size], colors=['w'])
 ```
 
-## 小结
+## 小結
 
-* 我们收集的香蕉检测数据集可用于演示目标检测模型。
-* 用于目标检测的数据加载与图像分类的数据加载类似。但是，在目标检测中，标签还包含真实边界框的信息，它不出现在图像分类中。
+* 我們收集的香蕉檢測資料集可用於示範目標檢測模型。
+* 用於目標檢測的資料載入與影象分類的資料載入類似。但是，在目標檢測中，標籤還包含真實邊界框的訊息，它不出現在影象分類中。
 
-## 练习
+## 練習
 
-1. 在香蕉检测数据集中演示其他带有真实边界框的图像。它们在边界框和目标方面有什么不同？
-1. 假设我们想要将数据增强（例如随机裁剪）应用于目标检测。它与图像分类中的有什么不同？提示：如果裁剪的图像只包含物体的一小部分会怎样？
+1. 在香蕉檢測資料集中示範其他帶有真實邊界框的影象。它們在邊界框和目標方面有什麼不同？
+1. 假設我們想要將資料增強（例如隨機裁剪）應用於目標檢測。它與影象分類中的有什麼不同？提示：如果裁剪的影象只包含物體的一小部分會怎樣？
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/3203)

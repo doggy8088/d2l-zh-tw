@@ -1,12 +1,12 @@
-# MovieLens数据集
+# MovieLens資料集
 
-用于推荐系统研究的数据集有很多，而其中[MovieLens](https://movielens.org/)数据集可能是最受欢迎的一个。1997年，为了收集评分数据用于研究目的，明尼苏达大学的GroupLens研究实验室创建了本数据集。MovieLens数据集在包括个性化推荐和社会心理学在内的多个研究领域起到了关键作用。
+用於推薦系統研究的資料集有很多，而其中[MovieLens](https://movielens.org/)資料集可能是最受歡迎的一個。1997年，為了收集評分資料用於研究目的，明尼蘇達大學的GroupLens研究實驗室建立了本資料集。MovieLens資料集在包括個性化推薦和社會心理學在內的多個研究領域起到了關鍵作用。
 
-## 获取数据
+## 獲取資料
 
-MovieLens数据集托管在了[GroupLens](https://grouplens.org/datasets/movielens/)网站上。它包括多个可用版本。此处我们将使用其中的100K版本:cite:`Herlocker.Konstan.Borchers.ea.1999`。该数据集的10万条评分（从一星到五星）来自于943名用户对于1682部电影的评价。该数据集已经经过清洗处理，每个用户都至少有二十条评分数据。该数据集还提供了简单的人口统计信息，例如年龄、性别、风格和物品等。下载压缩包[ml-100k.zip](http://files.grouplens.org/datasets/movielens/ml-100k.zip)后解压得到`u.data`文件，其中包含了csv格式的10万条评分。文件夹中还有许多其他的文件，关于这些文件的详细说明可以在数据集的[README](http://files.grouplens.org/datasets/movielens/ml-100k-README.txt)中找到。
+MovieLens資料集託管在了[GroupLens](https://grouplens.org/datasets/movielens/)網站上。它包括多個可用版本。此處我們將使用其中的100K版本:cite:`Herlocker.Konstan.Borchers.ea.1999`。該資料集的10萬條評分（從一星到五星）來自於943名使用者對於1682部電影的評價。該資料集已經經過清洗處理，每個使用者都至少有二十條評分資料。該資料集還提供了簡單的人口統計訊息，例如年齡、性別、風格和物品等。下載壓縮封裝[ml-100k.zip](http://files.grouplens.org/datasets/movielens/ml-100k.zip)後解壓得到`u.data`檔案，其中包含了csv格式的10萬條評分。資料夾中還有許多其他的檔案，關於這些檔案的詳細說明可以在資料集的[README](http://files.grouplens.org/datasets/movielens/ml-100k-README.txt)中找到。
 
-在开始之前，让我们先导入运行本节试验所必须的模块。
+在開始之前，讓我們先導入執行本節試驗所必須的模組。
 
 ```python
 from d2l import mxnet as d2l
@@ -15,7 +15,7 @@ import os
 import pandas as pd
 ```
 
-之后，我们下载MovieLens-100k数据集，以`DataFrame`格式加载交互数据。
+之後，我們下載MovieLens-100k資料集，以`DataFrame`格式載入互動資料。
 
 ```python
 #@save
@@ -25,7 +25,7 @@ d2l.DATA_HUB['ml-100k'] = (
 
 #@save
 def read_data_ml100k():
-    """读取MovieLens-100k数据集"""
+    """讀取MovieLens-100k資料集"""
     data_dir = d2l.download_extract('ml-100k')
     names = ['user_id', 'item_id', 'rating', 'timestamp']
     data = pd.read_csv(os.path.join(data_dir, 'u.data'), sep='\t',
@@ -35,9 +35,9 @@ def read_data_ml100k():
     return data, num_users, num_items
 ```
 
-## 数据集统计
+## 資料集統計
 
-我们加载一下数据，然后手动检查一下前五条记录。如此一来，我们可以有效地了解数据结构并确保它们已经正确加载。
+我們載入一下資料，然後手動檢查一下前五條記錄。如此一來，我們可以有效地瞭解資料結構並確保它們已經正確載入。
 
 ```python
 data, num_users, num_items = read_data_ml100k()
@@ -47,9 +47,9 @@ print(f'matrix sparsity: {sparsity:f}')
 print(data.head(5))
 ```
 
-每行数据由四列组成，其中包括用户id（1-943）、物品id（1-1682）、评分（1-5）和时间戳。我们可以据此构造一个大小为$n \times m$的矩阵，$n$和$m$分别代表用户和物品的数量。该数据集仅记录了已有的评分，因此我们可以把它叫作评分矩阵。由于该矩阵的数值可能用于表示精确的评分，因此我们将会互换地使用交互矩阵和评分矩阵。因为用户尚未评价大部分电影，因此评分矩阵中的大部分数值都是未知的。我们将会展示该矩阵的稀疏性。此处稀疏度的定义为`1 - 非零实体的数量 / ( 用户数量 * 物品数量)`。显然，该矩阵非常稀疏（稀疏度为93.695%）。现实世界中的系数矩阵可能会面临更严重的稀疏问题，该问题也一直是构建推荐系统所面临的长期挑战。一个可行的解决方案是，使用额外的辅助信息，例如用户和物品特征，来消除这种稀疏性。
+每行數據由四列組成，其中包括使用者id（1-943）、物品id（1-1682）、評分（1-5）和時間戳。我們可以據此構造一個大小為$n \times m$的矩陣，$n$和$m$分別代表使用者和物品的數量。該資料集僅記錄了已有的評分，因此我們可以把它叫作評分矩陣。由於該矩陣的數值可能用於表示精確的評分，因此我們將會互換地使用互動矩陣和評分矩陣。因為使用者尚未評價大部分電影，因此評分矩陣中的大部分數值都是未知的。我們將會展示該矩陣的稀疏性。此處稀疏度的定義為`1 - 非零實體的數量 / ( 使用者數量 * 物品數量)`。顯然，該矩陣非常稀疏（稀疏度為93.695%）。現實世界中的係數矩陣可能會面臨更嚴重的稀疏問題，該問題也一直是建立推薦系統所面臨的長期挑戰。一個可行的解決方案是，使用額外的輔助訊息，例如使用者和物品特徵，來消除這種稀疏性。
 
-接下来，我们绘制评分计数的分布情况。正如预期的一样，该分布看起来像是一个正态分布，大部分评分数据都集中在3-4之间。
+接下來，我們繪製評分計數的分佈情況。正如預期的一樣，該分佈看起來像是一個常態分佈，大部分評分資料都集中在3-4之間。
 
 ```python
 d2l.plt.hist(data['rating'], bins=5, ec='black')
@@ -59,26 +59,26 @@ d2l.plt.title('Distribution of Ratings in MovieLens 100K')
 d2l.plt.show()
 ```
 
-## 分割数据集
+## 分割資料集
 
-我们将数据集切分为训练集和测试集两部分。下面的函数提供了`随机`和`序列感知`两种分割模式。在`随机`模式下，该函数将忽略时间戳，然后随机切分100k的交互数据。在默认情况下，其中90%的数据将作为训练样本，剩余的10%用作测试样本。在`序列感知`模式下，我们利用时间戳排序用户的历史评分，然后将用户的最新评分用于测试，将其余的评分用作训练集。这一模式会用在序列感知推荐的小节中。
+我們將資料集切分為訓練集和測試集兩部分。下面的函式提供了`隨機`和`序列感知`兩種分割模式。在`隨機`模式下，該函式將忽略時間戳，然後隨機切分100k的互動資料。在預設情況下，其中90%的資料將作為訓練樣本，剩餘的10%用作測試樣本。在`序列感知`模式下，我們利用時間戳排序使用者的歷史評分，然後將使用者的最新評分用於測試，將其餘的評分用作訓練集。這一模式會用在序列感知推薦的小節中。
 
 ```python
 #@save
 def split_data_ml100k(data, num_users, num_items,
                       split_mode='random', test_ratio=0.1):
-    """以随机模式或者序列感知模式分割数据集"""
+    """以隨機模式或者序列感知模式分割資料集"""
     if split_mode == 'seq-aware':
         train_items, test_items, train_list = {}, {}, []
         for line in data.itertuples():
             u, i, rating, time = line[1], line[2], line[3], line[4]
             train_items.setdefault(u, []).append((u, i, rating, time))
             if u not in test_items or test_items[u][-1] < time:
-                test_items[u] = (i, rating, time) # 最新的评分
+                test_items[u] = (i, rating, time) # 最新的評分
         for u in range(1, num_users + 1):
             train_list.extend(sorted(train_items[u], key=lambda k: k[3]))
         test_data = [(key, *value) for key, value in test_items.items()] 
-        train_data = [item for item in train_list if item not in test_data] # 移除测试数据集中已有的评分
+        train_data = [item for item in train_list if item not in test_data] # 移除測試資料集中已有的評分
         train_data = pd.DataFrame(train_data)
         test_data = pd.DataFrame(test_data)
     else:
@@ -89,16 +89,16 @@ def split_data_ml100k(data, num_users, num_items,
     return train_data, test_data
 ```
 
-请注意，在日常实践中，除了测试集最好还要有验证集。但是简洁起见，我们在这里忽略了验证集。在这种情况下，我们的测试集可以视作保留的验证集。
+請注意，在日常實踐中，除了測試集最好還要有驗證集。但是簡潔起見，我們在這裡忽略了驗證集。在這種情況下，我們的測試集可以視作保留的驗證集。
 
-## 加载数据
+## 載入資料
 
-分割数据集后，为了方面使用，我们将训练集和测试集转化为了列表和字典（或者矩阵）。下面的函数按行读取dataframe中数据，并且从0开始枚举用户和物品的索引。该函数的返回值为用户、物品和评分列表，以及一个记录了交互数据的字典或者矩阵。我们可以将返回的类型指定为`显式`或者`隐式`。
+分割資料集後，為了方面使用，我們將訓練集和測試集轉化為了清單和字典（或者矩陣）。下面的函式按行讀取dataframe中資料，並且從0開始列舉使用者和物品的索引。該函式的回傳值為使用者、物品和評分清單，以及一個記錄了互動資料的字典或者矩陣。我們可以將回傳的型別指定為`顯式`或者`隱式`。
 
 ```python
 #@save
 def load_data_ml100k(data, num_users, num_items, feedback='explicit'):
-    """加载MovieLens-100k数据集"""
+    """載入MovieLens-100k資料集"""
     users, items, scores = [], [], []
     inter = np.zeros((num_items, num_users)) if feedback == 'explicit' else {}
     for line in data.itertuples():
@@ -114,13 +114,13 @@ def load_data_ml100k(data, num_users, num_items, feedback='explicit'):
     return users, items, scores, inter
 ```
 
-接下来，为了在之后的章节使用数据集，我们整合上述步骤。这里得到的结果将会封装到`Dataset`和`DataLoader`之中。请注意，训练数据的`DataLoader`的`last_batch`选项被设置为了`rollover`（剩余样本将滚动到下一周期），而且数据的顺序也是打乱的。
+接下來，為了在之後的章節使用資料集，我們整合上述步驟。這裡得到的結果將會封裝到`Dataset`和`DataLoader`之中。請注意，訓練資料的`DataLoader`的`last_batch`選項被設定為了`rollover`（剩餘樣本將捲動到下一週期），而且資料的順序也是打亂的。
 
 ```python
 #@save
 def split_and_load_ml100k(split_mode='seq-aware', feedback='explicit',
                           test_ratio=0.1, batch_size=256):
-    """分割并加载MovieLens-100k数据集"""
+    """分割並載入MovieLens-100k資料集"""
     data, num_users, num_items = read_data_ml100k()
     train_data, test_data = split_data_ml100k(
         data, num_users, num_items, split_mode, test_ratio)
@@ -140,15 +140,15 @@ def split_and_load_ml100k(split_mode='seq-aware', feedback='explicit',
     return num_users, num_items, train_iter, test_iter
 ```
 
-## 小结
+## 小結
 
-* MovieLens广泛用于推荐系统研究。它是免费且公开可用的。
-* 为了能在后续章节中使用，我们定义了一些函数用来下载和预处理MovieLens-100k数据集。
+* MovieLens廣泛用於推薦系統研究。它是免費且公開可用的。
+* 為了能在後續章節中使用，我們定義了一些函式用來下載和預處理MovieLens-100k資料集。
 
-## 练习
+## 練習
 
-* 你可以找到其他类似的推荐数据集吗？
-* 你可以在[https://movielens.org/](https://movielens.org/)上浏览到关于MovieLens数据集更多的信息。
+* 你可以找到其他類似的推薦資料集嗎？
+* 你可以在[https://movielens.org/](https://movielens.org/)上瀏覽到關於MovieLens資料集更多的訊息。
 
 [Discussions](https://discuss.d2l.ai/t/399)
 

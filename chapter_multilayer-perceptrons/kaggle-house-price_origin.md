@@ -660,9 +660,9 @@ on the test set.
 The steps are quite simple:
 
 * Log in to the Kaggle website and visit the house price prediction competition page.
-* Click the “Submit Predictions” or “Late Submission” button (as of this writing, the button is located on the right).
-* Click the “Upload Submission File” button in the dashed box at the bottom of the page and select the prediction file you wish to upload.
-* Click the “Make Submission” button at the bottom of the page to view your results.
+* Click the 『Submit Predictions』 or 『Late Submission』 button (as of this writing, the button is located on the right).
+* Click the 『Upload Submission File』 button in the dashed box at the bottom of the page and select the prediction file you wish to upload.
+* Click the 『Make Submission』 button at the bottom of the page to view your results.
 
 ![Submitting data to Kaggle](../img/kaggle-submit2.png)
 :width:`400px`

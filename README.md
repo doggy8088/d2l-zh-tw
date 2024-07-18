@@ -1,8 +1,8 @@
-# 动手学深度学习（Dive into Deep Learning，D2L.ai）
+# 動手學深度學習（Dive into Deep Learning，D2L.ai）
 
-[第二版：zh.D2L.ai](https://zh.d2l.ai)  | [第一版：zh-v1.D2L.ai](https://zh-v1.d2l.ai/) |  安装和使用书中源代码： [第二版](https://zh.d2l.ai/chapter_installation/index.html) [第一版](https://zh-v1.d2l.ai/chapter_prerequisite/install.html)
+[第二版：zh.D2L.ai](https://zh.d2l.ai)  | [第一版：zh-v1.D2L.ai](https://zh-v1.d2l.ai/) |  安裝和使用書中原始碼： [第二版](https://zh.d2l.ai/chapter_installation/index.html) [第一版](https://zh-v1.d2l.ai/chapter_prerequisite/install.html)
 
-<h5 align="center"><i>理解深度学习的最佳方法是学以致用。</i></h5>
+<h5 align="center"><i>理解深度學習的最佳方法是學以致用。</i></h5>
 
 <p align="center">
   <img width="200"  src="static/frontpage/_images/eq.jpg">
@@ -11,21 +11,21 @@
   <img width="200"  src="static/frontpage/_images/notebook.gif">
 </p>
 
-本开源项目代表了我们的一种尝试：我们将教给读者概念、背景知识和代码；我们将在同一个地方阐述剖析问题所需的批判性思维、解决问题所需的数学知识，以及实现解决方案所需的工程技能。
+本開源專案代表了我們的一種嘗試：我們將教給讀者概念、背景知識和程式碼；我們將在同一個地方闡述剖析問題所需的批判性思維、解決問題所需的數學知識，以及實現解決方案所需的工程技能。
 
-我们的目标是创建一个为实现以下目标的统一资源：
-1. 所有人均可在网上免费获取；
-1. 提供足够的技术深度，从而帮助读者实际成为深度学习应用科学家：既理解数学原理，又能够实现并不断改进方法；
-1. 包含可运行的代码，为读者展示如何在实际中解决问题。这样不仅直接将数学公式对应成实际代码，而且可以修改代码、观察结果并及时获取经验；
-1. 允许我们和整个社区不断快速迭代内容，从而紧跟仍在高速发展的深度学习领域；
-1. 由包含有关技术细节问答的论坛作为补充，使大家可以相互答疑并交换经验。
+我們的目標是建立一個為實現以下目標的統一資源：
+1. 所有人均可在網上免費獲取；
+1. 提供足夠的技術深度，從而幫助讀者實際成為深度學習應用科學家：既理解數學原理，又能夠實現並不斷改進方法；
+1. 包含可執行的程式碼，為讀者展示如何在實際中解決問題。這樣不僅直接將數學公式對應成實際程式碼，而且可以修改程式碼、觀察結果並及時獲取經驗；
+1. 允許我們和整個社群不斷快速迭代內容，從而緊跟仍在高速發展的深度學習領域；
+1. 由包含有關技術細節問答的論壇作為補充，使大家可以相互答疑並交換經驗。
 
-<h5 align="center">将本书（中英文版）用作教材或参考书的大学</h5>
+<h5 align="center">將本書（中英文版）用作教材或參考書的大學</h5>
 <p align="center">
   <img width="400"  src="https://d2l.ai/_images/map.png">
 </p>
 
-如果本书对你有帮助，请Star (★) 本仓库或引用本书的英文版：
+如果本書對你有幫助，請Star (★) 本倉庫或引用本書的英文版：
 
 ```
 @book{zhang2023dive,
@@ -37,46 +37,50 @@
 }
 ```
 
-## 本书的英文版
+## 本書的英文版
 
-虽然纸质书已出版，但深度学习领域依然在迅速发展。为了得到来自更广泛的英文开源社区的帮助，从而提升本书质量，本书的新版将继续用英文编写，并搬回中文版。
+雖然紙質書已出版，但深度學習領域依然在迅速發展。為了得到來自更廣泛的英文開源社群的幫助，從而提升本書質量，本書的新版將繼續用英文編寫，並搬回中文版。
 
-欢迎关注本书的[英文开源项目](https://github.com/d2l-ai/d2l-en)。
+歡迎關注本書的[英文開源專案](https://github.com/d2l-ai/d2l-en)。
 
-## 中英文教学资源
+## 中英文教學資源
 
-加州大学伯克利分校 2019 年春学期 [*Introduction to Deep Learning* 课程](http://courses.d2l.ai/berkeley-stat-157/index.html)教材（同时提供含教学视频地址的[中文版课件](https://github.com/d2l-ai/berkeley-stat-157/tree/master/slides-zh)）。
+加州大學伯克利分校 2019 年春學期 [*Introduction to Deep Learning* 課程](http://courses.d2l.ai/berkeley-stat-157/index.html)教材（同時提供含教學影片地址的[中文版課件](https://github.com/d2l-ai/berkeley-stat-157/tree/master/slides-zh)）。
 
-## 学术界推荐
+## 學術界推薦
 
 > <p>"Dive into this book if you want to dive into deep learning!"</p>
-> <b>&mdash; 韩家炜，ACM 院士、IEEE 院士，美国伊利诺伊大学香槟分校计算机系 Michael Aiken Chair 教授</b>
+> <b>&mdash; 韓家煒，ACM 院士、IEEE 院士，美國伊利諾大學香檳分校電腦系 Michael Aiken Chair 教授</b>
 
 > <p>"This is a highly welcome addition to the machine learning literature."</p>
-> <b>&mdash; Bernhard Schölkopf，ACM 院士、德国国家科学院院士，德国马克斯•普朗克研究所智能系统院院长</b>
+> <b>&mdash; Bernhard Schölkopf，ACM 院士、德國國家科學院院士，德國馬克斯•普朗克研究所智慧系統院院長</b>
 
-> <p>"书中代码可谓‘所学即所用’。"</p>
-> <b>&mdash; 周志华，ACM 院士、IEEE 院士、AAAS 院士，南京大学计算机科学与技术系主任</b>
+> <p>"書中程式碼可謂「所學即所用」。"</p>
+> <b>&mdash; 周志華，ACM 院士、IEEE 院士、AAAS 院士，南京大學電腦科學與技術系主任</b>
 
-> <p>"这本书可以帮助深度学习实践者快速提升自己的能力。"</p>
-> <b>&mdash; 张潼，ASA 院士、IMS 院士，香港科技大学计算机系和数学系教授</b>
+> <p>"這本書可以幫助深度學習實踐者快速提升自己的能力。"</p>
+> <b>&mdash; 張潼，ASA 院士、IMS 院士，香港科技大學電腦系和數學系教授</b>
 
-## 工业界推荐
+## 工業界推薦
 
-> <p>"一本优秀的深度学习教材，值得任何想了解深度学习何以引爆人工智能革命的人关注。"</p>
-> <b>&mdash; 黄仁勋，NVIDIA创始人 & CEO</b>
+> <p>"一本優秀的深度學習教材，值得任何想了解深度學習何以引爆人工智慧革命的人關注。"</p>
+> <b>&mdash; 黃仁勳，NVIDIA創始人 & CEO</b>
 
-> <p>"《动手学深度学习》是最适合工业界研发工程师学习的。我毫无保留地向广大的读者们强烈推荐。"</p>
-> <b>&mdash; 余凯，地平线公司创始人 & CEO</b>
+> <p>"《動手學深度學習》是最適合工業界研發工程師學習的。我毫無保留地向廣大的讀者們強烈推薦。"</p>
+> <b>&mdash; 餘凱，地平線公司創始人 & CEO</b>
 
-> <p>"强烈推荐这本书！我特别赞赏这种手脑一体的学习方式。"</p>
-> <b>&mdash; 漆远，复旦大学“浩清”教授、人工智能创新与产业研究院院长</b>
+> <p>"強烈推薦這本書！我特別讚賞這種手腦一體的學習方式。"</p>
+> <b>&mdash; 漆遠，復旦大學『浩清』教授、人工智慧創新與產業研究院院長</b>
 
-> <p>"《动手学深度学习》是一本很容易让学习者上瘾的书。"</p>
-> <b>&mdash; 沈强，将门创投创始合伙人</b>
+> <p>"《動手學深度學習》是一本很容易讓學習者上癮的書。"</p>
+> <b>&mdash; 沈強，將門創投創始合夥人</b>
 
-## 贡献
+## 正體中文翻譯
 
-感谢[社区贡献者们](https://github.com/d2l-ai/d2l-zh/graphs/contributors)为每一位读者改进这本开源书。
+本書正體中文翻譯由 [Will 保哥](http://blog.miniasp.com/) 協助完成，原文取自[簡體中文翻譯版本](https://github.com/d2l-ai/d2l-zh)。若有任何問題，歡迎造訪 [Will 保哥的技術交流中心](https://www.facebook.com/will.fans) 與我聯繫！
 
-[如何贡献](https://zh.d2l.ai/chapter_appendix-tools-for-deep-learning/contributing.html) | [致谢](https://zh.d2l.ai/chapter_preface/index.html) | [讨论或报告问题](https://discuss.d2l.ai/c/chinese-version/16) | [其他](INFO.md)
+## 貢獻
+
+感謝[社群貢獻者們](https://github.com/d2l-ai/d2l-zh/graphs/contributors)為每一位讀者改進這本開源書。
+
+[如何貢獻](https://zh.d2l.ai/chapter_appendix-tools-for-deep-learning/contributing.html) | [致謝](https://zh.d2l.ai/chapter_preface/index.html) | [討論或報告問題](https://discuss.d2l.ai/c/chinese-version/16) | [其他](INFO.md)

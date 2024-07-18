@@ -1,10 +1,10 @@
-# 循环神经网络的简洁实现
+# 迴圈神經網路的簡潔實現
 :label:`sec_rnn-concise`
 
-虽然 :numref:`sec_rnn_scratch`
-对了解循环神经网络的实现方式具有指导意义，但并不方便。
-本节将展示如何使用深度学习框架的高级API提供的函数更有效地实现相同的语言模型。
-我们仍然从读取时光机器数据集开始。
+雖然 :numref:`sec_rnn_scratch`
+對了解迴圈神經網路的實現方式具有指導意義，但並不方便。
+本節將展示如何使用深度學習框架的高階API提供的函式更有效地實現相同的語言模型。
+我們仍然從讀取時光機器資料集開始。
 
 ```{.python .input}
 from d2l import mxnet as d2l
@@ -48,12 +48,12 @@ batch_size, num_steps = 32, 35
 train_iter, vocab = d2l.load_data_time_machine(batch_size, num_steps)
 ```
 
-## [**定义模型**]
+## [**定義模型**]
 
-高级API提供了循环神经网络的实现。
-我们构造一个具有256个隐藏单元的单隐藏层的循环神经网络层`rnn_layer`。
-事实上，我们还没有讨论多层循环神经网络的意义（这将在 :numref:`sec_deep_rnn`中介绍）。
-现在仅需要将多层理解为一层循环神经网络的输出被用作下一层循环神经网络的输入就足够了。
+高階API提供了迴圈神經網路的實現。
+我們構造一個具有256個隱藏單元的單隱藏層的迴圈神經網路層`rnn_layer`。
+事實上，我們還沒有討論多層迴圈神經網路的意義（這將在 :numref:`sec_deep_rnn`中介紹）。
+現在僅需要將多層理解為一層迴圈神經網路的輸出被用作下一層迴圈神經網路的輸入就足夠了。
 
 ```{.python .input}
 num_hiddens = 256
@@ -83,14 +83,14 @@ rnn_layer = nn.SimpleRNN(len(vocab), num_hiddens, time_major=True)
 ```
 
 :begin_tab:`mxnet`
-初始化隐状态是简单的，只需要调用成员函数`begin_state`即可。
-函数将返回一个列表（`state`），列表中包含了初始隐状态用于小批量数据中的每个样本，
-其形状为（隐藏层数，批量大小，隐藏单元数）。
-对于以后要介绍的一些模型（例如长-短期记忆网络），这样的列表还会包含其他信息。
+初始化隱狀態是簡單的，只需要呼叫成員函式`begin_state`即可。
+函式將回傳一個清單（`state`），清單中包含了初始隱狀態用於小批次資料中的每個樣本，
+其形狀為（隱藏層數，批次大小，隱藏單元數）。
+對於以後要介紹的一些模型（例如長-短期記憶網路），這樣的清單還會包含其他訊息。
 :end_tab:
 
 :begin_tab:`pytorch`
-我们(**使用张量来初始化隐状态**)，它的形状是（隐藏层数，批量大小，隐藏单元数）。
+我們(**使用張量來初始化隱狀態**)，它的形狀是（隱藏層數，批次大小，隱藏單元數）。
 :end_tab:
 
 ```{.python .input}
@@ -116,16 +116,16 @@ state = paddle.zeros(shape=[1, batch_size, num_hiddens])
 state.shape
 ```
 
-[**通过一个隐状态和一个输入，我们就可以用更新后的隐状态计算输出。**]
-需要强调的是，`rnn_layer`的“输出”（`Y`）不涉及输出层的计算：
-它是指每个时间步的隐状态，这些隐状态可以用作后续输出层的输入。
+[**透過一個隱狀態和一個輸入，我們就可以用更新後的隱狀態計算輸出。**]
+需要強調的是，`rnn_layer`的『輸出』（`Y`）不涉及輸出層的計算：
+它是指每個時間步的隱狀態，這些隱狀態可以用作後續輸出層的輸入。
 
 :begin_tab:`mxnet`
-此外，`rnn_layer`返回的更新后的隐状态（`state_new`）
-是指小批量数据的最后时间步的隐状态。
-这个隐状态可以用来初始化顺序分区中一个迭代周期内下一个小批量数据的隐状态。
-对于多个隐藏层，每一层的隐状态将存储在（`state_new`）变量中。
-至于稍后要介绍的某些模型（例如，长－短期记忆），此变量还包含其他信息。
+此外，`rnn_layer`回傳的更新後的隱狀態（`state_new`）
+是指小批次資料的最後時間步的隱狀態。
+這個隱狀態可以用來初始化順序分割槽中一個迭代週期內下一個小批次資料的隱狀態。
+對於多個隱藏層，每一層的隱狀態將儲存在（`state_new`）變數中。
+至於稍後要介紹的某些模型（例如，長－短期記憶），此變數還包含其他訊息。
 :end_tab:
 
 ```{.python .input}
@@ -155,14 +155,14 @@ Y, state_new = rnn_layer(X, state)
 Y.shape, state_new.shape
 ```
 
-与 :numref:`sec_rnn_scratch`类似，
-[**我们为一个完整的循环神经网络模型定义了一个`RNNModel`类**]。
-注意，`rnn_layer`只包含隐藏的循环层，我们还需要创建一个单独的输出层。
+與 :numref:`sec_rnn_scratch`類似，
+[**我們為一個完整的迴圈神經網路模型定義了一個`RNNModel`類**]。
+注意，`rnn_layer`只包含隱藏的迴圈層，我們還需要建立一個單獨的輸出層。
 
 ```{.python .input}
 #@save
 class RNNModel(nn.Block):
-    """循环神经网络模型"""
+    """迴圈神經網路模型"""
     def __init__(self, rnn_layer, vocab_size, **kwargs):
         super(RNNModel, self).__init__(**kwargs)
         self.rnn = rnn_layer
@@ -172,8 +172,8 @@ class RNNModel(nn.Block):
     def forward(self, inputs, state):
         X = npx.one_hot(inputs.T, self.vocab_size)
         Y, state = self.rnn(X, state)
-        # 全连接层首先将Y的形状改为(时间步数*批量大小,隐藏单元数)
-        # 它的输出形状是(时间步数*批量大小,词表大小)
+        # 全連線層首先將Y的形狀改為(時間步數*批次大小,隱藏單元數)
+        # 它的輸出形狀是(時間步數*批次大小,詞表大小)
         output = self.dense(Y.reshape(-1, Y.shape[-1]))
         return output, state
 
@@ -185,13 +185,13 @@ class RNNModel(nn.Block):
 #@tab pytorch
 #@save
 class RNNModel(nn.Module):
-    """循环神经网络模型"""
+    """迴圈神經網路模型"""
     def __init__(self, rnn_layer, vocab_size, **kwargs):
         super(RNNModel, self).__init__(**kwargs)
         self.rnn = rnn_layer
         self.vocab_size = vocab_size
         self.num_hiddens = self.rnn.hidden_size
-        # 如果RNN是双向的（之后将介绍），num_directions应该是2，否则应该是1
+        # 如果RNN是雙向的（之後將介紹），num_directions應該是2，否則應該是1
         if not self.rnn.bidirectional:
             self.num_directions = 1
             self.linear = nn.Linear(self.num_hiddens, self.vocab_size)
@@ -203,19 +203,19 @@ class RNNModel(nn.Module):
         X = F.one_hot(inputs.T.long(), self.vocab_size)
         X = X.to(torch.float32)
         Y, state = self.rnn(X, state)
-        # 全连接层首先将Y的形状改为(时间步数*批量大小,隐藏单元数)
-        # 它的输出形状是(时间步数*批量大小,词表大小)。
+        # 全連線層首先將Y的形狀改為(時間步數*批次大小,隱藏單元數)
+        # 它的輸出形狀是(時間步數*批次大小,詞表大小)。
         output = self.linear(Y.reshape((-1, Y.shape[-1])))
         return output, state
 
     def begin_state(self, device, batch_size=1):
         if not isinstance(self.rnn, nn.LSTM):
-            # nn.GRU以张量作为隐状态
+            # nn.GRU以張量作為隱狀態
             return  torch.zeros((self.num_directions * self.rnn.num_layers,
                                  batch_size, self.num_hiddens), 
                                 device=device)
         else:
-            # nn.LSTM以元组作为隐状态
+            # nn.LSTM以元組作為隱狀態
             return (torch.zeros((
                 self.num_directions * self.rnn.num_layers,
                 batch_size, self.num_hiddens), device=device),
@@ -236,7 +236,7 @@ class RNNModel(tf.keras.layers.Layer):
 
     def call(self, inputs, state):
         X = tf.one_hot(tf.transpose(inputs), self.vocab_size)
-        # rnn返回两个以上的值
+        # rnn回傳兩個以上的值
         Y, *state = self.rnn(X, state)
         output = self.dense(tf.reshape(Y, (-1, Y.shape[-1])))
         return output, state
@@ -249,13 +249,13 @@ class RNNModel(tf.keras.layers.Layer):
 #@tab paddle
 #@save
 class RNNModel(nn.Layer):   
-    """循环神经网络模型"""
+    """迴圈神經網路模型"""
     def __init__(self, rnn_layer, vocab_size, **kwargs):
         super(RNNModel, self).__init__(**kwargs)
         self.rnn = rnn_layer
         self.vocab_size = vocab_size
         self.num_hiddens = self.rnn.hidden_size
-        # 如果RNN是双向的（之后将介绍），num_directions应该是2，否则应该是1
+        # 如果RNN是雙向的（之後將介紹），num_directions應該是2，否則應該是1
         if self.rnn.num_directions==1:
             self.num_directions = 1
             self.linear = nn.Linear(self.num_hiddens, self.vocab_size)
@@ -266,18 +266,18 @@ class RNNModel(nn.Layer):
     def forward(self, inputs, state):
         X = F.one_hot(inputs.T, self.vocab_size) 
         Y, state = self.rnn(X, state)
-        # 全连接层首先将Y的形状改为(时间步数*批量大小,隐藏单元数)
-        # 它的输出形状是(时间步数*批量大小,词表大小)。
+        # 全連線層首先將Y的形狀改為(時間步數*批次大小,隱藏單元數)
+        # 它的輸出形狀是(時間步數*批次大小,詞表大小)。
         output = self.linear(Y.reshape((-1, Y.shape[-1])))
         return output, state
 
     def begin_state(self, batch_size=1):
         if not isinstance(self.rnn, nn.LSTM):
-            # nn.GRU以张量作为隐状态
+            # nn.GRU以張量作為隱狀態
             return  paddle.zeros(shape=[self.num_directions * self.rnn.num_layers,
                                                            batch_size, self.num_hiddens])
         else:
-            # nn.LSTM以元组作为隐状态
+            # nn.LSTM以元組作為隱狀態
             return (paddle.zeros(
                 shape=[self.num_directions * self.rnn.num_layers,
                 batch_size, self.num_hiddens]),
@@ -286,9 +286,9 @@ class RNNModel(nn.Layer):
                         batch_size, self.num_hiddens]))
 ```
 
-## 训练与预测
+## 訓練與預測
 
-在训练模型之前，让我们[**基于一个具有随机权重的模型进行预测**]。
+在訓練模型之前，讓我們[**基於一個具有隨機權重的模型進行預測**]。
 
 ```{.python .input}
 device = d2l.try_gpu()
@@ -322,9 +322,9 @@ net = RNNModel(rnn_layer, vocab_size=len(vocab))
 d2l.predict_ch8('time traveller', 10, net, vocab, device)
 ```
 
-很明显，这种模型根本不能输出好的结果。
-接下来，我们使用 :numref:`sec_rnn_scratch`中
-定义的超参数调用`train_ch8`，并且[**使用高级API训练模型**]。
+很明顯，這種模型根本不能輸出好的結果。
+接下來，我們使用 :numref:`sec_rnn_scratch`中
+定義的超引數呼叫`train_ch8`，並且[**使用高階API訓練模型**]。
 
 ```{.python .input}
 num_epochs, lr = 500, 1
@@ -349,20 +349,20 @@ num_epochs, lr = 500, 1.0
 d2l.train_ch8(net, train_iter, vocab, lr, num_epochs, device)
 ```
 
-与上一节相比，由于深度学习框架的高级API对代码进行了更多的优化，
-该模型在较短的时间内达到了较低的困惑度。
+與上一節相比，由於深度學習框架的高階API對程式碼進行了更多的最佳化，
+該模型在較短的時間內達到了較低的困惑度。
 
-## 小结
+## 小結
 
-* 深度学习框架的高级API提供了循环神经网络层的实现。
-* 高级API的循环神经网络层返回一个输出和一个更新后的隐状态，我们还需要计算整个模型的输出层。
-* 相比从零开始实现的循环神经网络，使用高级API实现可以加速训练。
+* 深度學習框架的高階API提供了迴圈神經網路層的實現。
+* 高階API的迴圈神經網路層回傳一個輸出和一個更新後的隱狀態，我們還需要計算整個模型的輸出層。
+* 相比從零開始實現的迴圈神經網路，使用高階API實現可以加速訓練。
 
-## 练习
+## 練習
 
-1. 尝试使用高级API，能使循环神经网络模型过拟合吗？
-1. 如果在循环神经网络模型中增加隐藏层的数量会发生什么？能使模型正常工作吗？
-1. 尝试使用循环神经网络实现 :numref:`sec_sequence`的自回归模型。
+1. 嘗試使用高階API，能使迴圈神經網路模型過擬合嗎？
+1. 如果在迴圈神經網路模型中增加隱藏層的數量會發生什麼？能使模型正常工作嗎？
+1. 嘗試使用迴圈神經網路實現 :numref:`sec_sequence`的自迴歸模型。
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/2105)

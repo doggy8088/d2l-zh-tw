@@ -1237,7 +1237,7 @@ in industry and the natural sciences.
 
 A second influence for machine learning came from information theory by
 [Claude Shannon (1916--2001)](https://en.wikipedia.org/wiki/Claude_Shannon) and the theory of computation via [Alan Turing (1912--1954)](https://en.wikipedia.org/wiki/Alan_Turing).
-Turing posed the question "can machines think?”
+Turing posed the question "can machines think?』
 in his famous paper *Computing Machinery and Intelligence* :cite:`Turing.1950`.
 In what he described as the Turing test, a machine
 can be considered *intelligent* if it is difficult

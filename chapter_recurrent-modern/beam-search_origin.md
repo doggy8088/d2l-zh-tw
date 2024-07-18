@@ -162,7 +162,7 @@ process of beam search with an example.
 Suppose that the output vocabulary
 contains only five elements: 
 $\mathcal{Y} = \{A, B, C, D, E\}$, 
-where one of them is “&lt;eos&gt;”. 
+where one of them is 『&lt;eos&gt;』. 
 Let the beam size be 2 and 
 the maximum length of an output sequence be 3. 
 At time step 1, 
@@ -181,7 +181,7 @@ $P(A, B, D \mid \mathbf{c})$   and  $P(C, E, D \mid  \mathbf{c}).$
 As a result, we get six candidates output sequences: (i) $A$; (ii) $C$; (iii) $A$, $B$; (iv) $C$, $E$; (v) $A$, $B$, $D$; and (vi) $C$, $E$, $D$. 
 
 
-In the end, we obtain the set of final candidate output sequences based on these six sequences (e.g., discard portions including and after “&lt;eos&gt;”).
+In the end, we obtain the set of final candidate output sequences based on these six sequences (e.g., discard portions including and after 『&lt;eos&gt;』).
 Then
 we choose the sequence with the highest of the following score as the output sequence:
 

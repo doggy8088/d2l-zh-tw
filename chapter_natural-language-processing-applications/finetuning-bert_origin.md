@@ -57,13 +57,13 @@ For instance, "I should study." is acceptable but "I should studying." is not.
 :numref:`sec_bert` describes the input representation of BERT.
 The BERT input sequence unambiguously represents both single text and text pairs,
 where the special classification token 
-“&lt;cls&gt;” is used for sequence classification and 
+『&lt;cls&gt;』 is used for sequence classification and 
 the special classification token 
-“&lt;sep&gt;” marks the end of single text or separates a pair of text.
+『&lt;sep&gt;』 marks the end of single text or separates a pair of text.
 As shown in :numref:`fig_bert-one-seq`,
 in single text classification applications,
 the BERT representation of the special classification token 
-“&lt;cls&gt;” encodes the information of the entire input text sequence.
+『&lt;cls&gt;』 encodes the information of the entire input text sequence.
 As the representation of the input single text,
 it will be fed into a small MLP consisting of fully connected (dense) layers
 to output the distribution of all the discrete label values.

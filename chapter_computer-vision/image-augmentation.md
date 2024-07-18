@@ -1,12 +1,12 @@
-# 图像增广
+# 影象增廣
 :label:`sec_image_augmentation`
 
- :numref:`sec_alexnet`提到过大型数据集是成功应用深度神经网络的先决条件。
-图像增广在对训练图像进行一系列的随机变化之后，生成相似但不同的训练样本，从而扩大了训练集的规模。
-此外，应用图像增广的原因是，随机改变训练样本可以减少模型对某些属性的依赖，从而提高模型的泛化能力。
-例如，我们可以以不同的方式裁剪图像，使感兴趣的对象出现在不同的位置，减少模型对于对象出现位置的依赖。
-我们还可以调整亮度、颜色等因素来降低模型对颜色的敏感度。
-可以说，图像增广技术对于AlexNet的成功是必不可少的。本节将讨论这项广泛应用于计算机视觉的技术。
+ :numref:`sec_alexnet`提到過大型資料集是成功應用深度神經網路的先決條件。
+影象增廣在對訓練影象進行一系列的隨機變化之後，生成相似但不同的訓練樣本，從而擴大了訓練集的規模。
+此外，應用影象增廣的原因是，隨機改變訓練樣本可以減少模型對某些屬性的依賴，從而提高模型的泛化能力。
+例如，我們可以以不同的方式裁剪影象，使感興趣的物件出現在不同的位置，減少模型對於物件出現位置的依賴。
+我們還可以調整亮度、顏色等因素來降低模型對顏色的敏感度。
+可以說，影象增廣技術對於AlexNet的成功是必不可少的。本節將討論這項廣泛應用於電腦視覺的技術。
 
 ```{.python .input}
 %matplotlib inline
@@ -37,9 +37,9 @@ import paddle.vision as paddlevision
 from paddle import nn
 ```
 
-## 常用的图像增广方法
+## 常用的影象增廣方法
 
-在对常用图像增广方法的探索时，我们将使用下面这个尺寸为$400\times 500$的图像作为示例。
+在對常用影象增廣方法的探索時，我們將使用下面這個尺寸為$400\times 500$的影象作為範例。
 
 ```{.python .input}
 d2l.set_figsize()
@@ -54,8 +54,8 @@ img = d2l.Image.open('../img/cat1.jpg')
 d2l.plt.imshow(img);
 ```
 
-大多数图像增广方法都具有一定的随机性。为了便于观察图像增广的效果，我们下面定义辅助函数`apply`。
-此函数在输入图像`img`上多次运行图像增广方法`aug`并显示所有结果。
+大多數影象增廣方法都具有一定的隨機性。為了便於觀察影象增廣的效果，我們下面定義輔助函式`apply`。
+此函式在輸入影象`img`上多次執行影象增廣方法`aug`並顯示所有結果。
 
 ```{.python .input}
 #@tab all
@@ -64,10 +64,10 @@ def apply(img, aug, num_rows=2, num_cols=4, scale=1.5):
     d2l.show_images(Y, num_rows, num_cols, scale=scale)
 ```
 
-### 翻转和裁剪
+### 翻轉和裁剪
 
-[**左右翻转图像**]通常不会改变对象的类别。这是最早且最广泛使用的图像增广方法之一。
-接下来，我们使用`transforms`模块来创建`RandomFlipLeftRight`实例，这样就各有50%的几率使图像向左或向右翻转。
+[**左右翻轉影象**]通常不會改變物件的類別。這是最早且最廣泛使用的影象增廣方法之一。
+接下來，我們使用`transforms`模組來建立`RandomFlipLeftRight`實例，這樣就各有50%的機率使影象向左或向右翻轉。
 
 ```{.python .input}
 apply(img, gluon.data.vision.transforms.RandomFlipLeftRight())
@@ -83,7 +83,7 @@ apply(img, torchvision.transforms.RandomHorizontalFlip())
 apply(img, paddlevision.transforms.RandomHorizontalFlip())
 ```
 
-[**上下翻转图像**]不如左右图像翻转那样常用。但是，至少对于这个示例图像，上下翻转不会妨碍识别。接下来，我们创建一个`RandomFlipTopBottom`实例，使图像各有50%的几率向上或向下翻转。
+[**上下翻轉影象**]不如左右影象翻轉那樣常用。但是，至少對於這個範例影象，上下翻轉不會妨礙識別。接下來，我們建立一個`RandomFlipTopBottom`實例，使影象各有50%的機率向上或向下翻轉。
 
 ```{.python .input}
 apply(img, gluon.data.vision.transforms.RandomFlipTopBottom())
@@ -99,14 +99,14 @@ apply(img, torchvision.transforms.RandomVerticalFlip())
 apply(img,  paddlevision.transforms.RandomVerticalFlip())
 ```
 
-在我们使用的示例图像中，猫位于图像的中间，但并非所有图像都是这样。
-在 :numref:`sec_pooling`中，我们解释了汇聚层可以降低卷积层对目标位置的敏感性。
-另外，我们可以通过对图像进行随机裁剪，使物体以不同的比例出现在图像的不同位置。
-这也可以降低模型对目标位置的敏感性。
+在我們使用的範例影象中，貓位於影象的中間，但並非所有影象都是這樣。
+在 :numref:`sec_pooling`中，我們解釋了彙聚層可以降低卷積層對目標位置的敏感性。
+另外，我們可以透過對影象進行隨機裁剪，使物體以不同的比例出現在影象的不同位置。
+這也可以降低模型對目標位置的敏感性。
 
-下面的代码将[**随机裁剪**]一个面积为原始面积10%到100%的区域，该区域的宽高比从0.5～2之间随机取值。
-然后，区域的宽度和高度都被缩放到200像素。
-在本节中（除非另有说明），$a$和$b$之间的随机数指的是在区间$[a, b]$中通过均匀采样获得的连续值。
+下面的程式碼將[**隨機裁剪**]一個面積為原始面積10%到100%的區域，該區域的寬高比從0.5～2之間隨機取值。
+然後，區域的寬度和高度都被縮放到200畫素。
+在本節中（除非另有說明），$a$和$b$之間的隨機數指的是在區間$[a, b]$中透過均勻取樣獲得的連續值。
 
 ```{.python .input}
 shape_aug = gluon.data.vision.transforms.RandomResizedCrop(
@@ -128,11 +128,11 @@ shape_aug =  paddlevision.transforms.RandomResizedCrop(
 apply(img, shape_aug)
 ```
 
-### 改变颜色
+### 改變顏色
 
-另一种增广方法是改变颜色。
-我们可以改变图像颜色的四个方面：亮度、对比度、饱和度和色调。
-在下面的示例中，我们[**随机更改图像的亮度**]，随机值为原始图像的50%（$1-0.5$）到150%（$1+0.5$）之间。
+另一種增廣方法是改變顏色。
+我們可以改變影象顏色的四個方面：亮度、對比度、飽和度和色調。
+在下面的範例中，我們[**隨機更改影象的亮度**]，隨機值為原始影象的50%（$1-0.5$）到150%（$1+0.5$）之間。
 
 ```{.python .input}
 apply(img, gluon.data.vision.transforms.RandomBrightness(0.5))
@@ -150,7 +150,7 @@ apply(img,  paddlevision.transforms.ColorJitter(
     brightness=0.5, contrast=0, saturation=0, hue=0))
 ```
 
-同样，我们可以[**随机更改图像的色调**]。
+同樣，我們可以[**隨機更改影象的色調**]。
 
 ```{.python .input}
 apply(img, gluon.data.vision.transforms.RandomHue(0.5))
@@ -168,7 +168,7 @@ apply(img,  paddlevision.transforms.ColorJitter(
     brightness=0, contrast=0, saturation=0, hue=0.5))
 ```
 
-我们还可以创建一个`RandomColorJitter`实例，并设置如何同时[**随机更改图像的亮度（`brightness`）、对比度（`contrast`）、饱和度（`saturation`）和色调（`hue`）**]。
+我們還可以建立一個`RandomColorJitter`實例，並設定如何同時[**隨機更改影象的亮度（`brightness`）、對比度（`contrast`）、飽和度（`saturation`）和色調（`hue`）**]。
 
 ```{.python .input}
 color_aug = gluon.data.vision.transforms.RandomColorJitter(
@@ -190,9 +190,9 @@ color_aug =  paddlevision.transforms.ColorJitter(
 apply(img, color_aug)
 ```
 
-### [**结合多种图像增广方法**]
+### [**結合多種影象增廣方法**]
 
-在实践中，我们将结合多种图像增广方法。比如，我们可以通过使用一个`Compose`实例来综合上面定义的不同的图像增广方法，并将它们应用到每个图像。
+在實踐中，我們將結合多種影象增廣方法。比如，我們可以透過使用一個`Compose`實例來綜合上面定義的不同的影象增廣方法，並將它們應用到每個影象。
 
 ```{.python .input}
 augs = gluon.data.vision.transforms.Compose([
@@ -214,12 +214,12 @@ augs =  paddlevision.transforms.Compose([
 apply(img, augs)
 ```
 
-## [**使用图像增广进行训练**]
+## [**使用影象增廣進行訓練**]
 
-让我们使用图像增广来训练模型。
-这里，我们使用CIFAR-10数据集，而不是我们之前使用的Fashion-MNIST数据集。
-这是因为Fashion-MNIST数据集中对象的位置和大小已被规范化，而CIFAR-10数据集中对象的颜色和大小差异更明显。
-CIFAR-10数据集中的前32个训练图像如下所示。
+讓我們使用影象增廣來訓練模型。
+這裡，我們使用CIFAR-10資料集，而不是我們之前使用的Fashion-MNIST資料集。
+這是因為Fashion-MNIST資料集中物件的位置和大小已被規範化，而CIFAR-10資料集中物件的顏色和大小差異更明顯。
+CIFAR-10資料集中的前32個訓練影象如下所示。
 
 ```{.python .input}
 d2l.show_images(gluon.data.vision.CIFAR10(
@@ -240,9 +240,9 @@ print(len(all_images))
 d2l.show_images([all_images[i][0] for i in range(32)], 4, 8, scale=0.8);
 ```
 
-为了在预测过程中得到确切的结果，我们通常对训练样本只进行图像增广，且在预测过程中不使用随机操作的图像增广。
-在这里，我们[**只使用最简单的随机左右翻转**]。
-此外，我们使用`ToTensor`实例将一批图像转换为深度学习框架所要求的格式，即形状为（批量大小，通道数，高度，宽度）的32位浮点数，取值范围为0～1。
+為了在預測過程中得到確切的結果，我們通常對訓練樣本只進行影象增廣，且在預測過程中不使用隨機操作的影象增廣。
+在這裡，我們[**只使用最簡單的隨機左右翻轉**]。
+此外，我們使用`ToTensor`實例將一批影象轉換為深度學習框架所要求的格式，即形狀為（批次大小，通道數，高度，寬度）的32位浮點數，取值範圍為0～1。
 
 ```{.python .input}
 train_augs = gluon.data.vision.transforms.Compose([
@@ -274,11 +274,11 @@ test_augs = paddlevision.transforms.Compose([
 ```
 
 :begin_tab:`mxnet`
-接下来，我们定义了一个辅助函数，以便于读取图像和应用图像增广。Gluon数据集提供的`transform_first`函数将图像增广应用于每个训练样本的第一个元素（由图像和标签组成），即应用在图像上。有关`DataLoader`的详细介绍，请参阅 :numref:`sec_fashion_mnist`。
+接下來，我們定義了一個輔助函式，以便於讀取影象和應用影象增廣。Gluon資料集提供的`transform_first`函式將影象增廣應用於每個訓練樣本的第一個元素（由影象和標籤組成），即應用在影象上。有關`DataLoader`的詳細介紹，請參閱 :numref:`sec_fashion_mnist`。
 :end_tab:
 
 :begin_tab:`pytorch`
-接下来，我们[**定义一个辅助函数，以便于读取图像和应用图像增广**]。PyTorch数据集提供的`transform`参数应用图像增广来转化图像。有关`DataLoader`的详细介绍，请参阅 :numref:`sec_fashion_mnist`。
+接下來，我們[**定義一個輔助函式，以便於讀取影象和應用影象增廣**]。PyTorch資料集提供的`transform`引數應用影象增廣來轉化影象。有關`DataLoader`的詳細介紹，請參閱 :numref:`sec_fashion_mnist`。
 :end_tab:
 
 ```{.python .input}
@@ -309,17 +309,17 @@ def load_cifar10(is_train, augs, batch_size):
     return dataloader
 ```
 
-### 多GPU训练
+### 多GPU訓練
 
-我们在CIFAR-10数据集上训练 :numref:`sec_resnet`中的ResNet-18模型。
-回想一下 :numref:`sec_multi_gpu_concise`中对多GPU训练的介绍。
-接下来，我们[**定义一个函数，使用多GPU对模型进行训练和评估**]。
+我們在CIFAR-10資料集上訓練 :numref:`sec_resnet`中的ResNet-18模型。
+回想一下 :numref:`sec_multi_gpu_concise`中對多GPU訓練的介紹。
+接下來，我們[**定義一個函式，使用多GPU對模型進行訓練和評估**]。
 
 ```{.python .input}
 #@save
 def train_batch_ch13(net, features, labels, loss, trainer, devices,
                      split_f=d2l.split_batch):
-    """用多GPU进行小批量训练"""
+    """用多GPU進行小批次訓練"""
     X_shards, y_shards = split_f(features, labels, devices)
     with autograd.record():
         pred_shards = [net(X_shard) for X_shard in X_shards]
@@ -327,7 +327,7 @@ def train_batch_ch13(net, features, labels, loss, trainer, devices,
               in zip(pred_shards, y_shards)]
     for l in ls:
         l.backward()
-    # True标志允许使用过时的梯度，这很有用（例如，在微调BERT中）
+    # True標誌允許使用過時的梯度，這很有用（例如，在微調BERT中）
     trainer.step(labels.shape[0], ignore_stale_grad=True)
     train_loss_sum = sum([float(l.sum()) for l in ls])
     train_acc_sum = sum(d2l.accuracy(pred_shard, y_shard)
@@ -339,9 +339,9 @@ def train_batch_ch13(net, features, labels, loss, trainer, devices,
 #@tab pytorch
 #@save
 def train_batch_ch13(net, X, y, loss, trainer, devices):
-    """用多GPU进行小批量训练"""
+    """用多GPU進行小批次訓練"""
     if isinstance(X, list):
-        # 微调BERT中所需
+        # 微調BERT中所需
         X = [x.to(devices[0]) for x in X]
     else:
         X = X.to(devices[0])
@@ -361,11 +361,11 @@ def train_batch_ch13(net, X, y, loss, trainer, devices):
 #@tab paddle
 #@save
 def train_batch_ch13(net, X, y, loss, trainer, devices):
-    """用多GPU进行小批量训练
-    飞桨不支持在notebook上进行多GPU训练
+    """用多GPU進行小批次訓練
+    飛槳不支援在notebook上進行多GPU訓練
     Defined in :numref:`sec_image_augmentation`"""
     if isinstance(X, list):
-        # 微调BERT中所需（稍后讨论）
+        # 微調BERT中所需（稍後討論）
         X = [paddle.to_tensor(x, place=devices[0]) for x in X]
     else:
         X = paddle.to_tensor(X, place=devices[0])
@@ -385,12 +385,12 @@ def train_batch_ch13(net, X, y, loss, trainer, devices):
 #@save
 def train_ch13(net, train_iter, test_iter, loss, trainer, num_epochs,
                devices=d2l.try_all_gpus(), split_f=d2l.split_batch):
-    """用多GPU进行模型训练"""
+    """用多GPU進行模型訓練"""
     timer, num_batches = d2l.Timer(), len(train_iter)
     animator = d2l.Animator(xlabel='epoch', xlim=[1, num_epochs], ylim=[0, 1],
                             legend=['train loss', 'train acc', 'test acc'])
     for epoch in range(num_epochs):
-        # 4个维度：储存训练损失，训练准确度，实例数，特点数
+        # 4個維度：儲存訓練損失，訓練準確度，實例數，特點數
         metric = d2l.Accumulator(4)
         for i, (features, labels) in enumerate(train_iter):
             timer.start()
@@ -415,13 +415,13 @@ def train_ch13(net, train_iter, test_iter, loss, trainer, num_epochs,
 #@save
 def train_ch13(net, train_iter, test_iter, loss, trainer, num_epochs,
                devices=d2l.try_all_gpus()):
-    """用多GPU进行模型训练"""
+    """用多GPU進行模型訓練"""
     timer, num_batches = d2l.Timer(), len(train_iter)
     animator = d2l.Animator(xlabel='epoch', xlim=[1, num_epochs], ylim=[0, 1],
                             legend=['train loss', 'train acc', 'test acc'])
     net = nn.DataParallel(net, device_ids=devices).to(devices[0])
     for epoch in range(num_epochs):
-        # 4个维度：储存训练损失，训练准确度，实例数，特点数
+        # 4個維度：儲存訓練損失，訓練準確度，實例數，特點數
         metric = d2l.Accumulator(4)
         for i, (features, labels) in enumerate(train_iter):
             timer.start()
@@ -446,14 +446,14 @@ def train_ch13(net, train_iter, test_iter, loss, trainer, num_epochs,
 #@save
 def train_ch13(net, train_iter, test_iter, loss, trainer, num_epochs,
                devices=d2l.try_all_gpus()):
-    """用多GPU进行模型训练
+    """用多GPU進行模型訓練
     Defined in :numref:`sec_image_augmentation`"""
     timer, num_batches = d2l.Timer(), len(train_iter)
     animator = d2l.Animator(xlabel='epoch', xlim=[1, num_epochs], ylim=[0, 1],
                             legend=['train loss', 'train acc', 'test acc'])
     net = paddle.DataParallel(net)
     for epoch in range(num_epochs):
-        # 4个维度：储存训练损失，训练准确度，实例数，特点数
+        # 4個維度：儲存訓練損失，訓練準確度，實例數，特點數
         metric = d2l.Accumulator(4)
         for i, (features, labels) in enumerate(train_iter):
             timer.start()
@@ -473,7 +473,7 @@ def train_ch13(net, train_iter, test_iter, loss, trainer, num_epochs,
           f'{str(devices)}')
 ```
 
-现在，我们可以[**定义`train_with_data_aug`函数，使用图像增广来训练模型**]。该函数获取所有的GPU，并使用Adam作为训练的优化算法，将图像增广应用于训练集，最后调用刚刚定义的用于训练和评估模型的`train_ch13`函数。
+現在，我們可以[**定義`train_with_data_aug`函式，使用影象增廣來訓練模型**]。該函式獲取所有的GPU，並使用Adam作為訓練的最佳化演算法，將影象增廣應用於訓練集，最後呼叫剛剛定義的用於訓練和評估模型的`train_ch13`函式。
 
 ```{.python .input}
 batch_size, devices, net = 256, d2l.try_all_gpus(), d2l.resnet18(10)
@@ -524,24 +524,24 @@ def train_with_data_aug(train_augs, test_augs, net, lr=0.001):
     train_ch13(net, train_iter, test_iter, loss, trainer, 10, devices[:1])
 ```
 
-让我们使用基于随机左右翻转的图像增广来[**训练模型**]。
+讓我們使用基於隨機左右翻轉的影象增廣來[**訓練模型**]。
 
 ```{.python .input}
 #@tab all
 train_with_data_aug(train_augs, test_augs, net)
 ```
 
-## 小结
+## 小結
 
-* 图像增广基于现有的训练数据生成随机图像，来提高模型的泛化能力。
-* 为了在预测过程中得到确切的结果，我们通常对训练样本只进行图像增广，而在预测过程中不使用带随机操作的图像增广。
-* 深度学习框架提供了许多不同的图像增广方法，这些方法可以被同时应用。
+* 影象增廣基於現有的訓練資料生成隨機影象，來提高模型的泛化能力。
+* 為了在預測過程中得到確切的結果，我們通常對訓練樣本只進行影象增廣，而在預測過程中不使用帶隨機操作的影象增廣。
+* 深度學習框架提供了許多不同的影象增廣方法，這些方法可以被同時應用。
 
-## 练习
+## 練習
 
-1. 在不使用图像增广的情况下训练模型：`train_with_data_aug(no_aug, no_aug)`。比较使用和不使用图像增广的训练结果和测试精度。这个对比实验能支持图像增广可以减轻过拟合的论点吗？为什么？
-2. 在基于CIFAR-10数据集的模型训练中结合多种不同的图像增广方法。它能提高测试准确性吗？
-3. 参阅深度学习框架的在线文档。它还提供了哪些其他的图像增广方法？
+1. 在不使用影象增廣的情況下訓練模型：`train_with_data_aug(no_aug, no_aug)`。比較使用和不使用影象增廣的訓練結果和測試精度。這個對比實驗能支援影象增廣可以減輕過擬合的論點嗎？為什麼？
+2. 在基於CIFAR-10資料集的模型訓練中結合多種不同的影象增廣方法。它能提高測試準確性嗎？
+3. 參閱深度學習框架的線上文件。它還提供了哪些其他的影象增廣方法？
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/2828)

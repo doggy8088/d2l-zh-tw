@@ -1,13 +1,13 @@
-# softmax回归的简洁实现
+# softmax迴歸的簡潔實現
 :label:`sec_softmax_concise`
 
 在 :numref:`sec_linear_concise`中，
-我们发现(**通过深度学习框架的高级API能够使实现**)
+我們發現(**透過深度學習框架的高階API能夠使實現**)
 (~~softmax~~)
-线性(**回归变得更加容易**)。
-同样，通过深度学习框架的高级API也能更方便地实现softmax回归模型。
-本节如在 :numref:`sec_softmax_scratch`中一样，
-继续使用Fashion-MNIST数据集，并保持批量大小为256。
+線性(**迴歸變得更加容易**)。
+同樣，透過深度學習框架的高階API也能更方便地實現softmax迴歸模型。
+本節如在 :numref:`sec_softmax_scratch`中一樣，
+繼續使用Fashion-MNIST資料集，並保持批次大小為256。
 
 ```{.python .input}
 from d2l import mxnet as d2l
@@ -44,15 +44,15 @@ batch_size = 256
 train_iter, test_iter = d2l.load_data_fashion_mnist(batch_size)
 ```
 
-## 初始化模型参数
+## 初始化模型引數
 
-如我们在 :numref:`sec_softmax`所述，
-[**softmax回归的输出层是一个全连接层**]。
-因此，为了实现我们的模型，
-我们只需在`Sequential`中添加一个带有10个输出的全连接层。
-同样，在这里`Sequential`并不是必要的，
-但它是实现深度模型的基础。
-我们仍然以均值0和标准差0.01随机初始化权重。
+如我們在 :numref:`sec_softmax`所述，
+[**softmax迴歸的輸出層是一個全連線層**]。
+因此，為了實現我們的模型，
+我們只需在`Sequential`中新增一個帶有10個輸出的全連線層。
+同樣，在這裡`Sequential`並不是必要的，
+但它是實現深度模型的基礎。
+我們仍然以均值0和標準差0.01隨機初始化權重。
 
 ```{.python .input}
 net = nn.Sequential()
@@ -62,8 +62,8 @@ net.initialize(init.Normal(sigma=0.01))
 
 ```{.python .input}
 #@tab pytorch
-# PyTorch不会隐式地调整输入的形状。因此，
-# 我们在线性层前定义了展平层（flatten），来调整网络输入的形状
+# PyTorch不會隱式地調整輸入的形狀。因此，
+# 我們線上性層前定義了展平層（flatten），來調整網路輸入的形狀
 net = nn.Sequential(nn.Flatten(), nn.Linear(784, 10))
 
 def init_weights(m):
@@ -92,26 +92,26 @@ def init_weights(m):
 net.apply(init_weights);
 ```
 
-## 重新审视Softmax的实现
+## 重新審視Softmax的實現
 :label:`subsec_softmax-implementation-revisited`
 
 在前面 :numref:`sec_softmax_scratch`的例子中，
-我们计算了模型的输出，然后将此输出送入交叉熵损失。
-从数学上讲，这是一件完全合理的事情。
-然而，从计算角度来看，指数可能会造成数值稳定性问题。
+我們計算了模型的輸出，然後將此輸出送入交叉熵損失。
+從數學上講，這是一件完全合理的事情。
+然而，從計算角度來看，指數可能會造成數值穩定性問題。
 
-回想一下，softmax函数$\hat y_j = \frac{\exp(o_j)}{\sum_k \exp(o_k)}$，
-其中$\hat y_j$是预测的概率分布。
-$o_j$是未规范化的预测$\mathbf{o}$的第$j$个元素。
-如果$o_k$中的一些数值非常大，
-那么$\exp(o_k)$可能大于数据类型容许的最大数字，即*上溢*（overflow）。
-这将使分母或分子变为`inf`（无穷大），
-最后得到的是0、`inf`或`nan`（不是数字）的$\hat y_j$。
-在这些情况下，我们无法得到一个明确定义的交叉熵值。
+回想一下，softmax函式$\hat y_j = \frac{\exp(o_j)}{\sum_k \exp(o_k)}$，
+其中$\hat y_j$是預測的機率分佈。
+$o_j$是未規範化的預測$\mathbf{o}$的第$j$個元素。
+如果$o_k$中的一些數值非常大，
+那麼$\exp(o_k)$可能大於資料型別容許的最大數字，即*上溢*（overflow）。
+這將使分母或分子變為`inf`（無窮大），
+最後得到的是0、`inf`或`nan`（不是數字）的$\hat y_j$。
+在這些情況下，我們無法得到一個明確定義的交叉熵值。
 
-解决这个问题的一个技巧是：
-在继续softmax计算之前，先从所有$o_k$中减去$\max(o_k)$。
-这里可以看到每个$o_k$按常数进行的移动不会改变softmax的返回值：
+解決這個問題的一個技巧是：
+在繼續softmax計算之前，先從所有$o_k$中減去$\max(o_k)$。
+這裡可以看到每個$o_k$按常數進行的移動不會改變softmax的回傳值：
 
 $$
 \begin{aligned}
@@ -121,16 +121,16 @@ $$
 $$
 
 
-在减法和规范化步骤之后，可能有些$o_j - \max(o_k)$具有较大的负值。
-由于精度受限，$\exp(o_j - \max(o_k))$将有接近零的值，即*下溢*（underflow）。
-这些值可能会四舍五入为零，使$\hat y_j$为零，
-并且使得$\log(\hat y_j)$的值为`-inf`。
-反向传播几步后，我们可能会发现自己面对一屏幕可怕的`nan`结果。
+在減法和規範化步驟之後，可能有些$o_j - \max(o_k)$具有較大的負值。
+由於精度受限，$\exp(o_j - \max(o_k))$將有接近零的值，即*下溢*（underflow）。
+這些值可能會四捨五入為零，使$\hat y_j$為零，
+並且使得$\log(\hat y_j)$的值為`-inf`。
+反向傳播幾步後，我們可能會發現自己面對一螢幕可怕的`nan`結果。
 
-尽管我们要计算指数函数，但我们最终在计算交叉熵损失时会取它们的对数。
-通过将softmax和交叉熵结合在一起，可以避免反向传播过程中可能会困扰我们的数值稳定性问题。
-如下面的等式所示，我们避免计算$\exp(o_j - \max(o_k))$，
-而可以直接使用$o_j - \max(o_k)$，因为$\log(\exp(\cdot))$被抵消了。
+儘管我們要計算指數函式，但我們最終在計算交叉熵損失時會取它們的對數。
+透過將softmax和交叉熵結合在一起，可以避免反向傳播過程中可能會困擾我們的數值穩定性問題。
+如下麵的等式所示，我們避免計算$\exp(o_j - \max(o_k))$，
+而可以直接使用$o_j - \max(o_k)$，因為$\log(\exp(\cdot))$被抵消了。
 
 $$
 \begin{aligned}
@@ -140,10 +140,10 @@ $$
 \end{aligned}
 $$
 
-我们也希望保留传统的softmax函数，以备我们需要评估通过模型输出的概率。
-但是，我们没有将softmax概率传递到损失函数中，
-而是[**在交叉熵损失函数中传递未规范化的预测，并同时计算softmax及其对数**]，
-这是一种类似["LogSumExp技巧"](https://en.wikipedia.org/wiki/LogSumExp)的聪明方式。
+我們也希望保留傳統的softmax函式，以備我們需要評估透過模型輸出的機率。
+但是，我們沒有將softmax機率傳遞到損失函式中，
+而是[**在交叉熵損失函式中傳遞未規範化的預測，並同時計算softmax及其對數**]，
+這是一種類似["LogSumExp技巧"](https://en.wikipedia.org/wiki/LogSumExp)的聰明方式。
 
 ```{.python .input}
 loss = gluon.loss.SoftmaxCrossEntropyLoss()
@@ -159,10 +159,10 @@ loss = nn.CrossEntropyLoss(reduction='none')
 loss = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True)
 ```
 
-## 优化算法
+## 最佳化演算法
 
-在这里，我们(**使用学习率为0.1的小批量随机梯度下降作为优化算法**)。
-这与我们在线性回归例子中的相同，这说明了优化器的普适性。
+在這裡，我們(**使用學習率為0.1的小批次隨機梯度下降作為最佳化演算法**)。
+這與我們線上性迴歸例子中的相同，這說明了最佳化器的普適性。
 
 ```{.python .input}
 trainer = gluon.Trainer(net.collect_params(), 'sgd', {'learning_rate': 0.1})
@@ -183,10 +183,10 @@ trainer = tf.keras.optimizers.SGD(learning_rate=.1)
 trainer = paddle.optimizer.SGD(learning_rate=0.1, parameters=net.parameters())
 ```
 
-## 训练
+## 訓練
 
-接下来我们[**调用**] :numref:`sec_softmax_scratch`中(~~之前~~)
-(**定义的训练函数来训练模型**)。
+接下來我們[**呼叫**] :numref:`sec_softmax_scratch`中(~~之前~~)
+(**定義的訓練函式來訓練模型**)。
 
 ```{.python .input}
 #@tab all
@@ -194,17 +194,17 @@ num_epochs = 10
 d2l.train_ch3(net, train_iter, test_iter, loss, num_epochs, trainer)
 ```
 
-和以前一样，这个算法使结果收敛到一个相当高的精度，而且这次的代码比之前更精简了。
+和以前一樣，這個演算法使結果收斂到一個相當高的精度，而且這次的程式碼比之前更精簡了。
 
-## 小结
+## 小結
 
-* 使用深度学习框架的高级API，我们可以更简洁地实现softmax回归。
-* 从计算的角度来看，实现softmax回归比较复杂。在许多情况下，深度学习框架在这些著名的技巧之外采取了额外的预防措施，来确保数值的稳定性。这使我们避免了在实践中从零开始编写模型时可能遇到的陷阱。
+* 使用深度學習框架的高階API，我們可以更簡潔地實現softmax迴歸。
+* 從計算的角度來看，實現softmax迴歸比較複雜。在許多情況下，深度學習框架在這些著名的技巧之外採取了額外的預防措施，來確保數值的穩定性。這使我們避免了在實踐中從零開始編寫模型時可能遇到的陷阱。
 
-## 练习
+## 練習
 
-1. 尝试调整超参数，例如批量大小、迭代周期数和学习率，并查看结果。
-1. 增加迭代周期的数量。为什么测试精度会在一段时间后降低？我们怎么解决这个问题？
+1. 嘗試調整超引數，例如批次大小、迭代週期數和學習率，並檢視結果。
+1. 增加迭代週期的數量。為什麼測試精度會在一段時間後降低？我們怎麼解決這個問題？
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/1794)

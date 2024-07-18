@@ -1,19 +1,19 @@
-# 数据预处理
+# 資料預處理
 :label:`sec_pandas`
 
-为了能用深度学习来解决现实世界的问题，我们经常从预处理原始数据开始，
-而不是从那些准备好的张量格式数据开始。
-在Python中常用的数据分析工具中，我们通常使用`pandas`软件包。
-像庞大的Python生态系统中的许多其他扩展包一样，`pandas`可以与张量兼容。
-本节我们将简要介绍使用`pandas`预处理原始数据，并将原始数据转换为张量格式的步骤。
-后面的章节将介绍更多的数据预处理技术。
+為了能用深度學習來解決現實世界的問題，我們經常從預處理原始資料開始，
+而不是從那些準備好的張量格式資料開始。
+在Python中常用的資料分析工具中，我們通常使用`pandas`軟體套件。
+像龐大的Python生態系統中的許多其他擴充套件套件一樣，`pandas`可以與張量相容。
+本節我們將簡要介紹使用`pandas`預處理原始資料，並將原始資料轉換為張量格式的步驟。
+後面的章節將介紹更多的資料預處理技術。
 
-## 读取数据集
+## 讀取資料集
 
-举一个例子，我们首先(**创建一个人工数据集，并存储在CSV（逗号分隔值）文件**)
+舉一個例子，我們首先(**建立一個人工資料集，並存儲在CSV（逗號分隔值）檔案**)
 `../data/house_tiny.csv`中。
-以其他格式存储的数据也可以通过类似的方式进行处理。
-下面我们将数据集按行写入CSV文件中。
+以其他格式儲存的資料也可以透過類似的方式進行處理。
+下面我們將資料集按行寫入CSV檔案中。
 
 ```{.python .input}
 #@tab all
@@ -23,17 +23,17 @@ os.makedirs(os.path.join('..', 'data'), exist_ok=True)
 data_file = os.path.join('..', 'data', 'house_tiny.csv')
 with open(data_file, 'w') as f:
     f.write('NumRooms,Alley,Price\n')  # 列名
-    f.write('NA,Pave,127500\n')  # 每行表示一个数据样本
+    f.write('NA,Pave,127500\n')  # 每行表示一個資料樣本
     f.write('2,NA,106000\n')
     f.write('4,NA,178100\n')
     f.write('NA,NA,140000\n')
 ```
 
-要[**从创建的CSV文件中加载原始数据集**]，我们导入`pandas`包并调用`read_csv`函数。该数据集有四行三列。其中每行描述了房间数量（“NumRooms”）、巷子类型（“Alley”）和房屋价格（“Price”）。
+要[**從建立的CSV檔案中載入原始資料集**]，我們匯入`pandas`套件並呼叫`read_csv`函式。該資料集有四行三列。其中每行描述了房間數量（『NumRooms』）、巷子類別型（『Alley』）和房屋價格（『Price』）。
 
 ```{.python .input}
 #@tab all
-# 如果没有安装pandas，只需取消对以下行的注释来安装pandas
+# 如果沒有安裝pandas，只需取消對以下行的註解來安裝pandas
 # !pip install pandas
 import pandas as pd
 
@@ -41,16 +41,16 @@ data = pd.read_csv(data_file)
 print(data)
 ```
 
-## 处理缺失值
+## 處理缺失值
 
-注意，“NaN”项代表缺失值。
-[**为了处理缺失的数据，典型的方法包括*插值法*和*删除法*，**]
-其中插值法用一个替代值弥补缺失值，而删除法则直接忽略缺失值。
-在(**这里，我们将考虑插值法**)。
+注意，『NaN』項代表缺失值。
+[**為了處理缺失的資料，典型的方法包括*插值法*和*刪除法*，**]
+其中插值法用一個替代值彌補缺失值，而刪除法則直接忽略缺失值。
+在(**這裡，我們將考慮插值法**)。
 
-通过位置索引`iloc`，我们将`data`分成`inputs`和`outputs`，
-其中前者为`data`的前两列，而后者为`data`的最后一列。
-对于`inputs`中缺少的数值，我们用同一列的均值替换“NaN”项。
+透過位置索引`iloc`，我們將`data`分成`inputs`和`outputs`，
+其中前者為`data`的前兩列，而後者為`data`的最後一列。
+對於`inputs`中缺少的數值，我們用同一列的均值替換『NaN』項。
 
 ```{.python .input}
 #@tab all
@@ -59,11 +59,11 @@ inputs = inputs.fillna(inputs.mean())
 print(inputs)
 ```
 
-[**对于`inputs`中的类别值或离散值，我们将“NaN”视为一个类别。**]
-由于“巷子类型”（“Alley”）列只接受两种类型的类别值“Pave”和“NaN”，
-`pandas`可以自动将此列转换为两列“Alley_Pave”和“Alley_nan”。
-巷子类型为“Pave”的行会将“Alley_Pave”的值设置为1，“Alley_nan”的值设置为0。
-缺少巷子类型的行会将“Alley_Pave”和“Alley_nan”分别设置为0和1。
+[**對於`inputs`中的類別值或離散值，我們將『NaN』視為一個類別。**]
+由於『巷子類別型』（『Alley』）列只接受兩種型別的類別值『Pave』和『NaN』，
+`pandas`可以自動將此列轉換為兩列『Alley_Pave』和『Alley_nan』。
+巷子類別型為『Pave』的行會將『Alley_Pave』的值設定為1，『Alley_nan』的值設定為0。
+缺少巷子類別型的行會將『Alley_Pave』和『Alley_nan』分別設定為0和1。
 
 ```{.python .input}
 #@tab all
@@ -71,10 +71,10 @@ inputs = pd.get_dummies(inputs, dummy_na=True)
 print(inputs)
 ```
 
-## 转换为张量格式
+## 轉換為張量格式
 
-[**现在`inputs`和`outputs`中的所有条目都是数值类型，它们可以转换为张量格式。**]
-当数据采用张量格式后，可以通过在 :numref:`sec_ndarray`中引入的那些张量函数来进一步操作。
+[**現在`inputs`和`outputs`中的所有條目都是數值型別，它們可以轉換為張量格式。**]
+當資料採用張量格式後，可以透過在 :numref:`sec_ndarray`中引入的那些張量函式來進一步操作。
 
 ```{.python .input}
 from mxnet import np
@@ -111,17 +111,17 @@ X, y = paddle.to_tensor(inputs.values), paddle.to_tensor(outputs.values)
 X, y
 ```
 
-## 小结
+## 小結
 
-* `pandas`软件包是Python中常用的数据分析工具中，`pandas`可以与张量兼容。
-* 用`pandas`处理缺失的数据时，我们可根据情况选择用插值法和删除法。
+* `pandas`軟體套件是Python中常用的資料分析工具中，`pandas`可以與張量相容。
+* 用`pandas`處理缺失的資料時，我們可根據情況選擇用插值法和刪除法。
 
-## 练习
+## 練習
 
-创建包含更多行和列的原始数据集。
+建立包含更多行和列的原始資料集。
 
-1. 删除缺失值最多的列。
-2. 将预处理后的数据集转换为张量格式。
+1. 刪除缺失值最多的列。
+2. 將預處理後的資料集轉換為張量格式。
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/1749)

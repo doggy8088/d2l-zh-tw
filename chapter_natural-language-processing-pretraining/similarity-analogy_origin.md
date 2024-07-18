@@ -211,9 +211,9 @@ Besides finding similar words,
 we can also apply word vectors
 to word analogy tasks.
 For example,
-“man”:“woman”::“son”:“daughter”
+『man』:『woman』::『son』:『daughter』
 is the form of a word analogy:
-“man” is to “woman” as “son” is to “daughter”.
+『man』 is to 『woman』 as 『son』 is to 『daughter』.
 Specifically,
 the word analogy completion task
 can be defined as:
@@ -242,8 +242,8 @@ get_analogy('man', 'woman', 'son', glove_6b50d)
 ```
 
 Below completes a
-“capital-country” analogy: 
-“beijing”:“china”::“tokyo”:“japan”.
+『capital-country』 analogy: 
+『beijing』:『china』::『tokyo』:『japan』.
 This demonstrates 
 semantics in the pretrained word vectors.
 
@@ -253,9 +253,9 @@ get_analogy('beijing', 'china', 'tokyo', glove_6b50d)
 ```
 
 For the
-“adjective-superlative adjective” analogy
+『adjective-superlative adjective』 analogy
 such as 
-“bad”:“worst”::“big”:“biggest”,
+『bad』:『worst』::『big』:『biggest』,
 we can see that the pretrained word vectors
 may capture the syntactic information.
 
@@ -267,7 +267,7 @@ get_analogy('bad', 'worst', 'big', glove_6b50d)
 To show the captured notion
 of past tense in the pretrained word vectors,
 we can test the syntax using the
-"present tense-past tense" analogy: “do”:“did”::“go”:“went”.
+"present tense-past tense" analogy: 『do』:『did』::『go』:『went』.
 
 ```{.python .input}
 #@tab all

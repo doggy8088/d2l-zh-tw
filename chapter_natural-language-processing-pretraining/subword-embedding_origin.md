@@ -47,7 +47,7 @@ its subword vectors.
 Let us illustrate how to obtain 
 subwords for each center word in fastText
 using the word "where".
-First, add special characters “&lt;” and “&gt;” 
+First, add special characters 『&lt;』 and 『&gt;』 
 at the beginning and end of the word to distinguish prefixes and suffixes from other subwords. 
 Then, extract character $n$-grams from the word.
 For example, when $n=3$,

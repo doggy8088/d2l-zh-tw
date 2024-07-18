@@ -267,14 +267,14 @@ truncate_pad(src_vocab[source[0]], 10, src_vocab['<pad>'])
 
 Now we define a function to transform
 text sequences into minibatches for training.
-We append the special “&lt;eos&gt;” token
+We append the special 『&lt;eos&gt;』 token
 to the end of every sequence to indicate the
 end of the sequence.
 When a model is predicting
 by
 generating a sequence token after token,
 the generation
-of the “&lt;eos&gt;” token
+of the 『&lt;eos&gt;』 token
 can suggest that
 the output sequence is complete.
 Besides,

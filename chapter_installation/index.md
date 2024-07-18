@@ -1,78 +1,78 @@
-# 安装
+# 安裝
 :label:`chap_installation`
 
-我们需要配置一个环境来运行 Python、Jupyter Notebook、相关库以及运行本书所需的代码，以快速入门并获得动手学习经验。
+我們需要設定一個環境來執行 Python、Jupyter Notebook、相關函式庫以及執行本書所需的程式碼，以快速入門並獲得動手學習經驗。
 
-## 安装 Miniconda
+## 安裝 Miniconda
 
-最简单的方法就是安装依赖Python 3.x的[Miniconda](https://conda.io/en/latest/miniconda.html)。
-如果已安装conda，则可以跳过以下步骤。访问Miniconda网站，根据Python3.x版本确定适合的版本。
+最簡單的方法就是安裝依賴Python 3.x的[Miniconda](https://conda.io/en/latest/miniconda.html)。
+如果已安裝conda，則可以跳過以下步驟。訪問Miniconda網站，根據Python3.x版本確定適合的版本。
 
-如果我们使用macOS，假设Python版本是3.9（我们的测试版本），将下载名称包含字符串“MacOSX”的bash脚本，并执行以下操作：
+如果我們使用macOS，假設Python版本是3.9（我們的測試版本），將下載名稱包含字串『MacOSX』的bash指令碼，並執行以下操作：
 
 ```bash
-# 以Intel处理器为例，文件名可能会更改
+# 以Intel處理器為例，檔案名可能會更改
 sh Miniconda3-py39_4.12.0-MacOSX-x86_64.sh -b
 ```
 
 
-如果我们使用Linux，假设Python版本是3.9（我们的测试版本），将下载名称包含字符串“Linux”的bash脚本，并执行以下操作：
+如果我們使用Linux，假設Python版本是3.9（我們的測試版本），將下載名稱包含字串『Linux』的bash指令碼，並執行以下操作：
 
 ```bash
-# 文件名可能会更改
+# 檔案名可能會更改
 sh Miniconda3-py39_4.12.0-Linux-x86_64.sh -b
 ```
 
 
-接下来，初始化终端Shell，以便我们可以直接运行`conda`。
+接下來，初始化終端Shell，以便我們可以直接執行`conda`。
 
 ```bash
 ~/miniconda3/bin/conda init
 ```
 
 
-现在关闭并重新打开当前的shell。并使用下面的命令创建一个新的环境：
+現在關閉並重新開啟當前的shell。並使用下面的指令建立一個新的環境：
 
 ```bash
 conda create --name d2l python=3.9 -y
 ```
 
 
-现在激活 `d2l` 环境：
+現在啟用 `d2l` 環境：
 
 ```bash
 conda activate d2l
 ```
 
 
-## 安装深度学习框架和`d2l`软件包
+## 安裝深度學習框架和`d2l`軟體套件
 
-在安装深度学习框架之前，请先检查计算机上是否有可用的GPU。
-例如可以查看计算机是否装有NVIDIA GPU并已安装[CUDA](https://developer.nvidia.com/cuda-downloads)。
-如果机器没有任何GPU，没有必要担心，因为CPU在前几章完全够用。
-但是，如果想流畅地学习全部章节，请提早获取GPU并且安装深度学习框架的GPU版本。
+在安裝深度學習框架之前，請先檢查電腦上是否有可用的GPU。
+例如可以檢視電腦是否裝有NVIDIA GPU並已安裝[CUDA](https://developer.nvidia.com/cuda-downloads)。
+如果機器沒有任何GPU，沒有必要擔心，因為CPU在前幾章完全夠用。
+但是，如果想流暢地學習全部章節，請提早獲取GPU並且安裝深度學習框架的GPU版本。
 
 
 :begin_tab:`mxnet`
 
-安装MXNet的GPU版本，首先需要知道已安装的CUDA版本。
-（可以通过运行`nvcc --version`或`cat /usr/local/cuda/version.txt`来检验。）
-假设已安装CUDA 10.1版本，请执行以下命令：
+安裝MXNet的GPU版本，首先需要知道已安裝的CUDA版本。
+（可以透過執行`nvcc --version`或`cat /usr/local/cuda/version.txt`來檢驗。）
+假設已安裝CUDA 10.1版本，請執行以下指令：
 
 ```bash
-# 对于Linux和macOS用户
+# 對於Linux和macOS使用者
 pip install mxnet-cu101==1.7.0
 
-# 对于Windows用户
+# 對於Windows使用者
 pip install mxnet-cu101==1.7.0 -f https://dist.mxnet.io/python
 ```
 
 
-可以根据CUDA版本更改如上`mxnet-cu101`的最后一位数字，
+可以根據CUDA版本更改如上`mxnet-cu101`的最後一位數字，
 例如：CUDA 10.0是`cu100`， CUDA 9.0是`cu90`。
 
 
-如果机器没有NVIDIA GPU或CUDA，可以按如下方式MXNet的CPU版本：
+如果機器沒有NVIDIA GPU或CUDA，可以按如下方式MXNet的CPU版本：
 
 ```bash
 pip install mxnet==1.7.0.post1
@@ -84,7 +84,7 @@ pip install mxnet==1.7.0.post1
 
 :begin_tab:`pytorch`
 
-我们可以按如下方式安装PyTorch的CPU或GPU版本：
+我們可以按如下方式安裝PyTorch的CPU或GPU版本：
 
 ```bash
 pip install torch==1.12.0
@@ -95,7 +95,7 @@ pip install torchvision==0.13.0
 :end_tab:
 
 :begin_tab:`tensorflow`
-我们可以按如下方式安装TensorFlow的CPU或GPU版本：
+我們可以按如下方式安裝TensorFlow的CPU或GPU版本：
 
 ```bash
 pip install tensorflow==2.8.0
@@ -106,16 +106,16 @@ pip install tensorflow-probability==0.16.0
 :end_tab:
 
 :begin_tab:`paddle`
-安装PaddlePaddle的GPU版本，首先需要知道已安装的CUDA版本。
-（可以通过运行`nvcc --version`或`cat /usr/local/cuda/version.txt`来检验。）
-假设已安装CUDA 11.2版本，请执行以下命令：
+安裝PaddlePaddle的GPU版本，首先需要知道已安裝的CUDA版本。
+（可以透過執行`nvcc --version`或`cat /usr/local/cuda/version.txt`來檢驗。）
+假設已安裝CUDA 11.2版本，請執行以下指令：
 
 ```bash
 python -m pip install paddlepaddle-gpu==2.3.2.post112 -f https://www.paddlepaddle.org.cn/whl/linux/mkl/avx/stable.html
 ```
 
 
-如果机器没有NVIDIA GPU或CUDA，可以按如下方式PaddlePaddle的CPU版本：
+如果機器沒有NVIDIA GPU或CUDA，可以按如下方式PaddlePaddle的CPU版本：
 
 ```bash
 python -m pip install paddlepaddle==2.3.2 -i https://pypi.tuna.tsinghua.edu.cn/simple
@@ -124,17 +124,17 @@ python -m pip install paddlepaddle==2.3.2 -i https://pypi.tuna.tsinghua.edu.cn/s
 
 :end_tab:
 
-我们的下一步是安装`d2l`包，以方便调取本书中经常使用的函数和类：
+我們的下一步是安裝`d2l`套件，以方便調取本書中經常使用的函式和類：
 
 ```bash
 pip install d2l==0.17.6
 ```
 
 
-## 下载 D2L Notebook
+## 下載 D2L Notebook
 
-接下来，需要下载这本书的代码。
-可以点击本书HTML页面顶部的“Jupyter 记事本”选项下载后解压代码，或者可以按照如下方式进行下载：
+接下來，需要下載這本書的程式碼。
+可以點選本書HTML頁面頂部的『Jupyter 記事本』選項下載後解壓程式碼，或者可以按照如下方式進行下載：
 
 
 :begin_tab:`mxnet`
@@ -147,7 +147,7 @@ cd mxnet
 ```
 
 
-注意：如果没有安装`unzip`，则可以通过运行`sudo apt install unzip`进行安装。
+注意：如果沒有安裝`unzip`，則可以透過執行`sudo apt install unzip`進行安裝。
 
 :end_tab:
 
@@ -162,7 +162,7 @@ cd pytorch
 ```
 
 
-注意：如果没有安装`unzip`，则可以通过运行`sudo apt install unzip`进行安装。
+注意：如果沒有安裝`unzip`，則可以透過執行`sudo apt install unzip`進行安裝。
 
 :end_tab:
 
@@ -177,7 +177,7 @@ cd tensorflow
 ```
 
 
-注意：如果没有安装`unzip`，则可以通过运行`sudo apt install unzip`进行安装。
+注意：如果沒有安裝`unzip`，則可以透過執行`sudo apt install unzip`進行安裝。
 
 :end_tab:
 
@@ -192,22 +192,22 @@ cd paddle
 ```
 
 
-注意：如果没有安装`unzip`，则可以通过运行`sudo apt install unzip`进行安装。
+注意：如果沒有安裝`unzip`，則可以透過執行`sudo apt install unzip`進行安裝。
 
 :end_tab:
 
 
-安装完成后我们可以通过运行以下命令打开Jupyter笔记本（在Window系统的命令行窗口中运行以下命令前，需先将当前路径定位到刚下载的本书代码解压后的目录）：
+安裝完成後我們可以透過執行以下指令開啟Jupyter筆記本（在Window系統的指令行視窗中執行以下指令前，需先將當前路徑定位到剛下載的本書程式碼解壓後的目錄）：
 
 ```bash
 jupyter notebook
 ```
 
 
-现在可以在Web浏览器中打开<http://localhost:8888>（通常会自动打开）。
-由此，我们可以运行这本书中每个部分的代码。
-在运行书籍代码、更新深度学习框架或`d2l`软件包之前，请始终执行`conda activate d2l`以激活运行时环境。
-要退出环境，请运行`conda deactivate`。
+現在可以在Web瀏覽器中開啟<http://localhost:8888>（通常會自動開啟）。
+由此，我們可以執行這本書中每個部分的程式碼。
+在執行書籍程式碼、更新深度學習框架或`d2l`軟體套件之前，請始終執行`conda activate d2l`以啟用執行時環境。
+要退出環境，請執行`conda deactivate`。
 
 
 

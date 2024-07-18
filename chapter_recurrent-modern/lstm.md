@@ -1,49 +1,49 @@
-# 长短期记忆网络（LSTM）
+# 長短期記憶網路（LSTM）
 :label:`sec_lstm`
 
-长期以来，隐变量模型存在着长期信息保存和短期输入缺失的问题。
-解决这一问题的最早方法之一是长短期存储器（long short-term memory，LSTM）
+長期以來，隱變數模型存在著長期訊息儲存和短期輸入缺失的問題。
+解決這一問題的最早方法之一是長短期儲存器（long short-term memory，LSTM）
  :cite:`Hochreiter.Schmidhuber.1997`。
-它有许多与门控循环单元（ :numref:`sec_gru`）一样的属性。
-有趣的是，长短期记忆网络的设计比门控循环单元稍微复杂一些，
-却比门控循环单元早诞生了近20年。
+它有許多與門控迴圈單元（ :numref:`sec_gru`）一樣的屬性。
+有趣的是，長短期記憶網路的設計比門控迴圈單元稍微複雜一些，
+卻比門控迴圈單元早誕生了近20年。
 
-## 门控记忆元
+## 門控記憶元
 
-可以说，长短期记忆网络的设计灵感来自于计算机的逻辑门。
-长短期记忆网络引入了*记忆元*（memory cell），或简称为*单元*（cell）。
-有些文献认为记忆元是隐状态的一种特殊类型，
-它们与隐状态具有相同的形状，其设计目的是用于记录附加的信息。
-为了控制记忆元，我们需要许多门。
-其中一个门用来从单元中输出条目，我们将其称为*输出门*（output gate）。
-另外一个门用来决定何时将数据读入单元，我们将其称为*输入门*（input gate）。
-我们还需要一种机制来重置单元的内容，由*遗忘门*（forget gate）来管理，
-这种设计的动机与门控循环单元相同，
-能够通过专用机制决定什么时候记忆或忽略隐状态中的输入。
-让我们看看这在实践中是如何运作的。
+可以說，長短期記憶網路的設計靈感來自於電腦的邏輯門。
+長短期記憶網路引入了*記憶元*（memory cell），或簡稱為*單元*（cell）。
+有些文獻認為記憶元是隱狀態的一種特殊型別，
+它們與隱狀態具有相同的形狀，其設計目的是用於記錄附加的訊息。
+為了控制記憶元，我們需要許多門。
+其中一個門用來從單元中輸出條目，我們將其稱為*輸出門*（output gate）。
+另外一個門用來決定何時將資料讀入單元，我們將其稱為*輸入門*（input gate）。
+我們還需要一種機制來重置單元的內容，由*遺忘門*（forget gate）來管理，
+這種設計的動機與門控迴圈單元相同，
+能夠透過專用機制決定什麼時候記憶或忽略隱狀態中的輸入。
+讓我們看看這在實踐中是如何運作的。
 
-### 输入门、忘记门和输出门
+### 輸入門、忘記門和輸出門
 
-就如在门控循环单元中一样，
-当前时间步的输入和前一个时间步的隐状态
-作为数据送入长短期记忆网络的门中，
+就如在門控迴圈單元中一樣，
+當前時間步的輸入和前一個時間步的隱狀態
+作為資料送入長短期記憶網路的門中，
 如 :numref:`lstm_0`所示。
-它们由三个具有sigmoid激活函数的全连接层处理，
-以计算输入门、遗忘门和输出门的值。
-因此，这三个门的值都在$(0, 1)$的范围内。
+它們由三個具有sigmoid啟用函式的全連線層處理，
+以計算輸入門、遺忘門和輸出門的值。
+因此，這三個門的值都在$(0, 1)$的範圍內。
 
-![长短期记忆模型中的输入门、遗忘门和输出门](../img/lstm-0.svg)
+![長短期記憶模型中的輸入門、遺忘門和輸出門](../img/lstm-0.svg)
 :label:`lstm_0`
 
-我们来细化一下长短期记忆网络的数学表达。
-假设有$h$个隐藏单元，批量大小为$n$，输入数为$d$。
-因此，输入为$\mathbf{X}_t \in \mathbb{R}^{n \times d}$，
-前一时间步的隐状态为$\mathbf{H}_{t-1} \in \mathbb{R}^{n \times h}$。
-相应地，时间步$t$的门被定义如下：
-输入门是$\mathbf{I}_t \in \mathbb{R}^{n \times h}$，
-遗忘门是$\mathbf{F}_t \in \mathbb{R}^{n \times h}$，
-输出门是$\mathbf{O}_t \in \mathbb{R}^{n \times h}$。
-它们的计算方法如下：
+我們來細化一下長短期記憶網路的數學表達。
+假設有$h$個隱藏單元，批次大小為$n$，輸入數為$d$。
+因此，輸入為$\mathbf{X}_t \in \mathbb{R}^{n \times d}$，
+前一時間步的隱狀態為$\mathbf{H}_{t-1} \in \mathbb{R}^{n \times h}$。
+相應地，時間步$t$的門被定義如下：
+輸入門是$\mathbf{I}_t \in \mathbb{R}^{n \times h}$，
+遺忘門是$\mathbf{F}_t \in \mathbb{R}^{n \times h}$，
+輸出門是$\mathbf{O}_t \in \mathbb{R}^{n \times h}$。
+它們的計算方法如下：
 
 $$
 \begin{aligned}
@@ -54,74 +54,74 @@ $$
 $$
 
 其中$\mathbf{W}_{xi}, \mathbf{W}_{xf}, \mathbf{W}_{xo} \in \mathbb{R}^{d \times h}$
-和$\mathbf{W}_{hi}, \mathbf{W}_{hf}, \mathbf{W}_{ho} \in \mathbb{R}^{h \times h}$是权重参数，
-$\mathbf{b}_i, \mathbf{b}_f, \mathbf{b}_o \in \mathbb{R}^{1 \times h}$是偏置参数。
+和$\mathbf{W}_{hi}, \mathbf{W}_{hf}, \mathbf{W}_{ho} \in \mathbb{R}^{h \times h}$是權重引數，
+$\mathbf{b}_i, \mathbf{b}_f, \mathbf{b}_o \in \mathbb{R}^{1 \times h}$是偏置引數。
 
-### 候选记忆元
+### 候選記憶元
 
-由于还没有指定各种门的操作，所以先介绍*候选记忆元*（candidate memory cell）
+由於還沒有指定各種門的操作，所以先介紹*候選記憶元*（candidate memory cell）
 $\tilde{\mathbf{C}}_t \in \mathbb{R}^{n \times h}$。
-它的计算与上面描述的三个门的计算类似，
-但是使用$\tanh$函数作为激活函数，函数的值范围为$(-1, 1)$。
-下面导出在时间步$t$处的方程：
+它的計算與上面描述的三個門的計算類似，
+但是使用$\tanh$函式作為啟用函式，函式的值範圍為$(-1, 1)$。
+下面匯出在時間步$t$處的方程：
 
 $$\tilde{\mathbf{C}}_t = \text{tanh}(\mathbf{X}_t \mathbf{W}_{xc} + \mathbf{H}_{t-1} \mathbf{W}_{hc} + \mathbf{b}_c),$$
 
 其中$\mathbf{W}_{xc} \in \mathbb{R}^{d \times h}$和
-$\mathbf{W}_{hc} \in \mathbb{R}^{h \times h}$是权重参数，
-$\mathbf{b}_c \in \mathbb{R}^{1 \times h}$是偏置参数。
+$\mathbf{W}_{hc} \in \mathbb{R}^{h \times h}$是權重引數，
+$\mathbf{b}_c \in \mathbb{R}^{1 \times h}$是偏置引數。
 
-候选记忆元的如 :numref:`lstm_1`所示。
+候選記憶元的如 :numref:`lstm_1`所示。
 
-![长短期记忆模型中的候选记忆元](../img/lstm-1.svg)
+![長短期記憶模型中的候選記憶元](../img/lstm-1.svg)
 :label:`lstm_1`
 
-### 记忆元
+### 記憶元
 
-在门控循环单元中，有一种机制来控制输入和遗忘（或跳过）。
-类似地，在长短期记忆网络中，也有两个门用于这样的目的：
-输入门$\mathbf{I}_t$控制采用多少来自$\tilde{\mathbf{C}}_t$的新数据，
-而遗忘门$\mathbf{F}_t$控制保留多少过去的
-记忆元$\mathbf{C}_{t-1} \in \mathbb{R}^{n \times h}$的内容。
+在門控迴圈單元中，有一種機制來控制輸入和遺忘（或跳過）。
+類似地，在長短期記憶網路中，也有兩個門用於這樣的目的：
+輸入門$\mathbf{I}_t$控制採用多少來自$\tilde{\mathbf{C}}_t$的新資料，
+而遺忘門$\mathbf{F}_t$控制保留多少過去的
+記憶元$\mathbf{C}_{t-1} \in \mathbb{R}^{n \times h}$的內容。
 使用按元素乘法，得出：
 
 $$\mathbf{C}_t = \mathbf{F}_t \odot \mathbf{C}_{t-1} + \mathbf{I}_t \odot \tilde{\mathbf{C}}_t.$$
 
-如果遗忘门始终为$1$且输入门始终为$0$，
-则过去的记忆元$\mathbf{C}_{t-1}$
-将随时间被保存并传递到当前时间步。
-引入这种设计是为了缓解梯度消失问题，
-并更好地捕获序列中的长距离依赖关系。
+如果遺忘門始終為$1$且輸入門始終為$0$，
+則過去的記憶元$\mathbf{C}_{t-1}$
+將隨時間被儲存並傳遞到當前時間步。
+引入這種設計是為了緩解梯度消失問題，
+並更好地捕獲序列中的長距離依賴關係。
 
-这样我们就得到了计算记忆元的流程图，如 :numref:`lstm_2`。
+這樣我們就得到了計算記憶元的流程圖，如 :numref:`lstm_2`。
 
-![在长短期记忆网络模型中计算记忆元](../img/lstm-2.svg)
+![在長短期記憶網路模型中計算記憶元](../img/lstm-2.svg)
 
 :label:`lstm_2`
 
-### 隐状态
+### 隱狀態
 
-最后，我们需要定义如何计算隐状态
+最後，我們需要定義如何計算隱狀態
 $\mathbf{H}_t \in \mathbb{R}^{n \times h}$，
-这就是输出门发挥作用的地方。
-在长短期记忆网络中，它仅仅是记忆元的$\tanh$的门控版本。
-这就确保了$\mathbf{H}_t$的值始终在区间$(-1, 1)$内：
+這就是輸出門發揮作用的地方。
+在長短期記憶網路中，它僅僅是記憶元的$\tanh$的門控版本。
+這就確保了$\mathbf{H}_t$的值始終在區間$(-1, 1)$內：
 
 $$\mathbf{H}_t = \mathbf{O}_t \odot \tanh(\mathbf{C}_t).$$
 
-只要输出门接近$1$，我们就能够有效地将所有记忆信息传递给预测部分，
-而对于输出门接近$0$，我们只保留记忆元内的所有信息，而不需要更新隐状态。
+只要輸出門接近$1$，我們就能夠有效地將所有記憶訊息傳遞給預測部分，
+而對於輸出門接近$0$，我們只保留記憶元內的所有訊息，而不需要更新隱狀態。
 
- :numref:`lstm_3`提供了数据流的图形化演示。
+ :numref:`lstm_3`提供了資料流的圖形化示範。
 
-![在长短期记忆模型中计算隐状态](../img/lstm-3.svg)
+![在長短期記憶模型中計算隱狀態](../img/lstm-3.svg)
 :label:`lstm_3`
 
-## 从零开始实现
+## 從零開始實現
 
-现在，我们从零开始实现长短期记忆网络。
-与 :numref:`sec_rnn_scratch`中的实验相同，
-我们首先加载时光机器数据集。
+現在，我們從零開始實現長短期記憶網路。
+與 :numref:`sec_rnn_scratch`中的實驗相同，
+我們首先載入時光機器資料集。
 
 ```{.python .input}
 from d2l import mxnet as d2l
@@ -164,11 +164,11 @@ batch_size, num_steps = 32, 35
 train_iter, vocab = d2l.load_data_time_machine(batch_size, num_steps)
 ```
 
-### [**初始化模型参数**]
+### [**初始化模型引數**]
 
-接下来，我们需要定义和初始化模型参数。
-如前所述，超参数`num_hiddens`定义隐藏单元的数量。
-我们按照标准差$0.01$的高斯分布初始化权重，并将偏置项设为$0$。
+接下來，我們需要定義和初始化模型引數。
+如前所述，超引數`num_hiddens`定義隱藏單元的數量。
+我們按照標準差$0.01$的高斯分佈初始化權重，並將偏置項設為$0$。
 
 ```{.python .input}
 def get_lstm_params(vocab_size, num_hiddens, device):
@@ -182,11 +182,11 @@ def get_lstm_params(vocab_size, num_hiddens, device):
                 normal((num_hiddens, num_hiddens)),
                 np.zeros(num_hiddens, ctx=device))
 
-    W_xi, W_hi, b_i = three()  # 输入门参数
-    W_xf, W_hf, b_f = three()  # 遗忘门参数
-    W_xo, W_ho, b_o = three()  # 输出门参数
-    W_xc, W_hc, b_c = three()  # 候选记忆元参数
-    # 输出层参数
+    W_xi, W_hi, b_i = three()  # 輸入門引數
+    W_xf, W_hf, b_f = three()  # 遺忘門引數
+    W_xo, W_ho, b_o = three()  # 輸出門引數
+    W_xc, W_hc, b_c = three()  # 候選記憶元引數
+    # 輸出層引數
     W_hq = normal((num_hiddens, num_outputs))
     b_q = np.zeros(num_outputs, ctx=device)
     # 附加梯度
@@ -210,11 +210,11 @@ def get_lstm_params(vocab_size, num_hiddens, device):
                 normal((num_hiddens, num_hiddens)),
                 d2l.zeros(num_hiddens, device=device))
 
-    W_xi, W_hi, b_i = three()  # 输入门参数
-    W_xf, W_hf, b_f = three()  # 遗忘门参数
-    W_xo, W_ho, b_o = three()  # 输出门参数
-    W_xc, W_hc, b_c = three()  # 候选记忆元参数
-    # 输出层参数
+    W_xi, W_hi, b_i = three()  # 輸入門引數
+    W_xf, W_hf, b_f = three()  # 遺忘門引數
+    W_xo, W_ho, b_o = three()  # 輸出門引數
+    W_xc, W_hc, b_c = three()  # 候選記憶元引數
+    # 輸出層引數
     W_hq = normal((num_hiddens, num_outputs))
     b_q = d2l.zeros(num_outputs, device=device)
     # 附加梯度
@@ -238,11 +238,11 @@ def get_lstm_params(vocab_size, num_hiddens):
                 normal((num_hiddens, num_hiddens)),
                 tf.Variable(tf.zeros(num_hiddens), dtype=tf.float32))
 
-    W_xi, W_hi, b_i = three()  # 输入门参数
-    W_xf, W_hf, b_f = three()  # 遗忘门参数
-    W_xo, W_ho, b_o = three()  # 输出门参数
-    W_xc, W_hc, b_c = three()  # 候选记忆元参数
-    # 输出层参数
+    W_xi, W_hi, b_i = three()  # 輸入門引數
+    W_xf, W_hf, b_f = three()  # 遺忘門引數
+    W_xo, W_ho, b_o = three()  # 輸出門引數
+    W_xc, W_hc, b_c = three()  # 候選記憶元引數
+    # 輸出層引數
     W_hq = normal((num_hiddens, num_outputs))
     b_q = tf.Variable(tf.zeros(num_outputs), dtype=tf.float32)
     # 附加梯度
@@ -264,11 +264,11 @@ def get_lstm_params(vocab_size, num_hiddens):
                 normal((num_hiddens, num_hiddens)),
                 d2l.zeros([num_hiddens]))
 
-    W_xi, W_hi, b_i = three()  # 输入门参数
-    W_xf, W_hf, b_f = three()  # 遗忘门参数
-    W_xo, W_ho, b_o = three()  # 输出门参数
-    W_xc, W_hc, b_c = three()  # 候选记忆元参数
-    # 输出层参数
+    W_xi, W_hi, b_i = three()  # 輸入門引數
+    W_xf, W_hf, b_f = three()  # 遺忘門引數
+    W_xo, W_ho, b_o = three()  # 輸出門引數
+    W_xc, W_hc, b_c = three()  # 候選記憶元引數
+    # 輸出層引數
     W_hq = normal((num_hiddens, num_outputs))
     b_q = d2l.zeros([num_outputs])
     # 附加梯度
@@ -279,12 +279,12 @@ def get_lstm_params(vocab_size, num_hiddens):
     return params
 ```
 
-### 定义模型
+### 定義模型
 
-在[**初始化函数**]中，
-长短期记忆网络的隐状态需要返回一个*额外*的记忆元，
-单元的值为0，形状为（批量大小，隐藏单元数）。
-因此，我们得到以下的状态初始化。
+在[**初始化函式**]中，
+長短期記憶網路的隱狀態需要回傳一個*額外*的記憶元，
+單元的值為0，形狀為（批次大小，隱藏單元數）。
+因此，我們得到以下的狀態初始化。
 
 ```{.python .input}
 def init_lstm_state(batch_size, num_hiddens, device):
@@ -313,10 +313,10 @@ def init_lstm_state(batch_size, num_hiddens):
             paddle.zeros([batch_size, num_hiddens]))
 ```
 
-[**实际模型**]的定义与我们前面讨论的一样：
-提供三个门和一个额外的记忆元。
-请注意，只有隐状态才会传递到输出层，
-而记忆元$\mathbf{C}_t$不直接参与输出计算。
+[**實際模型**]的定義與我們前面討論的一樣：
+提供三個門和一個額外的記憶元。
+請注意，只有隱狀態才會傳遞到輸出層，
+而記憶元$\mathbf{C}_t$不直接參與輸出計算。
 
 ```{.python .input}
 def lstm(inputs, state, params):
@@ -393,11 +393,11 @@ def lstm(inputs, state, params):
     return paddle.concat(outputs, axis=0), (H, C)
 ```
 
-### [**训练**]和预测
+### [**訓練**]和預測
 
-让我们通过实例化 :numref:`sec_rnn_scratch`中
-引入的`RNNModelScratch`类来训练一个长短期记忆网络，
-就如我们在 :numref:`sec_gru`中所做的一样。
+讓我們透過實例化 :numref:`sec_rnn_scratch`中
+引入的`RNNModelScratch`類來訓練一個長短期記憶網路，
+就如我們在 :numref:`sec_gru`中所做的一樣。
 
 ```{.python .input}
 #@tab mxnet, pytorch
@@ -427,12 +427,12 @@ model = d2l.RNNModelScratch(len(vocab), num_hiddens, get_lstm_params,
 d2l.train_ch8(model, train_iter, vocab, lr, num_epochs, device)
 ```
 
-## [**简洁实现**]
+## [**簡潔實現**]
 
-使用高级API，我们可以直接实例化`LSTM`模型。
-高级API封装了前文介绍的所有配置细节。
-这段代码的运行速度要快得多，
-因为它使用的是编译好的运算符而不是Python来处理之前阐述的许多细节。
+使用高階API，我們可以直接實例化`LSTM`模型。
+高階API封裝了前文介紹的所有設定細節。
+這段程式碼的執行速度要快得多，
+因為它使用的是編譯好的運算符而不是Python來處理之前闡述的許多細節。
 
 ```{.python .input}
 lstm_layer = rnn.LSTM(num_hiddens)
@@ -470,26 +470,26 @@ model = d2l.RNNModel(lstm_layer, len(vocab))
 d2l.train_ch8(model, train_iter, vocab, lr, num_epochs, device)
 ```
 
-长短期记忆网络是典型的具有重要状态控制的隐变量自回归模型。
-多年来已经提出了其许多变体，例如，多层、残差连接、不同类型的正则化。
-然而，由于序列的长距离依赖性，训练长短期记忆网络
-和其他序列模型（例如门控循环单元）的成本是相当高的。
-在后面的内容中，我们将讲述更高级的替代模型，如Transformer。
+長短期記憶網路是典型的具有重要狀態控制的隱變數自迴歸模型。
+多年來已經提出了其許多變體，例如，多層、殘差連線、不同型別的正則化。
+然而，由於序列的長距離依賴性，訓練長短期記憶網路
+和其他序列模型（例如門控迴圈單元）的成本是相當高的。
+在後麵的內容中，我們將講述更高階的替代模型，如Transformer。
 
-## 小结
+## 小結
 
-* 长短期记忆网络有三种类型的门：输入门、遗忘门和输出门。
-* 长短期记忆网络的隐藏层输出包括“隐状态”和“记忆元”。只有隐状态会传递到输出层，而记忆元完全属于内部信息。
-* 长短期记忆网络可以缓解梯度消失和梯度爆炸。
+* 長短期記憶網路有三種型別的門：輸入門、遺忘門和輸出門。
+* 長短期記憶網路的隱藏層輸出包括『隱狀態』和『記憶元』。只有隱狀態會傳遞到輸出層，而記憶元完全屬於內部訊息。
+* 長短期記憶網路可以緩解梯度消失和梯度爆炸。
 
 
-## 练习
+## 練習
 
-1. 调整和分析超参数对运行时间、困惑度和输出顺序的影响。
-1. 如何更改模型以生成适当的单词，而不是字符序列？
-1. 在给定隐藏层维度的情况下，比较门控循环单元、长短期记忆网络和常规循环神经网络的计算成本。要特别注意训练和推断成本。
-1. 既然候选记忆元通过使用$\tanh$函数来确保值范围在$(-1,1)$之间，那么为什么隐状态需要再次使用$\tanh$函数来确保输出值范围在$(-1,1)$之间呢？
-1. 实现一个能够基于时间序列进行预测而不是基于字符序列进行预测的长短期记忆网络模型。
+1. 調整和分析超引數對執行時間、困惑度和輸出順序的影響。
+1. 如何更改模型以生成適當的單詞，而不是字元序列？
+1. 在給定隱藏層維度的情況下，比較門控迴圈單元、長短期記憶網路和常規迴圈神經網路的計算成本。要特別注意訓練和推斷成本。
+1. 既然候選記憶元透過使用$\tanh$函式來確保值範圍在$(-1,1)$之間，那麼為什麼隱狀態需要再次使用$\tanh$函式來確保輸出值範圍在$(-1,1)$之間呢？
+1. 實現一個能夠基於時間序列進行預測而不是基於字元序列進行預測的長短期記憶網路模型。
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/2766)

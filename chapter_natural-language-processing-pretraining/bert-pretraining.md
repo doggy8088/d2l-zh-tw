@@ -1,7 +1,7 @@
-# 预训练BERT
+# 預訓練BERT
 :label:`sec_bert-pretraining`
 
-利用 :numref:`sec_bert`中实现的BERT模型和 :numref:`sec_bert-dataset`中从WikiText-2数据集生成的预训练样本，我们将在本节中在WikiText-2数据集上对BERT进行预训练。
+利用 :numref:`sec_bert`中實現的BERT模型和 :numref:`sec_bert-dataset`中從WikiText-2資料集生成的預訓練樣本，我們將在本節中在WikiText-2資料集上對BERT進行預訓練。
 
 ```{.python .input}
 from d2l import mxnet as d2l
@@ -26,7 +26,7 @@ import paddle
 from paddle import nn
 ```
 
-首先，我们加载WikiText-2数据集作为小批量的预训练样本，用于遮蔽语言模型和下一句预测。批量大小是512，BERT输入序列的最大长度是64。注意，在原始BERT模型中，最大长度是512。
+首先，我們載入WikiText-2資料集作為小批次的預訓練樣本，用於遮蔽語言模型和下一句預測。批次大小是512，BERT輸入序列的最大長度是64。注意，在原始BERT模型中，最大長度是512。
 
 ```{.python .input}
 #@tab mxnet, pytorch
@@ -37,7 +37,7 @@ train_iter, vocab = d2l.load_data_wiki(batch_size, max_len)
 ```{.python .input}
 #@tab paddle
 def load_data_wiki(batch_size, max_len):
-    """加载WikiText-2数据集
+    """載入WikiText-2資料集
 
     Defined in :numref:`subsec_prepare_mlm_data`"""
     data_dir = d2l.download_extract('wikitext-2', 'wikitext-2')
@@ -51,9 +51,9 @@ batch_size, max_len = 512, 64
 train_iter, vocab = load_data_wiki(batch_size, max_len)
 ```
 
-## 预训练BERT
+## 預訓練BERT
 
-原始BERT :cite:`Devlin.Chang.Lee.ea.2018`有两个不同模型尺寸的版本。基本模型（$\text{BERT}_{\text{BASE}}$）使用12层（Transformer编码器块），768个隐藏单元（隐藏大小）和12个自注意头。大模型（$\text{BERT}_{\text{LARGE}}$）使用24层，1024个隐藏单元和16个自注意头。值得注意的是，前者有1.1亿个参数，后者有3.4亿个参数。为了便于演示，我们定义了一个小的BERT，使用了2层、128个隐藏单元和2个自注意头。
+原始BERT :cite:`Devlin.Chang.Lee.ea.2018`有兩個不同模型尺寸的版本。基本模型（$\text{BERT}_{\text{BASE}}$）使用12層（Transformer編碼器區塊），768個隱藏單元（隱藏大小）和12個自注意頭。大模型（$\text{BERT}_{\text{LARGE}}$）使用24層，1024個隱藏單元和16個自注意頭。值得注意的是，前者有1.1億個引數，後者有3.4億個引數。為了便於示範，我們定義了一個小的BERT，使用了2層、128個隱藏單元和2個自注意頭。
 
 ```{.python .input}
 net = d2l.BERTModel(len(vocab), num_hiddens=128, ffn_num_hiddens=256,
@@ -74,7 +74,7 @@ devices = d2l.try_all_gpus()
 loss = nn.CrossEntropyLoss()
 ```
 
-在定义训练代码实现之前，我们定义了一个辅助函数`_get_batch_loss_bert`。给定训练样本，该函数计算遮蔽语言模型和下一句子预测任务的损失。请注意，BERT预训练的最终损失是遮蔽语言模型损失和下一句预测损失的和。
+在定義訓練程式碼實現之前，我們定義了一個輔助函式`_get_batch_loss_bert`。給定訓練樣本，該函式計算遮蔽語言模型和下一句子預測任務的損失。請注意，BERT預訓練的最終損失是遮蔽語言模型損失和下一句預測損失的和。
 
 ```{.python .input}
 #@save
@@ -89,16 +89,16 @@ def _get_batch_loss_bert(net, loss, vocab_size, tokens_X_shards,
         tokens_X_shards, segments_X_shards, valid_lens_x_shards,
         pred_positions_X_shards, mlm_weights_X_shards, mlm_Y_shards,
         nsp_y_shards):
-        # 前向传播
+        # 前向傳播
         _, mlm_Y_hat, nsp_Y_hat = net(
             tokens_X_shard, segments_X_shard, valid_lens_x_shard.reshape(-1),
             pred_positions_X_shard)
-        # 计算遮蔽语言模型损失
+        # 計算遮蔽語言模型損失
         mlm_l = loss(
             mlm_Y_hat.reshape((-1, vocab_size)), mlm_Y_shard.reshape(-1),
             mlm_weights_X_shard.reshape((-1, 1)))
         mlm_l = mlm_l.sum() / (mlm_weights_X_shard.sum() + 1e-8)
-        # 计算下一句子预测任务的损失
+        # 計算下一句子預測任務的損失
         nsp_l = loss(nsp_Y_hat, nsp_y_shard)
         nsp_l = nsp_l.mean()
         mlm_ls.append(mlm_l)
@@ -115,15 +115,15 @@ def _get_batch_loss_bert(net, loss, vocab_size, tokens_X,
                          segments_X, valid_lens_x,
                          pred_positions_X, mlm_weights_X,
                          mlm_Y, nsp_y):
-    # 前向传播
+    # 前向傳播
     _, mlm_Y_hat, nsp_Y_hat = net(tokens_X, segments_X,
                                   valid_lens_x.reshape(-1),
                                   pred_positions_X)
-    # 计算遮蔽语言模型损失
+    # 計算遮蔽語言模型損失
     mlm_l = loss(mlm_Y_hat.reshape(-1, vocab_size), mlm_Y.reshape(-1)) *\
     mlm_weights_X.reshape(-1, 1)
     mlm_l = mlm_l.sum() / (mlm_weights_X.sum() + 1e-8)
-    # 计算下一句子预测任务的损失
+    # 計算下一句子預測任務的損失
     nsp_l = loss(nsp_Y_hat, nsp_y)
     l = mlm_l + nsp_l
     return mlm_l, nsp_l, l
@@ -136,21 +136,21 @@ def _get_batch_loss_bert(net, loss, vocab_size, tokens_X,
                          segments_X, valid_lens_x,
                          pred_positions_X, mlm_weights_X,
                          mlm_Y, nsp_y):
-    # 前向传播
+    # 前向傳播
     _, mlm_Y_hat, nsp_Y_hat = net(tokens_X, segments_X,
                                   valid_lens_x.reshape([-1]), 
                                   pred_positions_X)
-    # 计算遮蔽语言模型损失
+    # 計算遮蔽語言模型損失
     mlm_l = loss(mlm_Y_hat.reshape([-1, vocab_size]), mlm_Y.reshape([-1])) *\
     mlm_weights_X.reshape([-1, 1])
     mlm_l = mlm_l.sum() / (mlm_weights_X.sum() + 1e-8)
-    # 计算下一句子预测任务的损失
+    # 計算下一句子預測任務的損失
     nsp_l = loss(nsp_Y_hat, nsp_y)
     l = mlm_l + nsp_l
     return mlm_l, nsp_l, l
 ```
 
-通过调用上述两个辅助函数，下面的`train_bert`函数定义了在WikiText-2（`train_iter`）数据集上预训练BERT（`net`）的过程。训练BERT可能需要很长时间。以下函数的输入`num_steps`指定了训练的迭代步数，而不是像`train_ch13`函数那样指定训练的轮数（参见 :numref:`sec_image_augmentation`）。
+透過呼叫上述兩個輔助函式，下面的`train_bert`函式定義了在WikiText-2（`train_iter`）資料集上預訓練BERT（`net`）的過程。訓練BERT可能需要很長時間。以下函式的輸入`num_steps`指定了訓練的迭代步數，而不是像`train_ch13`函式那樣指定訓練的輪數（參見 :numref:`sec_image_augmentation`）。
 
 ```{.python .input}
 def train_bert(train_iter, net, loss, vocab_size, devices, num_steps):
@@ -159,7 +159,7 @@ def train_bert(train_iter, net, loss, vocab_size, devices, num_steps):
     step, timer = 0, d2l.Timer()
     animator = d2l.Animator(xlabel='step', ylabel='loss',
                             xlim=[1, num_steps], legend=['mlm', 'nsp'])
-    # 遮蔽语言模型损失的和，下一句预测任务损失的和，句子对的数量，计数
+    # 遮蔽語言模型損失的和，下一句預測任務損失的和，句子對的數量，計數
     metric = d2l.Accumulator(4)
     num_steps_reached = False
     while step < num_steps and not num_steps_reached:
@@ -202,7 +202,7 @@ def train_bert(train_iter, net, loss, vocab_size, devices, num_steps):
     step, timer = 0, d2l.Timer()
     animator = d2l.Animator(xlabel='step', ylabel='loss',
                             xlim=[1, num_steps], legend=['mlm', 'nsp'])
-    # 遮蔽语言模型损失的和，下一句预测任务损失的和，句子对的数量，计数
+    # 遮蔽語言模型損失的和，下一句預測任務損失的和，句子對的數量，計數
     metric = d2l.Accumulator(4)
     num_steps_reached = False
     while step < num_steps and not num_steps_reached:
@@ -243,7 +243,7 @@ def train_bert(train_iter, net, loss, vocab_size, devices, num_steps):
     step, timer = 0, d2l.Timer()
     animator = d2l.Animator(xlabel='step', ylabel='loss',
                             xlim=[1, num_steps], legend=['mlm', 'nsp'])
-    # 遮蔽语言模型损失的和，下一句预测任务损失的和，句子对的数量，计数
+    # 遮蔽語言模型損失的和，下一句預測任務損失的和，句子對的數量，計數
     metric = d2l.Accumulator(4)
     num_steps_reached = False
     while step < num_steps and not num_steps_reached:
@@ -271,7 +271,7 @@ def train_bert(train_iter, net, loss, vocab_size, devices, num_steps):
           f'{str(devices)}')
 ```
 
-在预训练过程中，我们可以绘制出遮蔽语言模型损失和下一句预测损失。
+在預訓練過程中，我們可以繪製出遮蔽語言模型損失和下一句預測損失。
 
 ```{.python .input}
 #@tab mxnet, pytorch
@@ -283,9 +283,9 @@ train_bert(train_iter, net, loss, len(vocab), devices, 50)
 train_bert(train_iter, net, loss, len(vocab), devices[:1], 50)
 ```
 
-## 用BERT表示文本
+## 用BERT表示文字
 
-在预训练BERT之后，我们可以用它来表示单个文本、文本对或其中的任何词元。下面的函数返回`tokens_a`和`tokens_b`中所有词元的BERT（`net`）表示。
+在預訓練BERT之後，我們可以用它來表示單個文字、文字對或其中的任何詞元。下面的函式回傳`tokens_a`和`tokens_b`中所有詞元的BERT（`net`）表示。
 
 ```{.python .input}
 def get_bert_encoding(net, tokens_a, tokens_b=None):
@@ -321,43 +321,43 @@ def get_bert_encoding(net, tokens_a, tokens_b=None):
     return encoded_X
 ```
 
-考虑“a crane is flying”这句话。回想一下 :numref:`subsec_bert_input_rep`中讨论的BERT的输入表示。插入特殊标记“&lt;cls&gt;”（用于分类）和“&lt;sep&gt;”（用于分隔）后，BERT输入序列的长度为6。因为零是“&lt;cls&gt;”词元，`encoded_text[:, 0, :]`是整个输入语句的BERT表示。为了评估一词多义词元“crane”，我们还打印出了该词元的BERT表示的前三个元素。
+考慮『a crane is flying』這句話。回想一下 :numref:`subsec_bert_input_rep`中討論的BERT的輸入表示。插入特殊標記『&lt;cls&gt;』（用於分類）和『&lt;sep&gt;』（用於分隔）後，BERT輸入序列的長度為6。因為零是『&lt;cls&gt;』詞元，`encoded_text[:, 0, :]`是整個輸入語句的BERT表示。為了評估一詞多義詞元『crane』，我們還列印出了該詞元的BERT表示的前三個元素。
 
 ```{.python .input}
 #@tab all
 tokens_a = ['a', 'crane', 'is', 'flying']
 encoded_text = get_bert_encoding(net, tokens_a)
-# 词元：'<cls>','a','crane','is','flying','<sep>'
+# 詞元：'<cls>','a','crane','is','flying','<sep>'
 encoded_text_cls = encoded_text[:, 0, :]
 encoded_text_crane = encoded_text[:, 2, :]
 encoded_text.shape, encoded_text_cls.shape, encoded_text_crane[0][:3]
 ```
 
-现在考虑一个句子“a crane driver came”和“he just left”。类似地，`encoded_pair[:, 0, :]`是来自预训练BERT的整个句子对的编码结果。注意，多义词元“crane”的前三个元素与上下文不同时的元素不同。这支持了BERT表示是上下文敏感的。
+現在考慮一個句子『a crane driver came』和『he just left』。類似地，`encoded_pair[:, 0, :]`是來自預訓練BERT的整個句子對的編碼結果。注意，多義詞元『crane』的前三個元素與上下文不同時的元素不同。這支援了BERT表示是上下文敏感的。
 
 ```{.python .input}
 #@tab all
 tokens_a, tokens_b = ['a', 'crane', 'driver', 'came'], ['he', 'just', 'left']
 encoded_pair = get_bert_encoding(net, tokens_a, tokens_b)
-# 词元：'<cls>','a','crane','driver','came','<sep>','he','just',
+# 詞元：'<cls>','a','crane','driver','came','<sep>','he','just',
 # 'left','<sep>'
 encoded_pair_cls = encoded_pair[:, 0, :]
 encoded_pair_crane = encoded_pair[:, 2, :]
 encoded_pair.shape, encoded_pair_cls.shape, encoded_pair_crane[0][:3]
 ```
 
-在 :numref:`chap_nlp_app`中，我们将为下游自然语言处理应用微调预训练的BERT模型。
+在 :numref:`chap_nlp_app`中，我們將為下游自然語言處理應用微調預訓練的BERT模型。
 
-## 小结
+## 小結
 
-* 原始的BERT有两个版本，其中基本模型有1.1亿个参数，大模型有3.4亿个参数。
-* 在预训练BERT之后，我们可以用它来表示单个文本、文本对或其中的任何词元。
-* 在实验中，同一个词元在不同的上下文中具有不同的BERT表示。这支持BERT表示是上下文敏感的。
+* 原始的BERT有兩個版本，其中基本模型有1.1億個引數，大模型有3.4億個引數。
+* 在預訓練BERT之後，我們可以用它來表示單個文字、文字對或其中的任何詞元。
+* 在實驗中，同一個詞元在不同的上下文中具有不同的BERT表示。這支援BERT表示是上下文敏感的。
 
-## 练习
+## 練習
 
-1. 在实验中，我们可以看到遮蔽语言模型损失明显高于下一句预测损失。为什么？
-2. 将BERT输入序列的最大长度设置为512（与原始BERT模型相同）。使用原始BERT模型的配置，如$\text{BERT}_{\text{LARGE}}$。运行此部分时是否遇到错误？为什么？
+1. 在實驗中，我們可以看到遮蔽語言模型損失明顯高於下一句預測損失。為什麼？
+2. 將BERT輸入序列的最大長度設定為512（與原始BERT模型相同）。使用原始BERT模型的設定，如$\text{BERT}_{\text{LARGE}}$。執行此部分時是否遇到錯誤？為什麼？
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/5742)

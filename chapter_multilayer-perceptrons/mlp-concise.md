@@ -1,7 +1,7 @@
-# 多层感知机的简洁实现
+# 多層感知機的簡潔實現
 :label:`sec_mlp_concise`
 
-本节将介绍(**通过高级API更简洁地实现多层感知机**)。
+本節將介紹(**透過高階API更簡潔地實現多層感知機**)。
 
 ```{.python .input}
 from d2l import mxnet as d2l
@@ -34,10 +34,10 @@ from paddle import nn
 
 ## 模型
 
-与softmax回归的简洁实现（ :numref:`sec_softmax_concise`）相比，
-唯一的区别是我们添加了2个全连接层（之前我们只添加了1个全连接层）。
-第一层是[**隐藏层**]，它(**包含256个隐藏单元，并使用了ReLU激活函数**)。
-第二层是输出层。
+與softmax迴歸的簡潔實現（ :numref:`sec_softmax_concise`）相比，
+唯一的區別是我們新增了2個全連線層（之前我們只新增了1個全連線層）。
+第一層是[**隱藏層**]，它(**包含256個隱藏單元，並使用了ReLU啟用函式**)。
+第二層是輸出層。
 
 ```{.python .input}
 net = nn.Sequential()
@@ -82,8 +82,8 @@ for layer in net:
         layer.weight_attr = weight_attr
 ```
 
-[**训练过程**]的实现与我们实现softmax回归时完全相同，
-这种模块化设计使我们能够将与模型架构有关的内容独立出来。
+[**訓練過程**]的實現與我們實現softmax迴歸時完全相同，
+這種模組化設計使我們能夠將與模型架構有關的內容獨立出來。
 
 ```{.python .input}
 batch_size, lr, num_epochs = 256, 0.1, 10
@@ -118,16 +118,16 @@ train_iter, test_iter = d2l.load_data_fashion_mnist(batch_size)
 d2l.train_ch3(net, train_iter, test_iter, loss, num_epochs, trainer)
 ```
 
-## 小结
+## 小結
 
-* 我们可以使用高级API更简洁地实现多层感知机。
-* 对于相同的分类问题，多层感知机的实现与softmax回归的实现相同，只是多层感知机的实现里增加了带有激活函数的隐藏层。
+* 我們可以使用高階API更簡潔地實現多層感知機。
+* 對於相同的分類問題，多層感知機的實現與softmax迴歸的實現相同，只是多層感知機的實現裡增加了帶有啟用函式的隱藏層。
 
-## 练习
+## 練習
 
-1. 尝试添加不同数量的隐藏层（也可以修改学习率），怎么样设置效果最好？
-1. 尝试不同的激活函数，哪个效果最好？
-1. 尝试不同的方案来初始化权重，什么方法效果最好？
+1. 嘗試新增不同數量的隱藏層（也可以修改學習率），怎麼樣設定效果最好？
+1. 嘗試不同的啟用函式，哪個效果最好？
+1. 嘗試不同的方案來初始化權重，什麼方法效果最好？
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/1803)

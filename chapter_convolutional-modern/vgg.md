@@ -1,30 +1,30 @@
-# 使用块的网络（VGG）
+# 使用區塊的網路（VGG）
 :label:`sec_vgg`
 
-虽然AlexNet证明深层神经网络卓有成效，但它没有提供一个通用的模板来指导后续的研究人员设计新的网络。
-在下面的几个章节中，我们将介绍一些常用于设计深层神经网络的启发式概念。
+雖然AlexNet證明深層神經網路卓有成效，但它沒有提供一個通用的樣板來指導後續的研究人員設計新的網路。
+在下面的幾個章節中，我們將介紹一些常用於設計深層神經網路的啟發式概念。
 
-与芯片设计中工程师从放置晶体管到逻辑元件再到逻辑块的过程类似，神经网络架构的设计也逐渐变得更加抽象。研究人员开始从单个神经元的角度思考问题，发展到整个层，现在又转向块，重复层的模式。
+與晶片設計中工程師從放置晶體管到邏輯元件再到邏輯區塊的過程類似，神經網路架構的設計也逐漸變得更加抽象。研究人員開始從單個神經元的角度思考問題，發展到整個層，現在又轉向區塊，重複層的模式。
 
-使用块的想法首先出现在牛津大学的[视觉几何组（visual geometry group）](http://www.robots.ox.ac.uk/~vgg/)的*VGG网络*中。通过使用循环和子程序，可以很容易地在任何现代深度学习框架的代码中实现这些重复的架构。
+使用區塊的想法首先出現在牛津大學的[視覺幾何組（visual geometry group）](http://www.robots.ox.ac.uk/~vgg/)的*VGG網路*中。透過使用迴圈和子程式，可以很容易地在任何現代深度學習框架的程式碼中實現這些重複的架構。
 
-## (**VGG块**)
+## (**VGG區塊**)
 
-经典卷积神经网络的基本组成部分是下面的这个序列：
+經典卷積神經網路的基本組成部分是下面的這個序列：
 
-1. 带填充以保持分辨率的卷积层；
-1. 非线性激活函数，如ReLU；
-1. 汇聚层，如最大汇聚层。
+1. 帶填充以保持解析度的卷積層；
+1. 非線性啟用函式，如ReLU；
+1. 彙聚層，如最大彙聚層。
 
-而一个VGG块与之类似，由一系列卷积层组成，后面再加上用于空间下采样的最大汇聚层。在最初的VGG论文中 :cite:`Simonyan.Zisserman.2014`，作者使用了带有$3\times3$卷积核、填充为1（保持高度和宽度）的卷积层，和带有$2 \times 2$汇聚窗口、步幅为2（每个块后的分辨率减半）的最大汇聚层。在下面的代码中，我们定义了一个名为`vgg_block`的函数来实现一个VGG块。
+而一個VGG區塊與之類似，由一系列卷積層組成，後面再加上用於空間下采樣的最大彙聚層。在最初的VGG論文中 :cite:`Simonyan.Zisserman.2014`，作者使用了帶有$3\times3$卷積核、填充為1（保持高度和寬度）的卷積層，和帶有$2 \times 2$彙聚視窗、步幅為2（每個區塊後的解析度減半）的最大彙聚層。在下面的程式碼中，我們定義了一個名為`vgg_block`的函式來實現一個VGG區塊。
 
 :begin_tab:`mxnet,tensorflow`
-该函数有两个参数，分别对应于卷积层的数量`num_convs`和输出通道的数量`num_channels`.
+該函式有兩個引數，分別對應於卷積層的數量`num_convs`和輸出通道的數量`num_channels`.
 :end_tab:
 
 :begin_tab:`pytorch`
-该函数有三个参数，分别对应于卷积层的数量`num_convs`、输入通道的数量`in_channels`
-和输出通道的数量`out_channels`.
+該函式有三個引數，分別對應於卷積層的數量`num_convs`、輸入通道的數量`in_channels`
+和輸出通道的數量`out_channels`.
 :end_tab:
 
 ```{.python .input}
@@ -92,33 +92,33 @@ def vgg_block(num_convs, in_channels, out_channels):
     return nn.Sequential(*layers)
 ```
 
-## [**VGG网络**]
+## [**VGG網路**]
 
-与AlexNet、LeNet一样，VGG网络可以分为两部分：第一部分主要由卷积层和汇聚层组成，第二部分由全连接层组成。如 :numref:`fig_vgg`中所示。
+與AlexNet、LeNet一樣，VGG網路可以分為兩部分：第一部分主要由卷積層和彙聚層組成，第二部分由全連線層組成。如 :numref:`fig_vgg`中所示。
 
-![从AlexNet到VGG，它们本质上都是块设计。](../img/vgg.svg)
+![從AlexNet到VGG，它們本質上都是區塊設計。](../img/vgg.svg)
 :width:`400px`
 :label:`fig_vgg`
 
-VGG神经网络连接 :numref:`fig_vgg`的几个VGG块（在`vgg_block`函数中定义）。其中有超参数变量`conv_arch`。该变量指定了每个VGG块里卷积层个数和输出通道数。全连接模块则与AlexNet中的相同。
+VGG神經網路連線 :numref:`fig_vgg`的幾個VGG區塊（在`vgg_block`函式中定義）。其中有超引數變數`conv_arch`。該變數指定了每個VGG區塊裡卷積層個數和輸出通道數。全連線模組則與AlexNet中的相同。
 
-原始VGG网络有5个卷积块，其中前两个块各有一个卷积层，后三个块各包含两个卷积层。
-第一个模块有64个输出通道，每个后续模块将输出通道数量翻倍，直到该数字达到512。由于该网络使用8个卷积层和3个全连接层，因此它通常被称为VGG-11。
+原始VGG網路有5個卷積區塊，其中前兩個區塊各有一個卷積層，後三個區塊各包含兩個卷積層。
+第一個模組有64個輸出通道，每個後續模組將輸出通道數量翻倍，直到該數字達到512。由於該網路使用8個卷積層和3個全連線層，因此它通常被稱為VGG-11。
 
 ```{.python .input}
 #@tab all
 conv_arch = ((1, 64), (1, 128), (2, 256), (2, 512), (2, 512))
 ```
 
-下面的代码实现了VGG-11。可以通过在`conv_arch`上执行for循环来简单实现。
+下面的程式碼實現了VGG-11。可以透過在`conv_arch`上執行for迴圈來簡單實現。
 
 ```{.python .input}
 def vgg(conv_arch):
     net = nn.Sequential()
-    # 卷积层部分
+    # 卷積層部分
     for (num_convs, num_channels) in conv_arch:
         net.add(vgg_block(num_convs, num_channels))
-    # 全连接层部分
+    # 全連線層部分
     net.add(nn.Dense(4096, activation='relu'), nn.Dropout(0.5),
             nn.Dense(4096, activation='relu'), nn.Dropout(0.5),
             nn.Dense(10))
@@ -132,14 +132,14 @@ net = vgg(conv_arch)
 def vgg(conv_arch):
     conv_blks = []
     in_channels = 1
-    # 卷积层部分
+    # 卷積層部分
     for (num_convs, out_channels) in conv_arch:
         conv_blks.append(vgg_block(num_convs, in_channels, out_channels))
         in_channels = out_channels
 
     return nn.Sequential(
         *conv_blks, nn.Flatten(),
-        # 全连接层部分
+        # 全連線層部分
         nn.Linear(out_channels * 7 * 7, 4096), nn.ReLU(), nn.Dropout(0.5),
         nn.Linear(4096, 4096), nn.ReLU(), nn.Dropout(0.5),
         nn.Linear(4096, 10))
@@ -151,10 +151,10 @@ net = vgg(conv_arch)
 #@tab tensorflow
 def vgg(conv_arch):
     net = tf.keras.models.Sequential()
-    # 卷积层部分
+    # 卷積層部分
     for (num_convs, num_channels) in conv_arch:
         net.add(vgg_block(num_convs, num_channels))
-    # 全连接层部分
+    # 全連線層部分
     net.add(tf.keras.models.Sequential([
         tf.keras.layers.Flatten(),
         tf.keras.layers.Dense(4096, activation='relu'),
@@ -172,13 +172,13 @@ net = vgg(conv_arch)
 def vgg(conv_arch):
     conv_blks = []
     in_channels = 1
-    # 卷积层部分
+    # 卷積層部分
     for (num_convs, out_channels) in conv_arch:
         conv_blks.append(vgg_block(num_convs, in_channels, out_channels))
         in_channels = out_channels
 
     return nn.Sequential(*conv_blks, nn.Flatten(),
-                         # 全连接层部分
+                         # 全連線層部分
                          nn.Linear(out_channels * 7 * 7, 4096), nn.ReLU(),
                          nn.Dropout(0.5), nn.Linear(4096, 4096), nn.ReLU(),
                          nn.Dropout(0.5), nn.Linear(4096, 10))
@@ -186,7 +186,7 @@ def vgg(conv_arch):
 net = vgg(conv_arch)
 ```
 
-接下来，我们将构建一个高度和宽度为224的单通道数据样本，以[**观察每个层输出的形状**]。
+接下來，我們將建立一個高度和寬度為224的單通道資料樣本，以[**觀察每個層輸出的形狀**]。
 
 ```{.python .input}
 net.initialize()
@@ -220,11 +220,11 @@ for blk in net:
     print(blk.__class__.__name__,'output shape:\t',X.shape)
 ```
 
-正如从代码中所看到的，我们在每个块的高度和宽度减半，最终高度和宽度都为7。最后再展平表示，送入全连接层处理。
+正如從程式碼中所看到的，我們在每個區塊的高度和寬度減半，最終高度和寬度都為7。最後再展平表示，送入全連線層處理。
 
-## 训练模型
+## 訓練模型
 
-[**由于VGG-11比AlexNet计算量更大，因此我们构建了一个通道数较少的网络**]，足够用于训练Fashion-MNIST数据集。
+[**由於VGG-11比AlexNet計算量更大，因此我們建立了一個通道數較少的網路**]，足夠用於訓練Fashion-MNIST資料集。
 
 ```{.python .input}
 #@tab mxnet, pytorch, paddle
@@ -237,11 +237,11 @@ net = vgg(small_conv_arch)
 #@tab tensorflow
 ratio = 4
 small_conv_arch = [(pair[0], pair[1] // ratio) for pair in conv_arch]
-# 回想一下，这必须是一个将被放入“d2l.train_ch6()”的函数，为了利用我们现有的CPU/GPU设备，这样模型构建/编译需要在strategy.scope()中
+# 回想一下，這必須是一個將被放入『d2l.train_ch6()』的函式，為了利用我們現有的CPU/GPU裝置，這樣模型建立/編譯需要在strategy.scope()中
 net = lambda: vgg(small_conv_arch)
 ```
 
-除了使用略高的学习率外，[**模型训练**]过程与 :numref:`sec_alexnet`中的AlexNet类似。
+除了使用略高的學習率外，[**模型訓練**]過程與 :numref:`sec_alexnet`中的AlexNet類似。
 
 ```{.python .input}
 #@tab all
@@ -250,18 +250,18 @@ train_iter, test_iter = d2l.load_data_fashion_mnist(batch_size, resize=224)
 d2l.train_ch6(net, train_iter, test_iter, num_epochs, lr, d2l.try_gpu())
 ```
 
-## 小结
+## 小結
 
-* VGG-11使用可复用的卷积块构造网络。不同的VGG模型可通过每个块中卷积层数量和输出通道数量的差异来定义。
-* 块的使用导致网络定义的非常简洁。使用块可以有效地设计复杂的网络。
-* 在VGG论文中，Simonyan和Ziserman尝试了各种架构。特别是他们发现深层且窄的卷积（即$3 \times 3$）比较浅层且宽的卷积更有效。
+* VGG-11使用可複用的卷積區塊構造網路。不同的VGG模型可透過每個塊中卷積層數量和輸出通道數量的差異來定義。
+* 區塊的使用導致網路定義的非常簡潔。使用區塊可以有效地設計複雜的網路。
+* 在VGG論文中，Simonyan和Ziserman嘗試了各種架構。特別是他們發現深層且窄的卷積（即$3 \times 3$）比較淺層且寬的卷積更有效。
 
-## 练习
+## 練習
 
-1. 打印层的尺寸时，我们只看到8个结果，而不是11个结果。剩余的3层信息去哪了？
-1. 与AlexNet相比，VGG的计算要慢得多，而且它还需要更多的显存。分析出现这种情况的原因。
-1. 尝试将Fashion-MNIST数据集图像的高度和宽度从224改为96。这对实验有什么影响？
-1. 请参考VGG论文 :cite:`Simonyan.Zisserman.2014`中的表1构建其他常见模型，如VGG-16或VGG-19。
+1. 列印層的尺寸時，我們只看到8個結果，而不是11個結果。剩餘的3層訊息去哪了？
+1. 與AlexNet相比，VGG的計算要慢得多，而且它還需要更多的顯存。分析出現這種情況的原因。
+1. 嘗試將Fashion-MNIST資料集影象的高度和寬度從224改為96。這對實驗有什麼影響？
+1. 請參考VGG論文 :cite:`Simonyan.Zisserman.2014`中的表1建立其他常見模型，如VGG-16或VGG-19。
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/1867)

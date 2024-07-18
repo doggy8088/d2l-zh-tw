@@ -1,10 +1,10 @@
-# 机器翻译
+# 機器翻譯
 
-机器翻译是指将一段文本从一种语言自动翻译到另一种语言。因为一段文本序列在不同语言中的长度不一定相同，所以我们使用机器翻译为例来介绍编码器—解码器和注意力机制的应用。
+機器翻譯是指將一段文字從一種語言自動翻譯到另一種語言。因為一段文字序列在不同語言中的長度不一定相同，所以我們使用機器翻譯為例來介紹編碼器—解碼器和注意力機制的應用。
 
-## 读取和预处理数据集
+## 讀取和預處理資料集
 
-我们先定义一些特殊符号。其中“&lt;pad&gt;”（padding）符号用来添加在较短序列后，直到每个序列等长，而“&lt;bos&gt;”和“&lt;eos&gt;”符号分别表示序列的开始和结束。
+我們先定義一些特殊符號。其中『&lt;pad&gt;』（padding）符號用來新增在較短序列後，直到每個序列等長，而『&lt;bos&gt;』和『&lt;eos&gt;』符號分別表示序列的開始和結束。
 
 ```{.python .input  n=2}
 import collections
@@ -17,17 +17,17 @@ from mxnet.gluon import data as gdata, loss as gloss, nn, rnn
 PAD, BOS, EOS = '<pad>', '<bos>', '<eos>'
 ```
 
-接着定义两个辅助函数对后面读取的数据进行预处理。
+接著定義兩個輔助函式對後面讀取的資料進行預處理。
 
 ```{.python .input}
-# 将一个序列中所有的词记录在all_tokens中以便之后构造词典，然后在该序列后面添加PAD直到序列
-# 长度变为max_seq_len，然后将序列保存在all_seqs中
+# 將一個序列中所有的詞記錄在all_tokens中以便之後構造詞典，然後在該序列後面新增PAD直到序列
+# 長度變為max_seq_len，然後將序列儲存在all_seqs中
 def process_one_seq(seq_tokens, all_tokens, all_seqs, max_seq_len):
     all_tokens.extend(seq_tokens)
     seq_tokens += [EOS] + [PAD] * (max_seq_len - len(seq_tokens) - 1)
     all_seqs.append(seq_tokens)
 
-# 使用所有的词来构造词典。并将所有序列中的词变换为词索引后构造NDArray实例
+# 使用所有的詞來構造詞典。並將所有序列中的詞變換為詞索引後構造NDArray實例
 def build_data(all_tokens, all_seqs):
     vocab = text.vocab.Vocabulary(collections.Counter(all_tokens),
                                   reserved_tokens=[PAD, BOS, EOS])
@@ -35,11 +35,11 @@ def build_data(all_tokens, all_seqs):
     return vocab, nd.array(indices)
 ```
 
-为了演示方便，我们在这里使用一个很小的法语—英语数据集。在这个数据集里，每一行是一对法语句子和它对应的英语句子，中间使用`'\t'`隔开。在读取数据时，我们在句末附上“&lt;eos&gt;”符号，并可能通过添加“&lt;pad&gt;”符号使每个序列的长度均为`max_seq_len`。我们为法语词和英语词分别创建词典。法语词的索引和英语词的索引相互独立。
+為了示範方便，我們在這裡使用一個很小的法語—英語資料集。在這個資料集裡，每一行是一對法語句子和它對應的英語句子，中間使用`'\t'`隔開。在讀取資料時，我們在句末附上『&lt;eos&gt;』符號，並可能透過新增『&lt;pad&gt;』符號使每個序列的長度均為`max_seq_len`。我們為法語詞和英語詞分別建立詞典。法語詞的索引和英語詞的索引相互獨立。
 
 ```{.python .input  n=31}
 def read_data(max_seq_len):
-    # in和out分别是input和output的缩写
+    # in和out分別是input和output的縮寫
     in_tokens, out_tokens, in_seqs, out_seqs = [], [], [], []
     with io.open('../data/fr-en-small.txt') as f:
         lines = f.readlines()
@@ -47,7 +47,7 @@ def read_data(max_seq_len):
         in_seq, out_seq = line.rstrip().split('\t')
         in_seq_tokens, out_seq_tokens = in_seq.split(' '), out_seq.split(' ')
         if max(len(in_seq_tokens), len(out_seq_tokens)) > max_seq_len - 1:
-            continue  # 如果加上EOS后长于max_seq_len，则忽略掉此样本
+            continue  # 如果加上EOS後長於max_seq_len，則忽略掉此樣本
         process_one_seq(in_seq_tokens, in_tokens, in_seqs, max_seq_len)
         process_one_seq(out_seq_tokens, out_tokens, out_seqs, max_seq_len)
     in_vocab, in_data = build_data(in_tokens, in_seqs)
@@ -55,7 +55,7 @@ def read_data(max_seq_len):
     return in_vocab, out_vocab, gdata.ArrayDataset(in_data, out_data)
 ```
 
-将序列的最大长度设成7，然后查看读取到的第一个样本。该样本分别包含法语词索引序列和英语词索引序列。
+將序列的最大長度設成7，然後檢視讀取到的第一個樣本。該樣本分別包含法語詞索引序列和英語詞索引序列。
 
 ```{.python .input  n=181}
 max_seq_len = 7
@@ -63,13 +63,13 @@ in_vocab, out_vocab, dataset = read_data(max_seq_len)
 dataset[0]
 ```
 
-## 含注意力机制的编码器—解码器
+## 含注意力機制的編碼器—解碼器
 
-我们将使用含注意力机制的编码器—解码器来将一段简短的法语翻译成英语。下面我们来介绍模型的实现。
+我們將使用含注意力機制的編碼器—解碼器來將一段簡短的法語翻譯成英語。下面我們來介紹模型的實現。
 
-### 编码器
+### 編碼器
 
-在编码器中，我们将输入语言的词索引通过词嵌入层得到词的表征，然后输入到一个多层门控循环单元中。正如我们在[“循环神经网络的简洁实现”](../chapter_recurrent-neural-networks/rnn-gluon.md)一节提到的，Gluon的`rnn.GRU`实例在前向计算后也会分别返回输出和最终时间步的多层隐状态。其中的输出指的是最后一层的隐藏层在各个时间步的隐状态，并不涉及输出层计算。注意力机制将这些输出作为键项和值项。
+在編碼器中，我們將輸入語言的詞索引透過詞嵌入層得到詞的表徵，然後輸入到一個多層門控迴圈單元中。正如我們在[『迴圈神經網路的簡潔實現』](../chapter_recurrent-neural-networks/rnn-gluon.md)一節提到的，Gluon的`rnn.GRU`實例在前向計算後也會分別回傳輸出和最終時間步的多層隱狀態。其中的輸出指的是最後一層的隱藏層在各個時間步的隱狀態，並不涉及輸出層計算。注意力機制將這些輸出作為鍵項和值項。
 
 ```{.python .input  n=165}
 class Encoder(nn.Block):
@@ -80,7 +80,7 @@ class Encoder(nn.Block):
         self.rnn = rnn.GRU(num_hiddens, num_layers, dropout=drop_prob)
 
     def forward(self, inputs, state):
-        # 输入形状是(批量大小, 时间步数)。将输出互换样本维和时间步维
+        # 輸入形狀是(批次大小, 時間步數)。將輸出互換樣本維和時間步維
         embedding = self.embedding(inputs).swapaxes(0, 1)
         return self.rnn(embedding, state)
 
@@ -88,7 +88,7 @@ class Encoder(nn.Block):
         return self.rnn.begin_state(*args, **kwargs)
 ```
 
-下面我们来创建一个批量大小为4、时间步数为7的小批量序列输入。设门控循环单元的隐藏层个数为2，隐藏单元个数为16。编码器对该输入执行前向计算后返回的输出形状为(时间步数, 批量大小, 隐藏单元个数)。门控循环单元在最终时间步的多层隐状态的形状为(隐藏层个数, 批量大小, 隐藏单元个数)。对门控循环单元来说，`state`列表中只含一个元素，即隐状态；如果使用长短期记忆，`state`列表中还将包含另一个元素，即记忆细胞。
+下面我們來建立一個批次大小為4、時間步數為7的小批次序列輸入。設門控迴圈單元的隱藏層個數為2，隱藏單元個數為16。編碼器對該輸入執行前向計算後回傳的輸出形狀為(時間步數, 批次大小, 隱藏單元個數)。門控迴圈單元在最終時間步的多層隱狀態的形狀為(隱藏層個數, 批次大小, 隱藏單元個數)。對門控迴圈單元來說，`state`清單中只含一個元素，即隱狀態；如果使用長短期記憶，`state`清單中還將包含另一個元素，即記憶細胞。
 
 ```{.python .input  n=166}
 encoder = Encoder(vocab_size=10, embed_size=8, num_hiddens=16, num_layers=2)
@@ -97,9 +97,9 @@ output, state = encoder(nd.zeros((4, 7)), encoder.begin_state(batch_size=4))
 output.shape, state[0].shape
 ```
 
-### 注意力机制
+### 注意力機制
 
-在介绍如何实现注意力机制的矢量化计算之前，我们先了解一下`Dense`实例的`flatten`选项。当输入的维度大于2时，默认情况下，`Dense`实例会将除了第一维（样本维）以外的维度均视作需要仿射变换的特征维，并将输入自动转成行为样本、列为特征的二维矩阵。计算后，输出矩阵的形状为(样本数, 输出个数)。如果我们希望全连接层只对输入的最后一维做仿射变换，而保持其他维度上的形状不变，便需要将`Dense`实例的`flatten`选项设为`False`。在下面例子中，全连接层只对输入的最后一维做仿射变换，因此输出形状中只有最后一维变为全连接层的输出个数2。
+在介紹如何實現注意力機制的矢量化計算之前，我們先了解一下`Dense`實例的`flatten`選項。當輸入的維度大於2時，預設情況下，`Dense`實例會將除了第一維（樣本維）以外的維度均視作需要仿射變換的特徵維，並將輸入自動轉成行為樣本、列為特徵的二維矩陣。計算後，輸出矩陣的形狀為(樣本數, 輸出個數)。如果我們希望全連線層只對輸入的最後一維做仿射變換，而保持其他維度上的形狀不變，便需要將`Dense`實例的`flatten`選項設為`False`。在下面例子中，全連線層只對輸入的最後一維做仿射變換，因此輸出形狀中只有最後一維變為全連線層的輸出個數2。
 
 ```{.python .input}
 dense = nn.Dense(2, flatten=False)
@@ -107,7 +107,7 @@ dense.initialize()
 dense(nd.zeros((3, 5, 7))).shape
 ```
 
-我们将实现[“注意力机制”](./attention.md)一节中定义的函数$a$：将输入连结后通过含单隐藏层的多层感知机变换。其中隐藏层的输入是解码器的隐状态与编码器在所有时间步上隐状态的一一连结，且使用tanh函数作为激活函数。输出层的输出个数为1。两个`Dense`实例均不使用偏置，且设`flatten=False`。其中函数$a$定义里向量$\boldsymbol{v}$的长度是一个超参数，即`attention_size`。
+我們將實現[『注意力機制』](./attention.md)一節中定義的函式$a$：將輸入連結後透過含單隱藏層的多層感知機變換。其中隱藏層的輸入是解碼器的隱狀態與編碼器在所有時間步上隱狀態的一一連結，且使用tanh函式作為啟用函式。輸出層的輸出個數為1。兩個`Dense`實例均不使用偏置，且設`flatten=False`。其中函式$a$定義裡向量$\boldsymbol{v}$的長度是一個超引數，即`attention_size`。
 
 ```{.python .input  n=167}
 def attention_model(attention_size):
@@ -118,20 +118,20 @@ def attention_model(attention_size):
     return model
 ```
 
-注意力机制的输入包括查询项、键项和值项。设编码器和解码器的隐藏单元个数相同。这里的查询项为解码器在上一时间步的隐状态，形状为(批量大小, 隐藏单元个数)；键项和值项均为编码器在所有时间步的隐状态，形状为(时间步数, 批量大小, 隐藏单元个数)。注意力机制返回当前时间步的上下文变量，形状为(批量大小, 隐藏单元个数)。
+注意力機制的輸入包括查詢項、鍵項和值項。設編碼器和解碼器的隱藏單元個數相同。這裡的查詢項為解碼器在上一時間步的隱狀態，形狀為(批次大小, 隱藏單元個數)；鍵項和值項均為編碼器在所有時間步的隱狀態，形狀為(時間步數, 批次大小, 隱藏單元個數)。注意力機制回傳當前時間步的上下文變數，形狀為(批次大小, 隱藏單元個數)。
 
 ```{.python .input  n=168}
 def attention_forward(model, enc_states, dec_state):
-    # 将解码器隐状态广播到和编码器隐状态形状相同后进行连结
+    # 將解碼器隱狀態廣播到和編碼器隱狀態形狀相同後進行連結
     dec_states = nd.broadcast_axis(
         dec_state.expand_dims(0), axis=0, size=enc_states.shape[0])
     enc_and_dec_states = nd.concat(enc_states, dec_states, dim=2)
-    e = model(enc_and_dec_states)  # 形状为(时间步数, 批量大小, 1)
-    alpha = nd.softmax(e, axis=0)  # 在时间步维度做softmax运算
-    return (alpha * enc_states).sum(axis=0)  # 返回上下文变量
+    e = model(enc_and_dec_states)  # 形狀為(時間步數, 批次大小, 1)
+    alpha = nd.softmax(e, axis=0)  # 在時間步維度做softmax運算
+    return (alpha * enc_states).sum(axis=0)  # 回傳上下文變數
 ```
 
-在下面的例子中，编码器的时间步数为10，批量大小为4，编码器和解码器的隐藏单元个数均为8。注意力机制返回一个小批量的背景向量，每个背景向量的长度等于编码器的隐藏单元个数。因此输出的形状为(4, 8)。
+在下面的例子中，編碼器的時間步數為10，批次大小為4，編碼器和解碼器的隱藏單元個數均為8。注意力機制回傳一個小批次的背景向量，每個背景向量的長度等於編碼器的隱藏單元個數。因此輸出的形狀為(4, 8)。
 
 ```{.python .input  n=169}
 seq_len, batch_size, num_hiddens = 10, 4, 8
@@ -142,11 +142,11 @@ dec_state = nd.zeros((batch_size, num_hiddens))
 attention_forward(model, enc_states, dec_state).shape
 ```
 
-### 含注意力机制的解码器
+### 含注意力機制的解碼器
 
-我们直接将编码器在最终时间步的隐状态作为解码器的初始隐状态。这要求编码器和解码器的循环神经网络使用相同的隐藏层个数和隐藏单元个数。
+我們直接將編碼器在最終時間步的隱狀態作為解碼器的初始隱狀態。這要求編碼器和解碼器的迴圈神經網路使用相同的隱藏層個數和隱藏單元個數。
 
-在解码器的前向计算中，我们先通过刚刚介绍的注意力机制计算得到当前时间步的背景向量。由于解码器的输入来自输出语言的词索引，我们将输入通过词嵌入层得到表征，然后和背景向量在特征维连结。我们将连结后的结果与上一时间步的隐状态通过门控循环单元计算出当前时间步的输出与隐状态。最后，我们将输出通过全连接层变换为有关各个输出词的预测，形状为(批量大小, 输出词典大小)。
+在解碼器的前向計算中，我們先透過剛剛介紹的注意力機制計算得到當前時間步的背景向量。由於解碼器的輸入來自輸出語言的詞索引，我們將輸入透過詞嵌入層得到表徵，然後和背景向量在特徵維連結。我們將連結後的結果與上一時間步的隱狀態透過門控迴圈單元計算出當前時間步的輸出與隱狀態。最後，我們將輸出透過全連線層變換為有關各個輸出詞的預測，形狀為(批次大小, 輸出詞典大小)。
 
 ```{.python .input  n=170}
 class Decoder(nn.Block):
@@ -159,48 +159,48 @@ class Decoder(nn.Block):
         self.out = nn.Dense(vocab_size, flatten=False)
 
     def forward(self, cur_input, state, enc_states):
-        # 使用注意力机制计算背景向量
+        # 使用注意力機制計算背景向量
         c = attention_forward(self.attention, enc_states, state[0][-1])
-        # 将嵌入后的输入和背景向量在特征维连结
+        # 將嵌入後的輸入和背景向量在特徵維連結
         input_and_c = nd.concat(self.embedding(cur_input), c, dim=1)
-        # 为输入和背景向量的连结增加时间步维，时间步个数为1
+        # 為輸入和背景向量的連結增加時間步維，時間步個數為1
         output, state = self.rnn(input_and_c.expand_dims(0), state)
-        # 移除时间步维，输出形状为(批量大小, 输出词典大小)
+        # 移除時間步維，輸出形狀為(批次大小, 輸出詞典大小)
         output = self.out(output).squeeze(axis=0)
         return output, state
 
     def begin_state(self, enc_state):
-        # 直接将编码器最终时间步的隐状态作为解码器的初始隐状态
+        # 直接將編碼器最終時間步的隱狀態作為解碼器的初始隱狀態
         return enc_state
 ```
 
-## 训练模型
+## 訓練模型
 
-我们先实现`batch_loss`函数计算一个小批量的损失。解码器在最初时间步的输入是特殊字符`BOS`。之后，解码器在某时间步的输入为样本输出序列在上一时间步的词，即强制教学。此外，同[“word2vec的实现”](word2vec-gluon.md)一节中的实现一样，我们在这里也使用掩码变量避免填充项对损失函数计算的影响。
+我們先實現`batch_loss`函式計算一個小批次的損失。解碼器在最初時間步的輸入是特殊字元`BOS`。之後，解碼器在某時間步的輸入為樣本輸出序列在上一時間步的詞，即強制教學。此外，同[『word2vec的實現』](word2vec-gluon.md)一節中的實現一樣，我們在這裡也使用掩碼變數避免填充項對損失函式計算的影響。
 
 ```{.python .input}
 def batch_loss(encoder, decoder, X, Y, loss):
     batch_size = X.shape[0]
     enc_state = encoder.begin_state(batch_size=batch_size)
     enc_outputs, enc_state = encoder(X, enc_state)
-    # 初始化解码器的隐状态
+    # 初始化解碼器的隱狀態
     dec_state = decoder.begin_state(enc_state)
-    # 解码器在最初时间步的输入是BOS
+    # 解碼器在最初時間步的輸入是BOS
     dec_input = nd.array([out_vocab.token_to_idx[BOS]] * batch_size)
-    # 我们将使用掩码变量mask来忽略掉标签为填充项PAD的损失
+    # 我們將使用掩碼變數mask來忽略掉標籤為填充項PAD的損失
     mask, num_not_pad_tokens = nd.ones(shape=(batch_size,)), 0
     l = nd.array([0])
     for y in Y.T:
         dec_output, dec_state = decoder(dec_input, dec_state, enc_outputs)
         l = l + (mask * loss(dec_output, y)).sum()
-        dec_input = y  # 使用强制教学
+        dec_input = y  # 使用強制教學
         num_not_pad_tokens += mask.sum().asscalar()
-        # 当遇到EOS时，序列后面的词将均为PAD，相应位置的掩码设成0
+        # 當遇到EOS時，序列後面的詞將均為PAD，相應位置的掩碼設成0
         mask = mask * (y != out_vocab.token_to_idx[EOS])
     return l / num_not_pad_tokens
 ```
 
-在训练函数中，我们需要同时迭代编码器和解码器的模型参数。
+在訓練函式中，我們需要同時迭代編碼器和解碼器的模型引數。
 
 ```{.python .input  n=188}
 def train(encoder, decoder, dataset, lr, batch_size, num_epochs):
@@ -225,7 +225,7 @@ def train(encoder, decoder, dataset, lr, batch_size, num_epochs):
             print("epoch %d, loss %.3f" % (epoch + 1, l_sum / len(data_iter)))
 ```
 
-接下来，创建模型实例并设置超参数。然后，我们就可以训练模型了。
+接下來，建立模型實例並設定超引數。然後，我們就可以訓練模型了。
 
 ```{.python .input}
 embed_size, num_hiddens, num_layers = 64, 64, 2
@@ -237,9 +237,9 @@ decoder = Decoder(len(out_vocab), embed_size, num_hiddens, num_layers,
 train(encoder, decoder, dataset, lr, batch_size, num_epochs)
 ```
 
-## 预测不定长的序列
+## 預測不定長的序列
 
-在[“束搜索”](beam-search.md)一节中我们介绍了3种方法来生成解码器在每个时间步的输出。这里我们实现最简单的贪婪搜索。
+在[『束搜尋』](beam-search.md)一節中我們介紹了3種方法來生成解碼器在每個時間步的輸出。這裡我們實現最簡單的貪婪搜尋。
 
 ```{.python .input  n=177}
 def translate(encoder, decoder, input_seq, max_seq_len):
@@ -255,7 +255,7 @@ def translate(encoder, decoder, input_seq, max_seq_len):
         dec_output, dec_state = decoder(dec_input, dec_state, enc_output)
         pred = dec_output.argmax(axis=1)
         pred_token = out_vocab.idx_to_token[int(pred.asscalar())]
-        if pred_token == EOS:  # 当任一时间步搜索出EOS时，输出序列即完成
+        if pred_token == EOS:  # 當任一時間步搜尋出EOS時，輸出序列即完成
             break
         else:
             output_tokens.append(pred_token)
@@ -263,26 +263,26 @@ def translate(encoder, decoder, input_seq, max_seq_len):
     return output_tokens
 ```
 
-简单测试一下模型。输入法语句子“ils regardent.”，翻译后的英语句子应该是“they are watching.”。
+簡單測試一下模型。輸入法語句子『ils regardent.』，翻譯後的英語句子應該是『they are watching.』。
 
 ```{.python .input}
 input_seq = 'ils regardent .'
 translate(encoder, decoder, input_seq, max_seq_len)
 ```
 
-## 评价翻译结果
+## 評價翻譯結果
 
-评价机器翻译结果通常使用BLEU（Bilingual Evaluation Understudy）[1]。对于模型预测序列中任意的子序列，BLEU考察这个子序列是否出现在标签序列中。
+評價機器翻譯結果通常使用BLEU（Bilingual Evaluation Understudy）[1]。對於模型預測序列中任意的子序列，BLEU考察這個子序列是否出現在標籤序列中。
 
-具体来说，设词数为$n$的子序列的精度为$p_n$。它是预测序列与标签序列匹配词数为$n$的子序列的数量与预测序列中词数为$n$的子序列的数量之比。举个例子，假设标签序列为$A$、$B$、$C$、$D$、$E$、$F$，预测序列为$A$、$B$、$B$、$C$、$D$，那么$p_1 = 4/5,\ p_2 = 3/4,\ p_3 = 1/3,\ p_4 = 0$。设$len_{\text{label}}$和$len_{\text{pred}}$分别为标签序列和预测序列的词数，那么，BLEU的定义为
+具體來說，設詞數為$n$的子序列的精度為$p_n$。它是預測序列與標籤序列對應詞數為$n$的子序列的數量與預測序列中詞數為$n$的子序列的數量之比。舉個例子，假設標籤序列為$A$、$B$、$C$、$D$、$E$、$F$，預測序列為$A$、$B$、$B$、$C$、$D$，那麼$p_1 = 4/5,\ p_2 = 3/4,\ p_3 = 1/3,\ p_4 = 0$。設$len_{\text{label}}$和$len_{\text{pred}}$分別為標籤序列和預測序列的詞數，那麼，BLEU的定義為
 
 $$ \exp\left(\min\left(0, 1 - \frac{len_{\text{label}}}{len_{\text{pred}}}\right)\right) \prod_{n=1}^k p_n^{1/2^n},$$
 
-其中$k$是我们希望匹配的子序列的最大词数。可以看到当预测序列和标签序列完全一致时，BLEU为1。
+其中$k$是我們希望對應的子序列的最大詞數。可以看到當預測序列和標籤序列完全一致時，BLEU為1。
 
-因为匹配较长子序列比匹配较短子序列更难，BLEU对匹配较长子序列的精度赋予了更大权重。例如，当$p_n$固定在0.5时，随着$n$的增大，$0.5^{1/2} \approx 0.7, 0.5^{1/4} \approx 0.84, 0.5^{1/8} \approx 0.92, 0.5^{1/16} \approx 0.96$。另外，模型预测较短序列往往会得到较高$p_n$值。因此，上式中连乘项前面的系数是为了惩罚较短的输出而设的。举个例子，当$k=2$时，假设标签序列为$A$、$B$、$C$、$D$、$E$、$F$，而预测序列为$A$、$B$。虽然$p_1 = p_2 = 1$，但惩罚系数$\exp(1-6/2) \approx 0.14$，因此BLEU也接近0.14。
+因為對應較長子序列比對應較短子序列更難，BLEU對對應較長子序列的精度賦予了更大權重。例如，當$p_n$固定在0.5時，隨著$n$的增大，$0.5^{1/2} \approx 0.7, 0.5^{1/4} \approx 0.84, 0.5^{1/8} \approx 0.92, 0.5^{1/16} \approx 0.96$。另外，模型預測較短序列往往會得到較高$p_n$值。因此，上式中連乘項前面的係數是為了懲罰較短的輸出而設的。舉個例子，當$k=2$時，假設標籤序列為$A$、$B$、$C$、$D$、$E$、$F$，而預測序列為$A$、$B$。雖然$p_1 = p_2 = 1$，但懲罰係數$\exp(1-6/2) \approx 0.14$，因此BLEU也接近0.14。
 
-下面来实现BLEU的计算。
+下面來實現BLEU的計算。
 
 ```{.python .input}
 def bleu(pred_tokens, label_tokens, k):
@@ -300,7 +300,7 @@ def bleu(pred_tokens, label_tokens, k):
     return score
 ```
 
-接下来，定义一个辅助打印函数。
+接下來，定義一個輔助列印函式。
 
 ```{.python .input}
 def score(input_seq, label_seq, k):
@@ -310,33 +310,33 @@ def score(input_seq, label_seq, k):
                                       ' '.join(pred_tokens)))
 ```
 
-预测正确则分数为1。
+預測正確則分數為1。
 
 ```{.python .input}
 score('ils regardent .', 'they are watching .', k=2)
 ```
 
-测试一个不在训练集中的样本。
+測試一個不在訓練集中的樣本。
 
 ```{.python .input}
 score('ils sont canadiens .', 'they are canadian .', k=2)
 ```
 
-## 小结
+## 小結
 
-* 可以将编码器—解码器和注意力机制应用于机器翻译中。
-* BLEU可以用来评价翻译结果。
+* 可以將編碼器—解碼器和注意力機制應用於機器翻譯中。
+* BLEU可以用來評價翻譯結果。
 
-## 练习
+## 練習
 
-* 如果编码器和解码器的隐藏单元个数不同或隐藏层个数不同，该如何改进解码器的隐状态的初始化方法？
-* 在训练中，将强制教学替换为使用解码器在上一时间步的输出作为解码器在当前时间步的输入，结果有什么变化吗？
-* 试着使用更大的翻译数据集来训练模型，如WMT [2] 和Tatoeba Project [3]。
-
-
+* 如果編碼器和解碼器的隱藏單元個數不同或隱藏層個數不同，該如何改進解碼器的隱狀態的初始化方法？
+* 在訓練中，將強制教學替換為使用解碼器在上一時間步的輸出作為解碼器在當前時間步的輸入，結果有什麼變化嗎？
+* 試著使用更大的翻譯資料集來訓練模型，如WMT [2] 和Tatoeba Project [3]。
 
 
-## 参考文献
+
+
+## 參考文獻
 
 [1] Papineni, K., Roukos, S., Ward, T., & Zhu, W. J. (2002, July). BLEU: a method for automatic evaluation of machine translation. In Proceedings of the 40th annual meeting on association for computational linguistics (pp. 311-318). Association for Computational Linguistics.
 
@@ -344,6 +344,6 @@ score('ils sont canadiens .', 'they are canadian .', k=2)
 
 [3] Tatoeba Project. http://www.manythings.org/anki/
 
-## 扫码直达[讨论区](https://discuss.gluon.ai/t/topic/4689)
+## 掃碼直達[討論區](https://discuss.gluon.ai/t/topic/4689)
 
 ![](../img/qr_machine-translation.svg)

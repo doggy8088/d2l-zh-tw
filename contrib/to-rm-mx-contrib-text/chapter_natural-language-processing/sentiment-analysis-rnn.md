@@ -1,10 +1,10 @@
-# 文本情感分类：使用循环神经网络
+# 文字情感分類：使用迴圈神經網路
 
-文本分类是自然语言处理的一个常见任务，它把一段不定长的文本序列变换为文本的类别。本节关注它的一个子问题：使用文本情感分类来分析文本作者的情绪。这个问题也叫情感分析（sentiment analysis），并有着广泛的应用。例如，我们可以分析用户对产品的评论并统计用户的满意度，或者分析用户对市场行情的情绪并用以预测接下来的行情。
+文字分類是自然語言處理的一個常見任務，它把一段不定長的文字序列變換為文字的類別。本節關注它的一個子問題：使用文字情感分類來分析文字作者的情緒。這個問題也叫情感分析（sentiment analysis），並有著廣泛的應用。例如，我們可以分析使用者對產品的評論並統計使用者的滿意度，或者分析使用者對市場行情的情緒並用以預測接下來的行情。
 
-同求近义词和类比词一样，文本分类也属于词嵌入的下游应用。本节将应用预训练的词向量和含多个隐藏层的双向循环神经网络，来判断一段不定长的文本序列中包含的是正面还是负面的情绪。
+同求近義詞和類比詞一樣，文字分類也屬於詞嵌入的下游應用。本節將應用預訓練的詞向量和含多個隱藏層的雙向迴圈神經網路，來判斷一段不定長的文字序列中包含的是正面還是負面的情緒。
 
-在实验开始前，导入所需的包或模块。
+在實驗開始前，匯入所需的套件或模組。
 
 ```{.python .input  n=1}
 import collections
@@ -17,16 +17,16 @@ import random
 import tarfile
 ```
 
-## 文本情感分类数据集
+## 文字情感分類資料集
 
-我们使用斯坦福的IMDb数据集（Stanford's Large Movie Review Dataset）作为文本情感分类的数据集 [1]。这个数据集分为训练和测试用的两个数据集，分别包含25,000条从IMDb下载的关于电影的评论。在每个数据集中，标签为“正面”和“负面”的评论数量相等。
+我們使用斯坦福的IMDb資料集（Stanford's Large Movie Review Dataset）作為文字情感分類的資料集 [1]。這個資料集分為訓練和測試用的兩個資料集，分別包含25,000條從IMDb下載的關於電影的評論。在每個資料集中，標籤為『正面』和『負面』的評論數量相等。
 
-###  读取数据集
+###  讀取資料集
 
-首先下载这个数据集到`../data`路径下，然后解压至`../data/aclImdb`路径下。
+首先下載這個資料集到`../data`路徑下，然後解壓至`../data/aclImdb`路徑下。
 
 ```{.python .input  n=3}
-# 本函数已保存在d2lzh包中方便以后使用
+# 本函式已儲存在d2lzh套件中方便以後使用
 def download_imdb(data_dir='../data'):
     url = ('http://ai.stanford.edu/~amaas/data/sentiment/aclImdb_v1.tar.gz')
     sha1 = '01ada507287d82875905620988597833ad4e0903'
@@ -37,10 +37,10 @@ def download_imdb(data_dir='../data'):
 download_imdb()
 ```
 
-接下来，读取训练数据集和测试数据集。每个样本是一条评论及其对应的标签：1表示“正面”，0表示“负面”。
+接下來，讀取訓練資料集和測試資料集。每個樣本是一條評論及其對應的標籤：1表示『正面』，0表示『負面』。
 
 ```{.python .input  n=13}
-def read_imdb(folder='train'):  # 本函数已保存在d2lzh包中方便以后使用
+def read_imdb(folder='train'):  # 本函式已儲存在d2lzh套件中方便以後使用
     data = []
     for label in ['pos', 'neg']:
         folder_name = os.path.join('../data/aclImdb/', folder, label)
@@ -54,21 +54,21 @@ def read_imdb(folder='train'):  # 本函数已保存在d2lzh包中方便以后�
 train_data, test_data = read_imdb('train'), read_imdb('test')
 ```
 
-### 预处理数据集
+### 預處理資料集
 
-我们需要对每条评论做分词，从而得到分好词的评论。这里定义的`get_tokenized_imdb`函数使用最简单的方法：基于空格进行分词。
+我們需要對每條評論做分詞，從而得到分好詞的評論。這裡定義的`get_tokenized_imdb`函式使用最簡單的方法：基於空格進行分詞。
 
 ```{.python .input  n=14}
-def get_tokenized_imdb(data):  # 本函数已保存在d2lzh包中方便以后使用
+def get_tokenized_imdb(data):  # 本函式已儲存在d2lzh套件中方便以後使用
     def tokenizer(text):
         return [tok.lower() for tok in text.split(' ')]
     return [tokenizer(review) for review, _ in data]
 ```
 
-现在，我们可以根据分好词的训练数据集来创建词典了。我们在这里过滤掉了出现次数少于5的词。
+現在，我們可以根據分好詞的訓練資料集來建立詞典了。我們在這裡過濾掉了出現次數少於5的詞。
 
 ```{.python .input  n=28}
-def get_vocab_imdb(data):  # 本函数已保存在d2lzh包中方便以后使用
+def get_vocab_imdb(data):  # 本函式已儲存在d2lzh套件中方便以後使用
     tokenized_data = get_tokenized_imdb(data)
     counter = collections.Counter([tk for st in tokenized_data for tk in st])
     return text.vocab.Vocabulary(counter, min_freq=5,
@@ -78,11 +78,11 @@ vocab = get_vocab_imdb(train_data)
 '# words in vocab:', len(vocab)
 ```
 
-因为每条评论长度不一致所以不能直接组合成小批量，我们定义`preprocess_imdb`函数对每条评论进行分词，并通过词典转换成词索引，然后通过截断或者补“&lt;pad&gt;”（padding）符号来将每条评论长度固定成500。
+因為每條評論長度不一致所以不能直接組合成小批次，我們定義`preprocess_imdb`函式對每條評論進行分詞，並透過詞典轉換成詞索引，然後透過截斷或者補『&lt;pad&gt;』（padding）符號來將每條評論長度固定成500。
 
 ```{.python .input  n=44}
-def preprocess_imdb(data, vocab):  # 本函数已保存在d2lzh包中方便以后使用
-    max_l = 500  # 将每条评论通过截断或者补'<pad>'，使得长度变成500
+def preprocess_imdb(data, vocab):  # 本函式已儲存在d2lzh套件中方便以後使用
+    max_l = 500  # 將每條評論透過截斷或者補'<pad>'，使得長度變成500
 
     def pad(x):
         return x[:max_l] if len(x) > max_l else x + [
@@ -94,9 +94,9 @@ def preprocess_imdb(data, vocab):  # 本函数已保存在d2lzh包中方便以�
     return features, labels
 ```
 
-### 创建数据迭代器
+### 建立資料迭代器
 
-现在，我们创建数据迭代器。每次迭代将返回一个小批量的数据。
+現在，我們建立資料迭代器。每次迭代將回傳一個小批次的資料。
 
 ```{.python .input}
 batch_size = 64
@@ -106,7 +106,7 @@ train_iter = gdata.DataLoader(train_set, batch_size, shuffle=True)
 test_iter = gdata.DataLoader(test_set, batch_size)
 ```
 
-打印第一个小批量数据的形状以及训练集中小批量的个数。
+列印第一個小批次資料的形狀以及訓練集中小批次的個數。
 
 ```{.python .input}
 for X, y in train_iter:
@@ -115,35 +115,35 @@ for X, y in train_iter:
 '#batches:', len(train_iter)
 ```
 
-## 使用循环神经网络的模型
+## 使用迴圈神經網路的模型
 
-在这个模型中，每个词先通过嵌入层得到特征向量。然后，我们使用双向循环神经网络对特征序列进一步编码得到序列信息。最后，我们将编码的序列信息通过全连接层变换为输出。具体来说，我们可以将双向长短期记忆在最初时间步和最终时间步的隐状态连结，作为特征序列的表征传递给输出层分类。在下面实现的`BiRNN`类中，`Embedding`实例即嵌入层，`LSTM`实例即为序列编码的隐藏层，`Dense`实例即生成分类结果的输出层。
+在這個模型中，每個詞先透過嵌入層得到特徵向量。然後，我們使用雙向迴圈神經網路對特徵序列進一步編碼得到序列訊息。最後，我們將編碼的序列訊息透過全連線層變換為輸出。具體來說，我們可以將雙向長短期記憶在最初時間步和最終時間步的隱狀態連結，作為特徵序列的表徵傳遞給輸出層分類。在下面實現的`BiRNN`類別中，`Embedding`實例即嵌入層，`LSTM`實例即為序列編碼的隱藏層，`Dense`實例即生成分類結果的輸出層。
 
 ```{.python .input  n=46}
 class BiRNN(nn.Block):
     def __init__(self, vocab, embed_size, num_hiddens, num_layers, **kwargs):
         super(BiRNN, self).__init__(**kwargs)
         self.embedding = nn.Embedding(len(vocab), embed_size)
-        # bidirectional设为True即得到双向循环神经网络
+        # bidirectional設為True即得到雙向迴圈神經網路
         self.encoder = rnn.LSTM(num_hiddens, num_layers=num_layers,
                                 bidirectional=True, input_size=embed_size)
         self.decoder = nn.Dense(2)
 
     def forward(self, inputs):
-        # inputs的形状是(批量大小, 词数)，因为LSTM需要将序列作为第一维，所以将输入转置后
-        # 再提取词特征，输出形状为(词数, 批量大小, 词向量维度)
+        # inputs的形狀是(批次大小, 詞數)，因為LSTM需要將序列作為第一維，所以將輸入轉置後
+        # 再提取詞特徵，輸出形狀為(詞數, 批次大小, 詞向量維度)
         embeddings = self.embedding(inputs.T)
-        # rnn.LSTM只传入输入embeddings，因此只返回最后一层的隐藏层在各时间步的隐状态。
-        # outputs形状是(词数, 批量大小, 2 * 隐藏单元个数)
+        # rnn.LSTM只傳入輸入embeddings，因此只回傳最後一層的隱藏層在各時間步的隱狀態。
+        # outputs形狀是(詞數, 批次大小, 2 * 隱藏單元個數)
         outputs = self.encoder(embeddings)
-        # 连结初始时间步和最终时间步的隐状态作为全连接层输入。它的形状为
-        # (批量大小, 4 * 隐藏单元个数)。
+        # 連結初始時間步和最終時間步的隱狀態作為全連線層輸入。它的形狀為
+        # (批次大小, 4 * 隱藏單元個數)。
         encoding = nd.concat(outputs[0], outputs[-1])
         outs = self.decoder(encoding)
         return outs
 ```
 
-创建一个含两个隐藏层的双向循环神经网络。
+建立一個含兩個隱藏層的雙向迴圈神經網路。
 
 ```{.python .input}
 embed_size, num_hiddens, num_layers, ctx = 100, 100, 2, d2l.try_all_gpus()
@@ -151,25 +151,25 @@ net = BiRNN(vocab, embed_size, num_hiddens, num_layers)
 net.initialize(init.Xavier(), ctx=ctx)
 ```
 
-### 加载预训练的词向量
+### 載入預訓練的詞向量
 
-由于情感分类的训练数据集并不是很大，为应对过拟合，我们将直接使用在更大规模语料上预训练的词向量作为每个词的特征向量。这里，我们为词典`vocab`中的每个词加载100维的GloVe词向量。
+由於情感分類的訓練資料集並不是很大，為應對過擬合，我們將直接使用在更大規模語料上預訓練的詞向量作為每個詞的特徵向量。這裡，我們為詞典`vocab`中的每個詞載入100維的GloVe詞向量。
 
 ```{.python .input  n=45}
 glove_embedding = text.embedding.create(
     'glove', pretrained_file_name='glove.6B.100d.txt', vocabulary=vocab)
 ```
 
-然后，我们将用这些词向量作为评论中每个词的特征向量。注意，预训练词向量的维度需要与创建的模型中的嵌入层输出大小`embed_size`一致。此外，在训练中我们不再更新这些词向量。
+然後，我們將用這些詞向量作為評論中每個詞的特徵向量。注意，預訓練詞向量的維度需要與建立的模型中的嵌入層輸出大小`embed_size`一致。此外，在訓練中我們不再更新這些詞向量。
 
 ```{.python .input  n=47}
 net.embedding.weight.set_data(glove_embedding.idx_to_vec)
 net.embedding.collect_params().setattr('grad_req', 'null')
 ```
 
-### 训练模型
+### 訓練模型
 
-这时候就可以开始训练模型了。
+這時候就可以開始訓練模型了。
 
 ```{.python .input  n=48}
 lr, num_epochs = 0.01, 5
@@ -178,17 +178,17 @@ loss = gloss.SoftmaxCrossEntropyLoss()
 d2l.train(train_iter, test_iter, net, loss, trainer, ctx, num_epochs)
 ```
 
-最后，定义预测函数。
+最後，定義預測函式。
 
 ```{.python .input  n=49}
-# 本函数已保存在d2lzh包中方便以后使用
+# 本函式已儲存在d2lzh套件中方便以後使用
 def predict_sentiment(net, vocab, sentence):
     sentence = nd.array(vocab.to_indices(sentence), ctx=d2l.try_gpu())
     label = nd.argmax(net(sentence.reshape((1, -1))), axis=1)
     return 'positive' if label.asscalar() == 1 else 'negative'
 ```
 
-下面使用训练好的模型对两个简单句子的情感进行分类。
+下面使用訓練好的模型對兩個簡單句子的情感進行分類。
 
 ```{.python .input  n=50}
 predict_sentiment(net, vocab, ['this', 'movie', 'is', 'so', 'great'])
@@ -198,29 +198,29 @@ predict_sentiment(net, vocab, ['this', 'movie', 'is', 'so', 'great'])
 predict_sentiment(net, vocab, ['this', 'movie', 'is', 'so', 'bad'])
 ```
 
-## 小结
+## 小結
 
-* 文本分类把一段不定长的文本序列变换为文本的类别。它属于词嵌入的下游应用。
-* 可以应用预训练的词向量和循环神经网络对文本的情感进行分类。
-
-
-## 练习
-
-* 增加迭代周期。训练后的模型能在训练和测试数据集上得到怎样的精度？再调节其他超参数试试？
-
-* 使用更大的预训练词向量，如300维的GloVe词向量，能否提升分类精度？
-
-* 使用spaCy分词工具，能否提升分类精度？你需要安装spaCy（`pip install spacy`），并且安装英文包（`python -m spacy download en`）。在代码中，先导入spaCy（`import spacy`）。然后加载spaCy英文包（`spacy_en = spacy.load('en')`）。最后定义函数`def tokenizer(text): return [tok.text for tok in spacy_en.tokenizer(text)]`并替换原来的基于空格分词的`tokenizer`函数。需要注意的是，GloVe词向量对于名词词组的存储方式是用“-”连接各个单词，例如，词组“new york”在GloVe词向量中的表示为“new-york”，而使用spaCy分词之后“new york”的存储可能是“new york”。
+* 文字分類把一段不定長的文字序列變換為文字的類別。它屬於詞嵌入的下游應用。
+* 可以應用預訓練的詞向量和迴圈神經網路對文字的情感進行分類。
 
 
+## 練習
+
+* 增加迭代週期。訓練後的模型能在訓練和測試資料集上得到怎樣的精度？再調節其他超引數試試？
+
+* 使用更大的預訓練詞向量，如300維的GloVe詞向量，能否提升分類精度？
+
+* 使用spaCy分詞工具，能否提升分類精度？你需要安裝spaCy（`pip install spacy`），並且安裝英文套件（`python -m spacy download en`）。在程式碼中，先導入spaCy（`import spacy`）。然後載入spaCy英文套件（`spacy_en = spacy.load('en')`）。最後定義函式`def tokenizer(text): return [tok.text for tok in spacy_en.tokenizer(text)]`並替換原來的基於空格分詞的`tokenizer`函式。需要注意的是，GloVe詞向量對於名詞片語的儲存方式是用『-』連線各個單詞，例如，片語『new york』在GloVe詞向量中的表示為『new-york』，而使用spaCy分詞之後『new york』的儲存可能是『new york』。
 
 
 
 
-## 参考文献
+
+
+## 參考文獻
 
 [1] Maas, A. L., Daly, R. E., Pham, P. T., Huang, D., Ng, A. Y., & Potts, C. (2011, June). Learning word vectors for sentiment analysis. In Proceedings of the 49th annual meeting of the association for computational linguistics: Human language technologies-volume 1 (pp. 142-150). Association for Computational Linguistics.
 
-## 扫码直达[讨论区](https://discuss.gluon.ai/t/topic/6155)
+## 掃碼直達[討論區](https://discuss.gluon.ai/t/topic/6155)
 
 ![](../img/qr_sentiment-analysis.svg)

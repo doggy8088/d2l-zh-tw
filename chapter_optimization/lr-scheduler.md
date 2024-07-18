@@ -1,23 +1,23 @@
-# 学习率调度器
+# 學習率排程器
 :label:`sec_scheduler`
 
-到目前为止，我们主要关注如何更新权重向量的优化算法，而不是它们的更新速率。
-然而，调整学习率通常与实际算法同样重要，有如下几方面需要考虑：
+到目前為止，我們主要關注如何更新權重向量的最佳化演算法，而不是它們的更新速率。
+然而，調整學習率通常與實際演算法同樣重要，有如下幾方面需要考慮：
 
-* 首先，学习率的大小很重要。如果它太大，优化就会发散；如果它太小，训练就会需要过长时间，或者我们最终只能得到次优的结果。我们之前看到问题的条件数很重要（有关详细信息，请参见 :numref:`sec_momentum`）。直观地说，这是最不敏感与最敏感方向的变化量的比率。
-* 其次，衰减速率同样很重要。如果学习率持续过高，我们可能最终会在最小值附近弹跳，从而无法达到最优解。 :numref:`sec_minibatch_sgd`比较详细地讨论了这一点，在 :numref:`sec_sgd`中我们则分析了性能保证。简而言之，我们希望速率衰减，但要比$\mathcal{O}(t^{-\frac{1}{2}})$慢，这样能成为解决凸问题的不错选择。
-* 另一个同样重要的方面是初始化。这既涉及参数最初的设置方式（详情请参阅 :numref:`sec_numerical_stability`），又关系到它们最初的演变方式。这被戏称为*预热*（warmup），即我们最初开始向着解决方案迈进的速度有多快。一开始的大步可能没有好处，特别是因为最初的参数集是随机的。最初的更新方向可能也是毫无意义的。
-* 最后，还有许多优化变体可以执行周期性学习率调整。这超出了本章的范围，我们建议读者阅读 :cite:`Izmailov.Podoprikhin.Garipov.ea.2018`来了解个中细节。例如，如何通过对整个路径参数求平均值来获得更好的解。
+* 首先，學習率的大小很重要。如果它太大，最佳化就會發散；如果它太小，訓練就會需要過長時間，或者我們最終只能得到次優的結果。我們之前看到問題的條件數很重要（有關詳細訊息，請參見 :numref:`sec_momentum`）。直觀地說，這是最不敏感與最敏感方向的變化量的比率。
+* 其次，衰減速率同樣很重要。如果學習率持續過高，我們可能最終會在最小值附近彈跳，從而無法達到最優解。 :numref:`sec_minibatch_sgd`比較詳細地討論了這一點，在 :numref:`sec_sgd`中我們則分析了效能保證。簡而言之，我們希望速率衰減，但要比$\mathcal{O}(t^{-\frac{1}{2}})$慢，這樣能成為解決凸問題的不錯選擇。
+* 另一個同樣重要的方面是初始化。這既涉及引數最初的設定方式（詳情請參閱 :numref:`sec_numerical_stability`），又關係到它們最初的演變方式。這被戲稱為*預熱*（warmup），即我們最初開始向著解決方案邁進的速度有多快。一開始的大步可能沒有好處，特別是因為最初的引數集是隨機的。最初的更新方向可能也是毫無意義的。
+* 最後，還有許多最佳化變體可以執行週期性學習率調整。這超出了本章的範圍，我們建議讀者閱讀 :cite:`Izmailov.Podoprikhin.Garipov.ea.2018`來了解個中細節。例如，如何透過對整個路徑引數求平均值來獲得更好的解。
 
-鉴于管理学习率需要很多细节，因此大多数深度学习框架都有自动应对这个问题的工具。
-在本章中，我们将梳理不同的调度策略对准确性的影响，并展示如何通过*学习率调度器*（learning rate scheduler）来有效管理。
+鑑於管理學習率需要很多細節，因此大多數深度學習框架都有自動應對這個問題的工具。
+在本章中，我們將梳理不同的排程策略對準確性的影響，並展示如何透過*學習率排程器*（learning rate scheduler）來有效管理。
 
-## 一个简单的问题
+## 一個簡單的問題
 
-我们从一个简单的问题开始，这个问题可以轻松计算，但足以说明要义。
-为此，我们选择了一个稍微现代化的LeNet版本（激活函数使用`relu`而不是`sigmoid`，汇聚层使用最大汇聚层而不是平均汇聚层），并应用于Fashion-MNIST数据集。
-此外，我们混合网络以提高性能。
-由于大多数代码都是标准的，我们只介绍基础知识，而不做进一步的详细讨论。如果需要，请参阅 :numref:`chap_cnn`进行复习。
+我們從一個簡單的問題開始，這個問題可以輕鬆計算，但足以說明要義。
+為此，我們選擇了一個稍微現代化的LeNet版本（啟用函式使用`relu`而不是`sigmoid`，彙聚層使用最大彙聚層而不是平均彙聚層），並應用於Fashion-MNIST資料集。
+此外，我們混合網路以提高效能。
+由於大多數程式碼都是標準的，我們只介紹基礎知識，而不做進一步的詳細討論。如果需要，請參閱 :numref:`chap_cnn`進行複習。
 
 ```{.python .input}
 %matplotlib inline
@@ -41,7 +41,7 @@ device = d2l.try_gpu()
 batch_size = 256
 train_iter, test_iter = d2l.load_data_fashion_mnist(batch_size=batch_size)
 
-# 代码几乎与d2l.train_ch6定义在卷积神经网络一章LeNet一节中的相同
+# 程式碼幾乎與d2l.train_ch6定義在卷積神經網路一章LeNet一節中的相同
 def train(net, train_iter, test_iter, num_epochs, loss, trainer, device):
     net.initialize(force_reinit=True, ctx=device, init=init.Xavier())
     animator = d2l.Animator(xlabel='epoch', xlim=[0, num_epochs],
@@ -95,7 +95,7 @@ device = d2l.try_gpu()
 batch_size = 256
 train_iter, test_iter = d2l.load_data_fashion_mnist(batch_size=batch_size)
 
-# 代码几乎与d2l.train_ch6定义在卷积神经网络一章LeNet一节中的相同
+# 程式碼幾乎與d2l.train_ch6定義在卷積神經網路一章LeNet一節中的相同
 def train(net, train_iter, test_iter, num_epochs, loss, trainer, device,
           scheduler=None):
     net.to(device)
@@ -161,7 +161,7 @@ def net():
 batch_size = 256
 train_iter, test_iter = d2l.load_data_fashion_mnist(batch_size=batch_size)
 
-# 代码几乎与d2l.train_ch6定义在卷积神经网络一章LeNet一节中的相同
+# 程式碼幾乎與d2l.train_ch6定義在卷積神經網路一章LeNet一節中的相同
 def train(net_fn, train_iter, test_iter, num_epochs, lr,
               device=d2l.try_gpu(), custom_callback = False):
     device_name = device._device_name
@@ -212,7 +212,7 @@ device = d2l.try_gpu()
 batch_size = 256
 train_iter, test_iter = d2l.load_data_fashion_mnist(batch_size=batch_size)
 
-# 代码几乎与d2l.train_ch6定义在卷积神经网络一章LeNet一节中的相同
+# 程式碼幾乎與d2l.train_ch6定義在卷積神經網路一章LeNet一節中的相同
 def train(net, train_iter, test_iter, num_epochs, loss, trainer, device,
           scheduler=None):
     animator = d2l.Animator(xlabel='epoch', xlim=[0, num_epochs],
@@ -248,10 +248,10 @@ def train(net, train_iter, test_iter, num_epochs, loss, trainer, device,
     print(f'train loss {train_loss:.3f}, train acc {train_acc:.3f}, 'f'test acc {test_acc:.3f}')
 ```
 
-让我们来看看如果使用默认设置，调用此算法会发生什么。
-例如设学习率为$0.3$并训练$30$次迭代。
-留意在超过了某点、测试准确度方面的进展停滞时，训练准确度将如何继续提高。
-两条曲线之间的间隙表示过拟合。
+讓我們來看看如果使用預設設定，呼叫此演算法會發生什麼。
+例如設學習率為$0.3$並訓練$30$次迭代。
+留意在超過了某點、測試準確度方面的進展停滯時，訓練準確度將如何繼續提高。
+兩條曲線之間的間隙表示過擬合。
 
 ```{.python .input}
 lr, num_epochs = 0.3, 30
@@ -282,10 +282,10 @@ trainer = paddle.optimizer.SGD(learning_rate=lr, parameters=net.parameters())
 train(net, train_iter, test_iter, num_epochs, loss, trainer, device)
 ```
 
-## 学习率调度器
+## 學習率排程器
 
-我们可以在每个迭代轮数（甚至在每个小批量）之后向下调整学习率。
-例如，以动态的方式来响应优化的进展情况。
+我們可以在每個迭代輪數（甚至在每個小批次）之後向下調整學習率。
+例如，以動態的方式來回應最佳化的進展情況。
 
 ```{.python .input}
 trainer.set_learning_rate(0.1)
@@ -314,9 +314,9 @@ trainer.set_lr(lr)
 print(f'learning rate is now {trainer.get_lr():.2f}')
 ```
 
-更通常而言，我们应该定义一个调度器。
-当调用更新次数时，它将返回学习率的适当值。
-让我们定义一个简单的方法，将学习率设置为$\eta = \eta_0 (t + 1)^{-\frac{1}{2}}$。
+更通常而言，我們應該定義一個排程器。
+當呼叫更新次數時，它將回傳學習率的適當值。
+讓我們定義一個簡單的方法，將學習率設定為$\eta = \eta_0 (t + 1)^{-\frac{1}{2}}$。
 
 ```{.python .input}
 #@tab all
@@ -328,7 +328,7 @@ class SquareRootScheduler:
         return self.lr * pow(num_update + 1.0, -0.5)
 ```
 
-让我们在一系列值上绘制它的行为。
+讓我們在一系列值上繪製它的行為。
 
 ```{.python .input}
 #@tab all
@@ -336,8 +336,8 @@ scheduler = SquareRootScheduler(lr=0.1)
 d2l.plot(d2l.arange(num_epochs), [scheduler(t) for t in range(num_epochs)])
 ```
 
-现在让我们来看看这对在Fashion-MNIST数据集上的训练有何影响。
-我们只是提供调度器作为训练算法的额外参数。
+現在讓我們來看看這對在Fashion-MNIST資料集上的訓練有何影響。
+我們只是提供排程器作為訓練演算法的額外引數。
 
 ```{.python .input}
 trainer = gluon.Trainer(net.collect_params(), 'sgd',
@@ -367,21 +367,21 @@ train(net, train_iter, test_iter, num_epochs, loss, trainer, device,
       scheduler)
 ```
 
-这比以前好一些：曲线比以前更加平滑，并且过拟合更小了。
-遗憾的是，关于为什么在理论上某些策略会导致较轻的过拟合，有一些观点认为，较小的步长将导致参数更接近零，因此更简单。
-但是，这并不能完全解释这种现象，因为我们并没有真正地提前停止，而只是轻柔地降低了学习率。
+這比以前好一些：曲線比以前更加平滑，並且過擬合更小了。
+遺憾的是，關於為什麼在理論上某些策略會導致較輕的過擬合，有一些觀點認為，較小的步長將導致引數更接近零，因此更簡單。
+但是，這並不能完全解釋這種現象，因為我們並沒有真正地提前停止，而只是輕柔地降低了學習率。
 
 ## 策略
 
-虽然我们不可能涵盖所有类型的学习率调度器，但我们会尝试在下面简要概述常用的策略：多项式衰减和分段常数表。
-此外，余弦学习率调度在实践中的一些问题上运行效果很好。
-在某些问题上，最好在使用较高的学习率之前预热优化器。
+雖然我們不可能涵蓋所有型別的學習率排程器，但我們會嘗試在下面簡要概述常用的策略：多項式衰減和分段常數表。
+此外，餘弦學習率排程在實踐中的一些問題上執行效果很好。
+在某些問題上，最好在使用較高的學習率之前預熱最佳化器。
 
-### 单因子调度器
+### 單因子排程器
 
-多项式衰减的一种替代方案是乘法衰减，即$\eta_{t+1} \leftarrow \eta_t \cdot \alpha$其中$\alpha \in (0, 1)$。
-为了防止学习率衰减到一个合理的下界之下，
-更新方程经常修改为$\eta_{t+1} \leftarrow \mathop{\mathrm{max}}(\eta_{\mathrm{min}}, \eta_t \cdot \alpha)$。
+多項式衰減的一種替代方案是乘法衰減，即$\eta_{t+1} \leftarrow \eta_t \cdot \alpha$其中$\alpha \in (0, 1)$。
+為了防止學習率衰減到一個合理的下界之下，
+更新方程經常修改為$\eta_{t+1} \leftarrow \mathop{\mathrm{max}}(\eta_{\mathrm{min}}, \eta_t \cdot \alpha)$。
 
 ```{.python .input}
 #@tab all
@@ -399,14 +399,14 @@ scheduler = FactorScheduler(factor=0.9, stop_factor_lr=1e-2, base_lr=2.0)
 d2l.plot(d2l.arange(50), [scheduler(t) for t in range(50)])
 ```
 
-接下来，我们将使用内置的调度器，但在这里仅解释它们的功能。
+接下來，我們將使用內建的排程器，但在這裡僅解釋它們的功能。
 
-### 多因子调度器
+### 多因子排程器
 
-训练深度网络的常见策略之一是保持学习率为一组分段的常量，并且不时地按给定的参数对学习率做乘法衰减。
-具体地说，给定一组降低学习率的时间点，例如$s = \{5, 10, 20\}$，
-每当$t \in s$时，降低$\eta_{t+1} \leftarrow \eta_t \cdot \alpha$。
-假设每步中的值减半，我们可以按如下方式实现这一点。
+訓練深度網路的常見策略之一是保持學習率為一組分段的常數，並且不時地按給定的引數對學習率做乘法衰減。
+具體地說，給定一組降低學習率的時間點，例如$s = \{5, 10, 20\}$，
+每當$t \in s$時，降低$\eta_{t+1} \leftarrow \eta_t \cdot \alpha$。
+假設每步中的值減半，我們可以按如下方式實現這一點。
 
 ```{.python .input}
 scheduler = lr_scheduler.MultiFactorScheduler(step=[15, 30], factor=0.5,
@@ -464,9 +464,9 @@ d2l.plot(paddle.arange(num_epochs), [get_lr(trainer, scheduler)
                                   for t in range(num_epochs)])
 ```
 
-这种分段恒定学习率调度背后的直觉是，让优化持续进行，直到权重向量的分布达到一个驻点。
-此时，我们才将学习率降低，以获得更高质量的代理来达到一个良好的局部最小值。
-下面的例子展示了如何使用这种方法产生更好的解决方案。
+這種分段恆定學習率排程背後的直覺是，讓最佳化持續進行，直到權重向量的分佈達到一個駐點。
+此時，我們才將學習率降低，以獲得更高質量的代理來達到一個良好的區域性最小值。
+下面的例子展示了如何使用這種方法產生更好的解決方案。
 
 ```{.python .input}
 trainer = gluon.Trainer(net.collect_params(), 'sgd',
@@ -492,17 +492,17 @@ train(net, train_iter, test_iter, num_epochs, loss, trainer, device,
       scheduler)
 ```
 
-### 余弦调度器
+### 餘弦排程器
 
-余弦调度器是 :cite:`Loshchilov.Hutter.2016`提出的一种启发式算法。
-它所依据的观点是：我们可能不想在一开始就太大地降低学习率，而且可能希望最终能用非常小的学习率来“改进”解决方案。
-这产生了一个类似于余弦的调度，函数形式如下所示，学习率的值在$t \in [0, T]$之间。
+餘弦排程器是 :cite:`Loshchilov.Hutter.2016`提出的一種啟發式演算法。
+它所依據的觀點是：我們可能不想在一開始就太大地降低學習率，而且可能希望最終能用非常小的學習率來『改進』解決方案。
+這產生了一個類似於餘弦的排程，函式形式如下所示，學習率的值在$t \in [0, T]$之間。
 
 $$\eta_t = \eta_T + \frac{\eta_0 - \eta_T}{2} \left(1 + \cos(\pi t/T)\right)$$
 
-这里$\eta_0$是初始学习率，$\eta_T$是当$T$时的目标学习率。
-此外，对于$t > T$，我们只需将值固定到$\eta_T$而不再增加它。
-在下面的示例中，我们设置了最大更新步数$T = 20$。
+這裡$\eta_0$是初始學習率，$\eta_T$是當$T$時的目標學習率。
+此外，對於$t > T$，我們只需將值固定到$\eta_T$而不再增加它。
+在下面的範例中，我們設定了最大更新步數$T = 20$。
 
 ```{.python .input}
 scheduler = lr_scheduler.CosineScheduler(max_update=20, base_lr=0.3,
@@ -540,8 +540,8 @@ scheduler = CosineScheduler(max_update=20, base_lr=0.3, final_lr=0.01)
 d2l.plot(d2l.arange(num_epochs), [scheduler(t) for t in range(num_epochs)])
 ```
 
-在计算机视觉的背景下，这个调度方式可能产生改进的结果。
-但请注意，如下所示，这种改进并不一定成立。
+在電腦視覺的背景下，這個排程方式可能產生改進的結果。
+但請注意，如下所示，這種改進並不一定成立。
 
 ```{.python .input}
 trainer = gluon.Trainer(net.collect_params(), 'sgd',
@@ -571,17 +571,17 @@ train(net, train_iter, test_iter, num_epochs, loss, trainer, device,
       scheduler)
 ```
 
-### 预热
+### 預熱
 
-在某些情况下，初始化参数不足以得到良好的解。
-这对某些高级网络设计来说尤其棘手，可能导致不稳定的优化结果。
-对此，一方面，我们可以选择一个足够小的学习率，
-从而防止一开始发散，然而这样进展太缓慢。
-另一方面，较高的学习率最初就会导致发散。
+在某些情況下，初始化引數不足以得到良好的解。
+這對某些高階網路設計來說尤其棘手，可能導致不穩定的最佳化結果。
+對此，一方面，我們可以選擇一個足夠小的學習率，
+從而防止一開始發散，然而這樣進展太緩慢。
+另一方面，較高的學習率最初就會導致發散。
 
-解决这种困境的一个相当简单的解决方法是使用预热期，在此期间学习率将增加至初始最大值，然后冷却直到优化过程结束。
-为了简单起见，通常使用线性递增。
-这引出了如下表所示的时间表。
+解決這種困境的一個相當簡單的解決方法是使用預熱期，在此期間學習率將增加至初始最大值，然後冷卻直到最佳化過程結束。
+為了簡單起見，通常使用線性遞增。
+這引出瞭如下表所示的時間表。
 
 ```{.python .input}
 scheduler = lr_scheduler.CosineScheduler(20, warmup_steps=5, base_lr=0.3,
@@ -595,7 +595,7 @@ scheduler = CosineScheduler(20, warmup_steps=5, base_lr=0.3, final_lr=0.01)
 d2l.plot(d2l.arange(num_epochs), [scheduler(t) for t in range(num_epochs)])
 ```
 
-注意，观察前5个迭代轮数的性能，网络最初收敛得更好。
+注意，觀察前5個迭代輪數的效能，網路最初收斂得更好。
 
 ```{.python .input}
 trainer = gluon.Trainer(net.collect_params(), 'sgd',
@@ -625,26 +625,26 @@ train(net, train_iter, test_iter, num_epochs, loss, trainer, device,
       scheduler)
 ```
 
-预热可以应用于任何调度器，而不仅仅是余弦。
-有关学习率调度的更多实验和更详细讨论，请参阅 :cite:`Gotmare.Keskar.Xiong.ea.2018`。
-其中，这篇论文的点睛之笔的发现：预热阶段限制了非常深的网络中参数的发散程度 。
-这在直觉上是有道理的：在网络中那些一开始花费最多时间取得进展的部分，随机初始化会产生巨大的发散。
+預熱可以應用於任何排程器，而不僅僅是餘弦。
+有關學習率排程的更多實驗和更詳細討論，請參閱 :cite:`Gotmare.Keskar.Xiong.ea.2018`。
+其中，這篇論文的點睛之筆的發現：預熱階段限制了非常深的網路中引數的發散程度 。
+這在直覺上是有道理的：在網路中那些一開始花費最多時間取得進展的部分，隨機初始化會產生巨大的發散。
 
-## 小结
+## 小結
 
-* 在训练期间逐步降低学习率可以提高准确性，并且减少模型的过拟合。
-* 在实验中，每当进展趋于稳定时就降低学习率，这是很有效的。从本质上说，这可以确保我们有效地收敛到一个适当的解，也只有这样才能通过降低学习率来减小参数的固有方差。
-* 余弦调度器在某些计算机视觉问题中很受欢迎。
-* 优化之前的预热期可以防止发散。
-* 优化在深度学习中有多种用途。对于同样的训练误差而言，选择不同的优化算法和学习率调度，除了最大限度地减少训练时间，可以导致测试集上不同的泛化和过拟合量。
+* 在訓練期間逐步降低學習率可以提高準確性，並且減少模型的過擬合。
+* 在實驗中，每當進展趨於穩定時就降低學習率，這是很有效的。從本質上說，這可以確保我們有效地收斂到一個適當的解，也只有這樣才能透過降低學習率來減小引數的固有方差。
+* 餘弦排程器在某些電腦視覺問題中很受歡迎。
+* 最佳化之前的預熱期可以防止發散。
+* 最佳化在深度學習中有多種用途。對於同樣的訓練誤差而言，選擇不同的最佳化演算法和學習率排程，除了最大限度地減少訓練時間，可以導致測試集上不同的泛化和過擬合量。
 
-## 练习
+## 練習
 
-1. 试验给定固定学习率的优化行为。这种情况下可以获得的最佳模型是什么？
-1. 如果改变学习率下降的指数，收敛性会如何改变？在实验中方便起见，使用`PolyScheduler`。
-1. 将余弦调度器应用于大型计算机视觉问题，例如训练ImageNet数据集。与其他调度器相比，它如何影响性能？
-1. 预热应该持续多长时间？
-1. 可以试着把优化和采样联系起来吗？首先，在随机梯度朗之万动力学上使用 :cite:`Welling.Teh.2011`的结果。
+1. 試驗給定固定學習率的最佳化行為。這種情況下可以獲得的最佳模型是什麼？
+1. 如果改變學習率下降的指數，收斂性會如何改變？在實驗中方便起見，使用`PolyScheduler`。
+1. 將餘弦排程器應用於大型計算機視覺問題，例如訓練ImageNet資料集。與其他排程器相比，它如何影響效能？
+1. 預熱應該持續多長時間？
+1. 可以試著把最佳化和取樣聯絡起來嗎？首先，在隨機梯度朗之萬動力學上使用 :cite:`Welling.Teh.2011`的結果。
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/4333)

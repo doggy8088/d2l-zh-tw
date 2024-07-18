@@ -231,7 +231,7 @@ in :numref:`sec_sentiment_rnn`.
 
 1. If the different directions use a different number of hidden units, how will the shape of $\mathbf{H}_t$ change?
 1. Design a bidirectional RNN with multiple hidden layers.
-1. Polysemy is common in natural languages. For example, the word "bank" has different meanings in contexts “i went to the bank to deposit cash” and “i went to the bank to sit down”. How can we design a neural network model such that given a context sequence and a word, a vector representation of the word in the context will be returned? What type of neural architectures is preferred for handling polysemy?
+1. Polysemy is common in natural languages. For example, the word "bank" has different meanings in contexts 『i went to the bank to deposit cash』 and 『i went to the bank to sit down』. How can we design a neural network model such that given a context sequence and a word, a vector representation of the word in the context will be returned? What type of neural architectures is preferred for handling polysemy?
 
 
 :begin_tab:`mxnet`

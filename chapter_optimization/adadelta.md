@@ -2,44 +2,44 @@
 :label:`sec_adadelta`
 
 
-Adadelta是AdaGrad的另一种变体（ :numref:`sec_adagrad`），
-主要区别在于前者减少了学习率适应坐标的数量。
-此外，广义上Adadelta被称为没有学习率，因为它使用变化量本身作为未来变化的校准。
-Adadelta算法是在 :cite:`Zeiler.2012`中提出的。
+Adadelta是AdaGrad的另一種變體（ :numref:`sec_adagrad`），
+主要區別在於前者減少了學習率適應坐標的數量。
+此外，廣義上Adadelta被稱為沒有學習率，因為它使用變化量本身作為未來變化的校準。
+Adadelta演算法是在 :cite:`Zeiler.2012`中提出的。
 
-## Adadelta算法
+## Adadelta演算法
 
-简而言之，Adadelta使用两个状态变量，$\mathbf{s}_t$用于存储梯度二阶导数的泄露平均值，$\Delta\mathbf{x}_t$用于存储模型本身中参数变化二阶导数的泄露平均值。请注意，为了与其他出版物和实现的兼容性，我们使用作者的原始符号和命名（没有其它真正理由让大家使用不同的希腊变量来表示在动量法、AdaGrad、RMSProp和Adadelta中用于相同用途的参数）。
+簡而言之，Adadelta使用兩個狀態變數，$\mathbf{s}_t$用於儲存梯度二階導數的洩露平均值，$\Delta\mathbf{x}_t$用於儲存模型本身中引數變化二階導數的洩露平均值。請注意，為了與其他出版物和實現的相容性，我們使用作者的原始符號和命名（沒有其它真正理由讓大家使用不同的希臘變數來表示在動量法、AdaGrad、RMSProp和Adadelta中用於相同用途的引數）。
 
-以下是Adadelta的技术细节。鉴于参数du jour是$\rho$，我们获得了与 :numref:`sec_rmsprop`类似的以下泄漏更新：
+以下是Adadelta的技術細節。鑑於引數du jour是$\rho$，我們獲得了與 :numref:`sec_rmsprop`類似的以下洩漏更新：
 
 $$\begin{aligned}
     \mathbf{s}_t & = \rho \mathbf{s}_{t-1} + (1 - \rho) \mathbf{g}_t^2.
 \end{aligned}$$
 
-与 :numref:`sec_rmsprop`的区别在于，我们使用重新缩放的梯度$\mathbf{g}_t'$执行更新，即
+與 :numref:`sec_rmsprop`的區別在於，我們使用重新縮放的梯度$\mathbf{g}_t'$執行更新，即
 
 $$\begin{aligned}
     \mathbf{x}_t  & = \mathbf{x}_{t-1} - \mathbf{g}_t'. \\
 \end{aligned}$$
 
-那么，调整后的梯度$\mathbf{g}_t'$是什么？我们可以按如下方式计算它：
+那麼，調整後的梯度$\mathbf{g}_t'$是什麼？我們可以按如下方式計算它：
 
 $$\begin{aligned}
     \mathbf{g}_t' & = \frac{\sqrt{\Delta\mathbf{x}_{t-1} + \epsilon}}{\sqrt{{\mathbf{s}_t + \epsilon}}} \odot \mathbf{g}_t, \\
 \end{aligned}$$
 
-其中$\Delta \mathbf{x}_{t-1}$是重新缩放梯度的平方$\mathbf{g}_t'$的泄漏平均值。我们将$\Delta \mathbf{x}_{0}$初始化为$0$，然后在每个步骤中使用$\mathbf{g}_t'$更新它，即
+其中$\Delta \mathbf{x}_{t-1}$是重新縮放梯度的平方$\mathbf{g}_t'$的洩漏平均值。我們將$\Delta \mathbf{x}_{0}$初始化為$0$，然後在每個步驟中使用$\mathbf{g}_t'$更新它，即
 
 $$\begin{aligned}
     \Delta \mathbf{x}_t & = \rho \Delta\mathbf{x}_{t-1} + (1 - \rho) {\mathbf{g}_t'}^2,
 \end{aligned}$$
 
-和$\epsilon$（例如$10^{-5}$这样的小值）是为了保持数字稳定性而加入的。
+和$\epsilon$（例如$10^{-5}$這樣的小值）是為了保持數字穩定性而加入的。
 
-## 代码实现
+## 程式碼實現
 
-Adadelta需要为每个变量维护两个状态变量，即$\mathbf{s}_t$和$\Delta\mathbf{x}_t$。这将产生以下实现。
+Adadelta需要為每個變數維護兩個狀態變數，即$\mathbf{s}_t$和$\Delta\mathbf{x}_t$。這將產生以下實現。
 
 ```{.python .input}
 %matplotlib inline
@@ -135,7 +135,7 @@ def adadelta(params, states, hyperparams):
     return a
 ```
 
-对于每次参数更新，选择$\rho = 0.9$相当于10个半衰期。由此我们得到：
+對於每次引數更新，選擇$\rho = 0.9$相當於10個半衰期。由此我們得到：
 
 ```{.python .input}
 #@tab all
@@ -144,7 +144,7 @@ d2l.train_ch11(adadelta, init_adadelta_states(feature_dim),
                {'rho': 0.9}, data_iter, feature_dim);
 ```
 
-为了简洁实现，我们只需使用高级API中的Adadelta算法。
+為了簡潔實現，我們只需使用高階API中的Adadelta演算法。
 
 ```{.python .input}
 d2l.train_concise_ch11('adadelta', {'rho': 0.9}, data_iter)
@@ -170,18 +170,18 @@ trainer = paddle.optimizer.Adadelta
 d2l.train_concise_ch11(trainer, {'rho': 0.9}, data_iter)
 ```
 
-## 小结
+## 小結
 
-* Adadelta没有学习率参数。相反，它使用参数本身的变化率来调整学习率。
-* Adadelta需要两个状态变量来存储梯度的二阶导数和参数的变化。
-* Adadelta使用泄漏的平均值来保持对适当统计数据的运行估计。
+* Adadelta沒有學習率引數。相反，它使用引數本身的變化率來調整學習率。
+* Adadelta需要兩個狀態變數來儲存梯度的二階導數和引數的變化。
+* Adadelta使用洩漏的平均值來保持對適當統計資料的執行估計。
 
-## 练习
+## 練習
 
-1. 调整$\rho$的值，会发生什么？
-1. 展示如何在不使用$\mathbf{g}_t'$的情况下实现算法。为什么这是个好主意？
-1. Adadelta真的是学习率为0吗？能找到Adadelta无法解决的优化问题吗？
-1. 将Adadelta的收敛行为与AdaGrad和RMSProp进行比较。
+1. 調整$\rho$的值，會發生什麼？
+1. 展示如何在不使用$\mathbf{g}_t'$的情況下實現演算法。為什麼這是個好主意？
+1. Adadelta真的是學習率為0嗎？能找到Adadelta無法解決的最佳化問題嗎？
+1. 將Adadelta的收斂行為與AdaGrad和RMSProp進行比較。
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/5771)

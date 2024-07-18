@@ -138,7 +138,7 @@ for data in [train_data, test_data]:
 
 Below we define a class for loading the SNLI dataset by inheriting from the `Dataset` class in Gluon. The argument `num_steps` in the class constructor specifies the length of a text sequence so that each minibatch of sequences will have the same shape. 
 In other words,
-tokens after the first `num_steps` ones in longer sequence are trimmed, while special tokens “&lt;pad&gt;” will be appended to shorter sequences until their length becomes `num_steps`.
+tokens after the first `num_steps` ones in longer sequence are trimmed, while special tokens 『&lt;pad&gt;』 will be appended to shorter sequences until their length becomes `num_steps`.
 By implementing the `__getitem__` function, we can arbitrarily access the premise, hypothesis, and label with the index `idx`.
 
 ```{.python .input}

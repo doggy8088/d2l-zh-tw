@@ -1,101 +1,101 @@
-# 批量规范化
+# 批次規範化
 :label:`sec_batch_norm`
 
-训练深层神经网络是十分困难的，特别是在较短的时间内使他们收敛更加棘手。
-本节将介绍*批量规范化*（batch normalization） :cite:`Ioffe.Szegedy.2015`，这是一种流行且有效的技术，可持续加速深层网络的收敛速度。
-再结合在 :numref:`sec_resnet`中将介绍的残差块，批量规范化使得研究人员能够训练100层以上的网络。
+訓練深層神經網路是十分困難的，特別是在較短的時間內使他們收斂更加棘手。
+本節將介紹*批次規範化*（batch normalization） :cite:`Ioffe.Szegedy.2015`，這是一種流行且有效的技術，可持續加速深層網路的收斂速度。
+再結合在 :numref:`sec_resnet`中將介紹的殘差區塊，批次規範化使得研究人員能夠訓練100層以上的網路。
 
-## 训练深层网络
+## 訓練深層網路
 
-为什么需要批量规范化层呢？让我们来回顾一下训练神经网络时出现的一些实际挑战。
+為什麼需要批次規範化層呢？讓我們來回顧一下訓練神經網路時出現的一些實際挑戰。
 
-首先，数据预处理的方式通常会对最终结果产生巨大影响。
-回想一下我们应用多层感知机来预测房价的例子（ :numref:`sec_kaggle_house`）。
-使用真实数据时，我们的第一步是标准化输入特征，使其平均值为0，方差为1。
-直观地说，这种标准化可以很好地与我们的优化器配合使用，因为它可以将参数的量级进行统一。
+首先，資料預處理的方式通常會對最終結果產生巨大影響。
+回想一下我們應用多層感知機來預測房價的例子（ :numref:`sec_kaggle_house`）。
+使用真實資料時，我們的第一步是標準化輸入特徵，使其平均值為0，方差為1。
+直觀地說，這種標準化可以很好地與我們的最佳化器配合使用，因為它可以將引數的量級進行統一。
 
-第二，对于典型的多层感知机或卷积神经网络。当我们训练时，中间层中的变量（例如，多层感知机中的仿射变换输出）可能具有更广的变化范围：不论是沿着从输入到输出的层，跨同一层中的单元，或是随着时间的推移，模型参数的随着训练更新变幻莫测。
-批量规范化的发明者非正式地假设，这些变量分布中的这种偏移可能会阻碍网络的收敛。
-直观地说，我们可能会猜想，如果一个层的可变值是另一层的100倍，这可能需要对学习率进行补偿调整。
+第二，對於典型的多層感知機或卷積神經網路。當我們訓練時，中間層中的變數（例如，多層感知機中的仿射變換輸出）可能具有更廣的變化範圍：不論是沿著從輸入到輸出的層，跨同一層中的單元，或是隨著時間的推移，模型引數的隨著訓練更新變幻莫測。
+批次規範化的發明者非正式地假設，這些變數分佈中的這種偏移可能會阻礙網路的收斂。
+直觀地說，我們可能會猜想，如果一個層的可變值是另一層的100倍，這可能需要對學習率進行補償調整。
 
-第三，更深层的网络很复杂，容易过拟合。
-这意味着正则化变得更加重要。
+第三，更深層的網路很複雜，容易過擬合。
+這意味著正則化變得更加重要。
 
-批量规范化应用于单个可选层（也可以应用到所有层），其原理如下：在每次训练迭代中，我们首先规范化输入，即通过减去其均值并除以其标准差，其中两者均基于当前小批量处理。
-接下来，我们应用比例系数和比例偏移。
-正是由于这个基于*批量*统计的*标准化*，才有了*批量规范化*的名称。
+批次規範化應用於單個可選層（也可以應用到所有層），其原理如下：在每次訓練迭代中，我們首先規範化輸入，即透過減去其均值併除以其標準差，其中兩者均基於當前小批次處理。
+接下來，我們應用比例係數和比例偏移。
+正是由於這個基於*批次*統計的*標準化*，才有了*批次規範化*的名稱。
 
-请注意，如果我们尝试使用大小为1的小批量应用批量规范化，我们将无法学到任何东西。
-这是因为在减去均值之后，每个隐藏单元将为0。
-所以，只有使用足够大的小批量，批量规范化这种方法才是有效且稳定的。
-请注意，在应用批量规范化时，批量大小的选择可能比没有批量规范化时更重要。
+請注意，如果我們嘗試使用大小為1的小批次應用批次規範化，我們將無法學到任何東西。
+這是因為在減去均值之後，每個隱藏單元將為0。
+所以，只有使用足夠大的小批次，批次規範化這種方法才是有效且穩定的。
+請注意，在應用批次規範化時，批次大小的選擇可能比沒有批次規範化時更重要。
 
-从形式上来说，用$\mathbf{x} \in \mathcal{B}$表示一个来自小批量$\mathcal{B}$的输入，批量规范化$\mathrm{BN}$根据以下表达式转换$\mathbf{x}$：
+從形式上來說，用$\mathbf{x} \in \mathcal{B}$表示一個來自小批次$\mathcal{B}$的輸入，批次規範化$\mathrm{BN}$根據以下表示式轉換$\mathbf{x}$：
 
 $$\mathrm{BN}(\mathbf{x}) = \boldsymbol{\gamma} \odot \frac{\mathbf{x} - \hat{\boldsymbol{\mu}}_\mathcal{B}}{\hat{\boldsymbol{\sigma}}_\mathcal{B}} + \boldsymbol{\beta}.$$
 :eqlabel:`eq_batchnorm`
 
-在 :eqref:`eq_batchnorm`中，$\hat{\boldsymbol{\mu}}_\mathcal{B}$是小批量$\mathcal{B}$的样本均值，$\hat{\boldsymbol{\sigma}}_\mathcal{B}$是小批量$\mathcal{B}$的样本标准差。
-应用标准化后，生成的小批量的平均值为0和单位方差为1。
-由于单位方差（与其他一些魔法数）是一个主观的选择，因此我们通常包含
-*拉伸参数*（scale）$\boldsymbol{\gamma}$和*偏移参数*（shift）$\boldsymbol{\beta}$，它们的形状与$\mathbf{x}$相同。
-请注意，$\boldsymbol{\gamma}$和$\boldsymbol{\beta}$是需要与其他模型参数一起学习的参数。
+在 :eqref:`eq_batchnorm`中，$\hat{\boldsymbol{\mu}}_\mathcal{B}$是小批次$\mathcal{B}$的樣本均值，$\hat{\boldsymbol{\sigma}}_\mathcal{B}$是小批次$\mathcal{B}$的樣本標準差。
+應用標準化後，生成的小批次的平均值為0和單位方差為1。
+由於單位方差（與其他一些魔法數）是一個主觀的選擇，因此我們通常包含
+*拉伸引數*（scale）$\boldsymbol{\gamma}$和*偏移引數*（shift）$\boldsymbol{\beta}$，它們的形狀與$\mathbf{x}$相同。
+請注意，$\boldsymbol{\gamma}$和$\boldsymbol{\beta}$是需要與其他模型引數一起學習的引數。
 
-由于在训练过程中，中间层的变化幅度不能过于剧烈，而批量规范化将每一层主动居中，并将它们重新调整为给定的平均值和大小（通过$\hat{\boldsymbol{\mu}}_\mathcal{B}$和${\hat{\boldsymbol{\sigma}}_\mathcal{B}}$）。
+由於在訓練過程中，中間層的變化幅度不能過於劇烈，而批次規範化將每一層主動居中，並將它們重新調整為給定的平均值和大小（透過$\hat{\boldsymbol{\mu}}_\mathcal{B}$和${\hat{\boldsymbol{\sigma}}_\mathcal{B}}$）。
 
-从形式上来看，我们计算出 :eqref:`eq_batchnorm`中的$\hat{\boldsymbol{\mu}}_\mathcal{B}$和${\hat{\boldsymbol{\sigma}}_\mathcal{B}}$，如下所示：
+從形式上來看，我們計算出 :eqref:`eq_batchnorm`中的$\hat{\boldsymbol{\mu}}_\mathcal{B}$和${\hat{\boldsymbol{\sigma}}_\mathcal{B}}$，如下所示：
 
 $$\begin{aligned} \hat{\boldsymbol{\mu}}_\mathcal{B} &= \frac{1}{|\mathcal{B}|} \sum_{\mathbf{x} \in \mathcal{B}} \mathbf{x},\\
 \hat{\boldsymbol{\sigma}}_\mathcal{B}^2 &= \frac{1}{|\mathcal{B}|} \sum_{\mathbf{x} \in \mathcal{B}} (\mathbf{x} - \hat{\boldsymbol{\mu}}_{\mathcal{B}})^2 + \epsilon.\end{aligned}$$
 
-请注意，我们在方差估计值中添加一个小的常量$\epsilon > 0$，以确保我们永远不会尝试除以零，即使在经验方差估计值可能消失的情况下也是如此。估计值$\hat{\boldsymbol{\mu}}_\mathcal{B}$和${\hat{\boldsymbol{\sigma}}_\mathcal{B}}$通过使用平均值和方差的噪声（noise）估计来抵消缩放问题。
-乍看起来，这种噪声是一个问题，而事实上它是有益的。
+請注意，我們在方差估計值中新增一個小的常數$\epsilon > 0$，以確保我們永遠不會嘗試除以零，即使在經驗方差估計值可能消失的情況下也是如此。估計值$\hat{\boldsymbol{\mu}}_\mathcal{B}$和${\hat{\boldsymbol{\sigma}}_\mathcal{B}}$透過使用平均值和方差的噪聲（noise）估計來抵消縮放問題。
+乍看起來，這種噪聲是一個問題，而事實上它是有益的。
 
-事实证明，这是深度学习中一个反复出现的主题。
-由于尚未在理论上明确的原因，优化中的各种噪声源通常会导致更快的训练和较少的过拟合：这种变化似乎是正则化的一种形式。
-在一些初步研究中， :cite:`Teye.Azizpour.Smith.2018`和 :cite:`Luo.Wang.Shao.ea.2018`分别将批量规范化的性质与贝叶斯先验相关联。
-这些理论揭示了为什么批量规范化最适应$50 \sim 100$范围中的中等批量大小的难题。
+事實證明，這是深度學習中一個反覆出現的主題。
+由於尚未在理論上明確的原因，最佳化中的各種噪聲源通常會導致更快的訓練和較少的過擬合：這種變化似乎是正則化的一種形式。
+在一些初步研究中， :cite:`Teye.Azizpour.Smith.2018`和 :cite:`Luo.Wang.Shao.ea.2018`分別將批次規範化的性質與貝葉斯先驗相關聯。
+這些理論揭示了為什麼批次規範化最適應$50 \sim 100$範圍中的中等批次大小的難題。
 
-另外，批量规范化层在”训练模式“（通过小批量统计数据规范化）和“预测模式”（通过数据集统计规范化）中的功能不同。
-在训练过程中，我们无法得知使用整个数据集来估计平均值和方差，所以只能根据每个小批次的平均值和方差不断训练模型。
-而在预测模式下，可以根据整个数据集精确计算批量规范化所需的平均值和方差。
+另外，批次規範化層在』訓練模式『（透過小批次統計資料規範化）和『預測模式』（透過資料集統計規範化）中的功能不同。
+在訓練過程中，我們無法得知使用整個資料集來估計平均值和方差，所以只能根據每個小批次的平均值和方差不斷訓練模型。
+而在預測模式下，可以根據整個資料集精確計算批次規範化所需的平均值和方差。
 
-现在，我们了解一下批量规范化在实践中是如何工作的。
+現在，我們瞭解一下批次規範化在實踐中是如何工作的。
 
-## 批量规范化层
+## 批次規範化層
 
-回想一下，批量规范化和其他层之间的一个关键区别是，由于批量规范化在完整的小批量上运行，因此我们不能像以前在引入其他层时那样忽略批量大小。
-我们在下面讨论这两种情况：全连接层和卷积层，他们的批量规范化实现略有不同。
+回想一下，批次規範化和其他層之間的一個關鍵區別是，由於批次規範化在完整的小批次上執行，因此我們不能像以前在引入其他層時那樣忽略批次大小。
+我們在下面討論這兩種情況：全連線層和卷積層，他們的批次規範化實現略有不同。
 
-### 全连接层
+### 全連線層
 
-通常，我们将批量规范化层置于全连接层中的仿射变换和激活函数之间。
-设全连接层的输入为x，权重参数和偏置参数分别为$\mathbf{W}$和$\mathbf{b}$，激活函数为$\phi$，批量规范化的运算符为$\mathrm{BN}$。
-那么，使用批量规范化的全连接层的输出的计算详情如下：
+通常，我們將批次規範化層置於全連線層中的仿射變換和啟用函式之間。
+設全連線層的輸入為x，權重引數和偏置引數分別為$\mathbf{W}$和$\mathbf{b}$，啟用函式為$\phi$，批次規範化的運算符為$\mathrm{BN}$。
+那麼，使用批次規範化的全連線層的輸出的計算詳情如下：
 
 $$\mathbf{h} = \phi(\mathrm{BN}(\mathbf{W}\mathbf{x} + \mathbf{b}) ).$$
 
-回想一下，均值和方差是在应用变换的"相同"小批量上计算的。
+回想一下，均值和方差是在應用變換的"相同"小批次上計算的。
 
-### 卷积层
+### 卷積層
 
-同样，对于卷积层，我们可以在卷积层之后和非线性激活函数之前应用批量规范化。
-当卷积有多个输出通道时，我们需要对这些通道的“每个”输出执行批量规范化，每个通道都有自己的拉伸（scale）和偏移（shift）参数，这两个参数都是标量。
-假设我们的小批量包含$m$个样本，并且对于每个通道，卷积的输出具有高度$p$和宽度$q$。
-那么对于卷积层，我们在每个输出通道的$m \cdot p \cdot q$个元素上同时执行每个批量规范化。
-因此，在计算平均值和方差时，我们会收集所有空间位置的值，然后在给定通道内应用相同的均值和方差，以便在每个空间位置对值进行规范化。
+同樣，對於卷積層，我們可以在卷積層之後和非線性啟用函式之前應用批次規範化。
+當卷積有多個輸出通道時，我們需要對這些通道的『每個』輸出執行批次規範化，每個通道都有自己的拉伸（scale）和偏移（shift）引數，這兩個引數都是標量。
+假設我們的小批次包含$m$個樣本，並且對於每個通道，卷積的輸出具有高度$p$和寬度$q$。
+那麼對於卷積層，我們在每個輸出通道的$m \cdot p \cdot q$個元素上同時執行每個批次規範化。
+因此，在計算平均值和方差時，我們會收集所有空間位置的值，然後在給定通道內應用相同的均值和方差，以便在每個空間位置對值進行規範化。
 
-### 预测过程中的批量规范化
+### 預測過程中的批次規範化
 
-正如我们前面提到的，批量规范化在训练模式和预测模式下的行为通常不同。
-首先，将训练好的模型用于预测时，我们不再需要样本均值中的噪声以及在微批次上估计每个小批次产生的样本方差了。
-其次，例如，我们可能需要使用我们的模型对逐个样本进行预测。
-一种常用的方法是通过移动平均估算整个训练数据集的样本均值和方差，并在预测时使用它们得到确定的输出。
-可见，和暂退法一样，批量规范化层在训练模式和预测模式下的计算结果也是不一样的。
+正如我們前面提到的，批次規範化在訓練模式和預測模式下的行為通常不同。
+首先，將訓練好的模型用於預測時，我們不再需要樣本均值中的噪聲以及在微批次上估計每個小批次產生的樣本方差了。
+其次，例如，我們可能需要使用我們的模型對逐個樣本進行預測。
+一種常用的方法是透過移動平均估算整個訓練資料集的樣本均值和方差，並在預測時使用它們得到確定的輸出。
+可見，和暫退法一樣，批次規範化層在訓練模式和預測模式下的計算結果也是不一樣的。
 
-## (**从零实现**)
+## (**從零實現**)
 
-下面，我们从头开始实现一个具有张量的批量规范化层。
+下面，我們從頭開始實現一個具有張量的批次規範化層。
 
 ```{.python .input}
 from d2l import mxnet as d2l
@@ -104,27 +104,27 @@ from mxnet.gluon import nn
 npx.set_np()
 
 def batch_norm(X, gamma, beta, moving_mean, moving_var, eps, momentum):
-    # 通过autograd来判断当前模式是训练模式还是预测模式
+    # 透過autograd來判斷當前模式是訓練模式還是預測模式
     if not autograd.is_training():
-        # 如果是在预测模式下，直接使用传入的移动平均所得的均值和方差
+        # 如果是在預測模式下，直接使用傳入的移動平均所得的均值和方差
         X_hat = (X - moving_mean) / np.sqrt(moving_var + eps)
     else:
         assert len(X.shape) in (2, 4)
         if len(X.shape) == 2:
-            # 使用全连接层的情况，计算特征维上的均值和方差
+            # 使用全連線層的情況，計算特徵維上的均值和方差
             mean = X.mean(axis=0)
             var = ((X - mean) ** 2).mean(axis=0)
         else:
-            # 使用二维卷积层的情况，计算通道维上（axis=1）的均值和方差。
-            # 这里我们需要保持X的形状以便后面可以做广播运算
+            # 使用二維卷積層的情況，計算通道維上（axis=1）的均值和方差。
+            # 這裡我們需要保持X的形狀以便後面可以做廣播運算
             mean = X.mean(axis=(0, 2, 3), keepdims=True)
             var = ((X - mean) ** 2).mean(axis=(0, 2, 3), keepdims=True)
-        # 训练模式下，用当前的均值和方差做标准化
+        # 訓練模式下，用當前的均值和方差做標準化
         X_hat = (X - mean) / np.sqrt(var + eps)
-        # 更新移动平均的均值和方差
+        # 更新移動平均的均值和方差
         moving_mean = momentum * moving_mean + (1.0 - momentum) * mean
         moving_var = momentum * moving_var + (1.0 - momentum) * var
-    Y = gamma * X_hat + beta  # 缩放和移位
+    Y = gamma * X_hat + beta  # 縮放和移位
     return Y, moving_mean, moving_var
 ```
 
@@ -135,27 +135,27 @@ import torch
 from torch import nn
 
 def batch_norm(X, gamma, beta, moving_mean, moving_var, eps, momentum):
-    # 通过is_grad_enabled来判断当前模式是训练模式还是预测模式
+    # 透過is_grad_enabled來判斷當前模式是訓練模式還是預測模式
     if not torch.is_grad_enabled():
-        # 如果是在预测模式下，直接使用传入的移动平均所得的均值和方差
+        # 如果是在預測模式下，直接使用傳入的移動平均所得的均值和方差
         X_hat = (X - moving_mean) / torch.sqrt(moving_var + eps)
     else:
         assert len(X.shape) in (2, 4)
         if len(X.shape) == 2:
-            # 使用全连接层的情况，计算特征维上的均值和方差
+            # 使用全連線層的情況，計算特徵維上的均值和方差
             mean = X.mean(dim=0)
             var = ((X - mean) ** 2).mean(dim=0)
         else:
-            # 使用二维卷积层的情况，计算通道维上（axis=1）的均值和方差。
-            # 这里我们需要保持X的形状以便后面可以做广播运算
+            # 使用二維卷積層的情況，計算通道維上（axis=1）的均值和方差。
+            # 這裡我們需要保持X的形狀以便後面可以做廣播運算
             mean = X.mean(dim=(0, 2, 3), keepdim=True)
             var = ((X - mean) ** 2).mean(dim=(0, 2, 3), keepdim=True)
-        # 训练模式下，用当前的均值和方差做标准化
+        # 訓練模式下，用當前的均值和方差做標準化
         X_hat = (X - mean) / torch.sqrt(var + eps)
-        # 更新移动平均的均值和方差
+        # 更新移動平均的均值和方差
         moving_mean = momentum * moving_mean + (1.0 - momentum) * mean
         moving_var = momentum * moving_var + (1.0 - momentum) * var
-    Y = gamma * X_hat + beta  # 缩放和移位
+    Y = gamma * X_hat + beta  # 縮放和移位
     return Y, moving_mean.data, moving_var.data
 ```
 
@@ -165,9 +165,9 @@ from d2l import tensorflow as d2l
 import tensorflow as tf
 
 def batch_norm(X, gamma, beta, moving_mean, moving_var, eps):
-    # 计算移动方差元平方根的倒数
+    # 計算移動方差元平方根的倒數
     inv = tf.cast(tf.math.rsqrt(moving_var + eps), X.dtype)
-    # 缩放和移位
+    # 縮放和移位
     inv *= gamma
     Y = X * inv + (beta - moving_mean * inv)
     return Y
@@ -182,64 +182,64 @@ import paddle
 import paddle.nn as nn
 
 def batch_norm(X, gamma, beta, moving_mean, moving_var, eps, momentum, is_training=True):
-    # 训练模式还与预测模式的BN处理不同
+    # 訓練模式還與預測模式的BN處理不同
     if not is_training:
-        # 如果是在预测模式下，直接使用传入的移动平均所得的均值和方差
+        # 如果是在預測模式下，直接使用傳入的移動平均所得的均值和方差
         X_hat = (X - moving_mean) / (moving_var + eps) ** 0.5
     else:
         assert len(X.shape) in (2, 4)
         if len(X.shape) == 2:
-            # 使用全连接层的情况，计算特征维上的均值和方差
+            # 使用全連線層的情況，計算特徵維上的均值和方差
             mean = paddle.mean(X)
             var = paddle.mean(((X - mean) ** 2))
         else:
-            # 使用二维卷积层的情况，计算通道维上（axis=1）的均值和方差。这里我们需要保持
-            # X的形状以便后面可以做广播运算
+            # 使用二維卷積層的情況，計算通道維上（axis=1）的均值和方差。這裡我們需要保持
+            # X的形狀以便後面可以做廣播運算
             mean = paddle.mean(X, axis=(0, 2, 3), keepdim=True)
             var = paddle.mean(((X - mean) ** 2), axis=(0, 2, 3), keepdim=True)
-        # 训练模式下用当前的均值和方差做标准化
+        # 訓練模式下用當前的均值和方差做標準化
         X_hat = (X - mean) / (var + eps) ** 0.5
-        # 更新移动平均的均值和方差
+        # 更新移動平均的均值和方差
         moving_mean = momentum * moving_mean + (1.0 - momentum) * mean
         moving_var = momentum * moving_var + (1.0 - momentum) * var
-    Y = gamma * X_hat + beta  # 缩放和移位
+    Y = gamma * X_hat + beta  # 縮放和移位
     return Y, moving_mean, moving_var
 ```
 
-我们现在可以[**创建一个正确的`BatchNorm`层**]。
-这个层将保持适当的参数：拉伸`gamma`和偏移`beta`,这两个参数将在训练过程中更新。
-此外，我们的层将保存均值和方差的移动平均值，以便在模型预测期间随后使用。
+我們現在可以[**建立一個正確的`BatchNorm`層**]。
+這個層將保持適當的引數：拉伸`gamma`和偏移`beta`,這兩個引數將在訓練過程中更新。
+此外，我們的層將儲存均值和方差的移動平均值，以便在模型預測期間隨後使用。
 
-撇开算法细节，注意我们实现层的基础设计模式。
-通常情况下，我们用一个单独的函数定义其数学原理，比如说`batch_norm`。
-然后，我们将此功能集成到一个自定义层中，其代码主要处理数据移动到训练设备（如GPU）、分配和初始化任何必需的变量、跟踪移动平均线（此处为均值和方差）等问题。
-为了方便起见，我们并不担心在这里自动推断输入形状，因此我们需要指定整个特征的数量。
-不用担心，深度学习框架中的批量规范化API将为我们解决上述问题，我们稍后将展示这一点。
+撇開演算法細節，注意我們實現層的基礎設計模式。
+通常情況下，我們用一個單獨的函式定義其數學原理，比如說`batch_norm`。
+然後，我們將此功能整合到一個自定義層中，其程式碼主要處理資料移動到訓練裝置（如GPU）、分配和初始化任何必需的變數、跟蹤移動平均線（此處為均值和方差）等問題。
+為了方便起見，我們並不擔心在這裡自動推斷輸入形狀，因此我們需要指定整個特徵的數量。
+不用擔心，深度學習框架中的批次規範化API將為我們解決上述問題，我們稍後將展示這一點。
 
 ```{.python .input}
 class BatchNorm(nn.Block):
-    # num_features：完全连接层的输出数量或卷积层的输出通道数。
-    # num_dims：2表示完全连接层，4表示卷积层
+    # num_features：完全連線層的輸出數量或卷積層的輸出通道數。
+    # num_dims：2表示完全連線層，4表示卷積層
     def __init__(self, num_features, num_dims, **kwargs):
         super().__init__(**kwargs)
         if num_dims == 2:
             shape = (1, num_features)
         else:
             shape = (1, num_features, 1, 1)
-        # 参与求梯度和迭代的拉伸和偏移参数，分别初始化成1和0
+        # 參與求梯度和迭代的拉伸和偏移引數，分別初始化成1和0
         self.gamma = self.params.get('gamma', shape=shape, init=init.One())
         self.beta = self.params.get('beta', shape=shape, init=init.Zero())
-        # 非模型参数的变量初始化为0和1
+        # 非模型引數的變數初始化為0和1
         self.moving_mean = np.zeros(shape)
         self.moving_var = np.ones(shape)
 
     def forward(self, X):
-        # 如果X不在内存上，将moving_mean和moving_var
-        # 复制到X所在显存上
+        # 如果X不在記憶體上，將moving_mean和moving_var
+        # 複製到X所在顯存上
         if self.moving_mean.ctx != X.ctx:
             self.moving_mean = self.moving_mean.copyto(X.ctx)
             self.moving_var = self.moving_var.copyto(X.ctx)
-        # 保存更新过的moving_mean和moving_var
+        # 儲存更新過的moving_mean和moving_var
         Y, self.moving_mean, self.moving_var = batch_norm(
             X, self.gamma.data(), self.beta.data(), self.moving_mean,
             self.moving_var, eps=1e-12, momentum=0.9)
@@ -249,28 +249,28 @@ class BatchNorm(nn.Block):
 ```{.python .input}
 #@tab pytorch
 class BatchNorm(nn.Module):
-    # num_features：完全连接层的输出数量或卷积层的输出通道数。
-    # num_dims：2表示完全连接层，4表示卷积层
+    # num_features：完全連線層的輸出數量或卷積層的輸出通道數。
+    # num_dims：2表示完全連線層，4表示卷積層
     def __init__(self, num_features, num_dims):
         super().__init__()
         if num_dims == 2:
             shape = (1, num_features)
         else:
             shape = (1, num_features, 1, 1)
-        # 参与求梯度和迭代的拉伸和偏移参数，分别初始化成1和0
+        # 參與求梯度和迭代的拉伸和偏移引數，分別初始化成1和0
         self.gamma = nn.Parameter(torch.ones(shape))
         self.beta = nn.Parameter(torch.zeros(shape))
-        # 非模型参数的变量初始化为0和1
+        # 非模型引數的變數初始化為0和1
         self.moving_mean = torch.zeros(shape)
         self.moving_var = torch.ones(shape)
 
     def forward(self, X):
-        # 如果X不在内存上，将moving_mean和moving_var
-        # 复制到X所在显存上
+        # 如果X不在記憶體上，將moving_mean和moving_var
+        # 複製到X所在顯存上
         if self.moving_mean.device != X.device:
             self.moving_mean = self.moving_mean.to(X.device)
             self.moving_var = self.moving_var.to(X.device)
-        # 保存更新过的moving_mean和moving_var
+        # 儲存更新過的moving_mean和moving_var
         Y, self.moving_mean, self.moving_var = batch_norm(
             X, self.gamma, self.beta, self.moving_mean,
             self.moving_var, eps=1e-5, momentum=0.9)
@@ -285,12 +285,12 @@ class BatchNorm(tf.keras.layers.Layer):
 
     def build(self, input_shape):
         weight_shape = [input_shape[-1], ]
-        # 参与求梯度和迭代的拉伸和偏移参数，分别初始化成1和0
+        # 參與求梯度和迭代的拉伸和偏移引數，分別初始化成1和0
         self.gamma = self.add_weight(name='gamma', shape=weight_shape,
             initializer=tf.initializers.ones, trainable=True)
         self.beta = self.add_weight(name='beta', shape=weight_shape,
             initializer=tf.initializers.zeros, trainable=True)
-        # 非模型参数的变量初始化为0和1
+        # 非模型引數的變數初始化為0和1
         self.moving_mean = self.add_weight(name='moving_mean',
             shape=weight_shape, initializer=tf.initializers.zeros,
             trainable=False)
@@ -336,7 +336,7 @@ class BatchNorm(nn.Layer):
             shape = (1, num_features)
         else:
             shape = (1, num_features, 1, 1)
-        # 参与求梯度和迭代的拉伸和偏移参数，分别初始化成1和0
+        # 參與求梯度和迭代的拉伸和偏移引數，分別初始化成1和0
         self.gamma = self.create_parameter(
             attr=None,
             shape=shape,
@@ -353,17 +353,17 @@ class BatchNorm(nn.Layer):
         self.moving_var = paddle.zeros(shape=shape, dtype='float32')
 
     def forward(self, X):
-        # 保存更新过的moving_mean和moving_var
+        # 儲存更新過的moving_mean和moving_var
         Y, self.moving_mean, self.moving_var = batch_norm(
             X, self.gamma, self.beta, self.moving_mean,
             self.moving_var, eps=1e-5, momentum=0.9, is_training=self.training)
         return Y
 ```
 
-##  使用批量规范化层的 LeNet
+##  使用批次規範化層的 LeNet
 
-为了更好理解如何[**应用`BatchNorm`**]，下面我们将其应用(**于LeNet模型**)（ :numref:`sec_lenet`）。
-回想一下，批量规范化是在卷积层或全连接层之后、相应的激活函数之前应用的。
+為了更好理解如何[**應用`BatchNorm`**]，下面我們將其應用(**於LeNet模型**)（ :numref:`sec_lenet`）。
+回想一下，批次規範化是在卷積層或全連線層之後、相應的啟用函式之前應用的。
 
 ```{.python .input}
 net = nn.Sequential()
@@ -398,8 +398,8 @@ net = nn.Sequential(
 
 ```{.python .input}
 #@tab tensorflow
-# 回想一下，这个函数必须传递给d2l.train_ch6。
-# 或者说为了利用我们现有的CPU/GPU设备，需要在strategy.scope()建立模型
+# 回想一下，這個函式必須傳遞給d2l.train_ch6。
+# 或者說為了利用我們現有的CPU/GPU裝置，需要在strategy.scope()建立模型
 def net():
     return tf.keras.models.Sequential([
         tf.keras.layers.Conv2D(filters=6, kernel_size=5,
@@ -434,8 +434,8 @@ net = nn.Sequential(
     nn.Linear(84, 10))
 ```
 
-和以前一样，我们将[**在Fashion-MNIST数据集上训练网络**]。
-这个代码与我们第一次训练LeNet（ :numref:`sec_lenet`）时几乎完全相同，主要区别在于学习率大得多。
+和以前一樣，我們將[**在Fashion-MNIST資料集上訓練網路**]。
+這個程式碼與我們第一次訓練LeNet（ :numref:`sec_lenet`）時幾乎完全相同，主要區別在於學習率大得多。
 
 ```{.python .input}
 #@tab mxnet, pytorch, paddle
@@ -451,7 +451,7 @@ train_iter, test_iter = d2l.load_data_fashion_mnist(batch_size)
 net = d2l.train_ch6(net, train_iter, test_iter, num_epochs, lr, d2l.try_gpu())
 ```
 
-让我们来看看从第一个批量规范化层中学到的[**拉伸参数`gamma`和偏移参数`beta`**]。
+讓我們來看看從第一個批次規範化層中學到的[**拉伸引數`gamma`和偏移引數`beta`**]。
 
 ```{.python .input}
 net[1].gamma.data().reshape(-1,), net[1].beta.data().reshape(-1,)
@@ -474,10 +474,10 @@ print('gamma:', param[2].numpy().reshape(-1))
 print('beta:', param[3].numpy().reshape(-1))
 ```
 
-## [**简明实现**]
+## [**簡明實現**]
 
-除了使用我们刚刚定义的`BatchNorm`，我们也可以直接使用深度学习框架中定义的`BatchNorm`。
-该代码看起来几乎与我们上面的代码相同。
+除了使用我們剛剛定義的`BatchNorm`，我們也可以直接使用深度學習框架中定義的`BatchNorm`。
+該程式碼看起來幾乎與我們上面的程式碼相同。
 
 ```{.python .input}
 net = nn.Sequential()
@@ -547,57 +547,57 @@ net = nn.Sequential(
     nn.Linear(84, 10))
 ```
 
-下面，我们[**使用相同超参数来训练模型**]。
-请注意，通常高级API变体运行速度快得多，因为它的代码已编译为C++或CUDA，而我们的自定义代码由Python实现。
+下面，我們[**使用相同超引數來訓練模型**]。
+請注意，通常高階API變體執行速度快得多，因為它的程式碼已編譯為C++或CUDA，而我們的自定義程式碼由Python實現。
 
 ```{.python .input}
 #@tab all
 d2l.train_ch6(net, train_iter, test_iter, num_epochs, lr, d2l.try_gpu())
 ```
 
-## 争议
+## 爭議
 
-直观地说，批量规范化被认为可以使优化更加平滑。
-然而，我们必须小心区分直觉和对我们观察到的现象的真实解释。
-回想一下，我们甚至不知道简单的神经网络（多层感知机和传统的卷积神经网络）为什么如此有效。
-即使在暂退法和权重衰减的情况下，它们仍然非常灵活，因此无法通过常规的学习理论泛化保证来解释它们是否能够泛化到看不见的数据。
+直觀地說，批次規範化被認為可以使最佳化更加平滑。
+然而，我們必須小心區分直覺和對我們觀察到的現象的真實解釋。
+回想一下，我們甚至不知道簡單的神經網路（多層感知機和傳統的卷積神經網路）為什麼如此有效。
+即使在暫退法和權重衰減的情況下，它們仍然非常靈活，因此無法透過常規的學習理論泛化保證來解釋它們是否能夠泛化到看不見的資料。
 
-在提出批量规范化的论文中，作者除了介绍了其应用，还解释了其原理：通过减少*内部协变量偏移*（internal covariate shift）。
-据推测，作者所说的*内部协变量转移*类似于上述的投机直觉，即变量值的分布在训练过程中会发生变化。
-然而，这种解释有两个问题：
-1、这种偏移与严格定义的*协变量偏移*（covariate shift）非常不同，所以这个名字用词不当；
-2、这种解释只提供了一种不明确的直觉，但留下了一个有待后续挖掘的问题：为什么这项技术如此有效？
-本书旨在传达实践者用来发展深层神经网络的直觉。
-然而，重要的是将这些指导性直觉与既定的科学事实区分开来。
-最终，当你掌握了这些方法，并开始撰写自己的研究论文时，你会希望清楚地区分技术和直觉。
+在提出批次規範化的論文中，作者除了介紹了其應用，還解釋了其原理：透過減少*內部協變數偏移*（internal covariate shift）。
+據推測，作者所說的*內部協變數轉移*類似於上述的投機直覺，即變數值的分佈在訓練過程中會發生變化。
+然而，這種解釋有兩個問題：
+1、這種偏移與嚴格定義的*協變數偏移*（covariate shift）非常不同，所以這個名字用詞不當；
+2、這種解釋只提供了一種不明確的直覺，但留下了一個有待後續挖掘的問題：為什麼這項技術如此有效？
+本書旨在傳達實踐者用來發展深層神經網路的直覺。
+然而，重要的是將這些指導性直覺與既定的科學事實區分開來。
+最終，當你掌握了這些方法，並開始撰寫自己的研究論文時，你會希望清楚地區分技術和直覺。
 
-随着批量规范化的普及，*内部协变量偏移*的解释反复出现在技术文献的辩论，特别是关于“如何展示机器学习研究”的更广泛的讨论中。
-Ali Rahimi在接受2017年NeurIPS大会的“接受时间考验奖”（Test of Time Award）时发表了一篇令人难忘的演讲。他将“内部协变量转移”作为焦点，将现代深度学习的实践比作炼金术。
-他对该示例进行了详细回顾 :cite:`Lipton.Steinhardt.2018`，概述了机器学习中令人不安的趋势。
-此外，一些作者对批量规范化的成功提出了另一种解释：在某些方面，批量规范化的表现出与原始论文 :cite:`Santurkar.Tsipras.Ilyas.ea.2018`中声称的行为是相反的。
+隨著批次規範化的普及，*內部協變數偏移*的解釋反覆出現在技術文獻的辯論，特別是關於『如何展示機器學習研究』的更廣泛的討論中。
+Ali Rahimi在接受2017年NeurIPS大會的『接受時間考驗獎』（Test of Time Award）時發表了一篇令人難忘的演講。他將『內部協變數轉移』作為焦點，將現代深度學習的實踐比作煉金術。
+他對該範例進行了詳細回顧 :cite:`Lipton.Steinhardt.2018`，概述了機器學習中令人不安的趨勢。
+此外，一些作者對批次規範化的成功提出了另一種解釋：在某些方面，批次規範化的表現出與原始論文 :cite:`Santurkar.Tsipras.Ilyas.ea.2018`中聲稱的行為是相反的。
 
-然而，与机器学习文献中成千上万类似模糊的说法相比，内部协变量偏移没有更值得批评。
-很可能，它作为这些辩论的焦点而产生共鸣，要归功于目标受众对它的广泛认可。
-批量规范化已经被证明是一种不可或缺的方法。它适用于几乎所有图像分类器，并在学术界获得了数万引用。
+然而，與機器學習文獻中成千上萬類似模糊的說法相比，內部協變數偏移沒有更值得批評。
+很可能，它作為這些辯論的焦點而產生共鳴，要歸功於目標受眾對它的廣泛認可。
+批次規範化已經被證明是一種不可或缺的方法。它適用於幾乎所有影象分類器，並在學術界獲得了數萬引用。
 
-## 小结
+## 小結
 
-* 在模型训练过程中，批量规范化利用小批量的均值和标准差，不断调整神经网络的中间输出，使整个神经网络各层的中间输出值更加稳定。
-* 批量规范化在全连接层和卷积层的使用略有不同。
-* 批量规范化层和暂退层一样，在训练模式和预测模式下计算不同。
-* 批量规范化有许多有益的副作用，主要是正则化。另一方面，”减少内部协变量偏移“的原始动机似乎不是一个有效的解释。
+* 在模型訓練過程中，批次規範化利用小批次的均值和標準差，不斷調整神經網路的中間輸出，使整個神經網路各層的中間輸出值更加穩定。
+* 批次規範化在全連線層和卷積層的使用略有不同。
+* 批次規範化層和暫退層一樣，在訓練模式和預測模式下計算不同。
+* 批次規範化有許多有益的副作用，主要是正則化。另一方面，』減少內部協變數偏移『的原始動機似乎不是一個有效的解釋。
 
-## 练习
+## 練習
 
-1. 在使用批量规范化之前，我们是否可以从全连接层或卷积层中删除偏置参数？为什么？
-1. 比较LeNet在使用和不使用批量规范化情况下的学习率。
-    1. 绘制训练和测试准确度的提高。
-    1. 学习率有多高？
-1. 我们是否需要在每个层中进行批量规范化？尝试一下？
-1. 可以通过批量规范化来替换暂退法吗？行为会如何改变？
-1. 确定参数`beta`和`gamma`，并观察和分析结果。
-1. 查看高级API中有关`BatchNorm`的在线文档，以查看其他批量规范化的应用。
-1. 研究思路：可以应用的其他“规范化”转换？可以应用概率积分变换吗？全秩协方差估计可以么？
+1. 在使用批次規範化之前，我們是否可以從全連線層或卷積層中刪除偏置引數？為什麼？
+1. 比較LeNet在使用和不使用批次規範化情況下的學習率。
+    1. 繪製訓練和測試準確度的提高。
+    1. 學習率有多高？
+1. 我們是否需要在每個層中進行批次規範化？嘗試一下？
+1. 可以透過批次規範化來替換暫退法嗎？行為會如何改變？
+1. 確定引數`beta`和`gamma`，並觀察和分析結果。
+1. 檢視高階API中有關`BatchNorm`的線上文件，以檢視其他批次規範化的應用。
+1. 研究思路：可以應用的其他『規範化』轉換？可以應用機率積分變換嗎？全秩協方差估計可以麼？
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/1876)

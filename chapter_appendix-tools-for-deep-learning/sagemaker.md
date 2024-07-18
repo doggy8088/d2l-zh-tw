@@ -1,82 +1,82 @@
 # 使用Amazon SageMaker
 :label:`sec_sagemaker`
 
-深度学习程序可能需要很多计算资源，这很容易超出你的本地计算机所能提供的范围。云计算服务允许你使用功能更强大的计算机更轻松地运行本书的GPU密集型代码。本节将介绍如何使用Amazon SageMaker运行本书的代码。
+深度學習程式可能需要很多計算資源，這很容易超出你的本地電腦所能提供的範圍。雲端運算服務允許你使用功能更強大的電腦更輕鬆地執行本書的GPU密集型程式碼。本節將介紹如何使用Amazon SageMaker執行本書的程式碼。
 
-## 注册
+## 註冊
 
-首先，我们需要在注册一个帐户https://aws.amazon.com/。 为了增加安全性，鼓励使用双因素身份验证。设置详细的计费和支出警报也是一个好主意，以避免任何意外，例如，当忘记停止运行实例时。登录AWS帐户后，转到[console](http://console.aws.amazon.com/)并搜索“Amazon SageMaker”（参见 :numref:`fig_sagemaker`），然后单击它打开SageMaker面板。
+首先，我們需要在註冊一個帳戶https://aws.amazon.com/。 為了增加安全性，鼓勵使用雙因素身份驗證。設定詳細的計費和支出警報也是一個好主意，以避免任何意外，例如，當忘記停止執行實例時。登入AWS帳戶後，轉到[console](http://console.aws.amazon.com/)並搜尋『Amazon SageMaker』（參見 :numref:`fig_sagemaker`），然後單擊它開啟SageMaker面板。
 
-![搜索并打开SageMaker面板](../img/sagemaker.png)
+![搜尋並開啟SageMaker面板](../img/sagemaker.png)
 :width:`300px`
 :label:`fig_sagemaker`
 
-## 创建SageMaker实例
+## 建立SageMaker實例
 
-接下来，让我们创建一个notebook实例，如 :numref:`fig_sagemaker-create`所示。
+接下來，讓我們建立一個notebook實例，如 :numref:`fig_sagemaker-create`所示。
 
-![创建一个SageMaker实例](../img/sagemaker-create.png)
+![建立一個SageMaker實例](../img/sagemaker-create.png)
 :width:`400px`
 :label:`fig_sagemaker-create`
 
-SageMaker提供多个具有不同计算能力和价格的[实例类型](https://aws.amazon.com/sagemaker/pricing/instance-types/)。创建notebook实例时，可以指定其名称和类型。在 :numref:`fig_sagemaker-create-2`中，我们选择`ml.p3.2xlarge`：使用一个Tesla V100 GPU和一个8核CPU，这个实例的性能足够本书的大部分内容使用。
+SageMaker提供多個具有不同計算能力和價格的[實例型別](https://aws.amazon.com/sagemaker/pricing/instance-types/)。建立notebook實例時，可以指定其名稱和型別。在 :numref:`fig_sagemaker-create-2`中，我們選擇`ml.p3.2xlarge`：使用一個Tesla V100 GPU和一個8核CPU，這個實例的效能足夠本書的大部分內容使用。
 
-![选择实例类型](../img/sagemaker-create-2.png)
+![選擇實例型別](../img/sagemaker-create-2.png)
 :width:`400px`
 :label:`fig_sagemaker-create-2`
 
 :begin_tab:`mxnet`
-用于与SageMaker一起运行的ipynb格式的整本书可从https://github.com/d2l-ai/d2l-en-sagemaker获得。
-我们可以指定此GitHub存储库URL（ :numref:`fig_sagemaker-create-3`），以允许SageMaker在创建实例时克隆它。
+用於與SageMaker一起執行的ipynb格式的整本書可從https://github.com/d2l-ai/d2l-en-sagemaker獲得。
+我們可以指定此GitHub儲存庫URL（ :numref:`fig_sagemaker-create-3`），以允許SageMaker在建立實例時克隆它。
 :end_tab:
 
 :begin_tab:`pytorch`
-用于与SageMaker一起运行的ipynb格式的整本书可从https://github.com/d2l-ai/d2l-pytorch-sagemaker获得。
-我们可以指定此GitHub存储库URL（ :numref:`fig_sagemaker-create-3`），以允许SageMaker在创建实例时克隆它。
+用於與SageMaker一起執行的ipynb格式的整本書可從https://github.com/d2l-ai/d2l-pytorch-sagemaker獲得。
+我們可以指定此GitHub儲存庫URL（ :numref:`fig_sagemaker-create-3`），以允許SageMaker在建立實例時克隆它。
 :end_tab:
 
 :begin_tab:`tensorflow`
-用于与SageMaker一起运行的ipynb格式的整本书可从https://github.com/d2l-ai/d2l-tensorflow-sagemaker获得。
-我们可以指定此GitHub存储库URL（ :numref:`fig_sagemaker-create-3`），以允许SageMaker在创建实例时克隆它。
+用於與SageMaker一起執行的ipynb格式的整本書可從https://github.com/d2l-ai/d2l-tensorflow-sagemaker獲得。
+我們可以指定此GitHub儲存庫URL（ :numref:`fig_sagemaker-create-3`），以允許SageMaker在建立實例時克隆它。
 :end_tab:
 
-![指定GitHub存储库](../img/sagemaker-create-3.png)
+![指定GitHub儲存庫](../img/sagemaker-create-3.png)
 :width:`400px`
 :label:`fig_sagemaker-create-3`
 
-## 运行和停止实例
+## 執行和停止實例
 
-创建实例可能需要几分钟的时间。当实例准备就绪时，单击它旁边的“Open Jupyter”链接（ :numref:`fig_sagemaker-open`），以便你可以在此实例上编辑并运行本书的所有Jupyter Notebook（类似于 :numref:`sec_jupyter`中的步骤）。
+建立實例可能需要幾分鐘的時間。當實例準備就緒時，單擊它旁邊的『Open Jupyter』連結（ :numref:`fig_sagemaker-open`），以便你可以在此實例上編輯並執行本書的所有Jupyter Notebook（類似於 :numref:`sec_jupyter`中的步驟）。
 
-![在创建的SageMaker实例上打开Jupyter](../img/sagemaker-open.png)
+![在建立的SageMaker實例上開啟Jupyter](../img/sagemaker-open.png)
 :width:`400px`
 :label:`fig_sagemaker-open`
 
-完成工作后，不要忘记停止实例以避免进一步收费（ :numref:`fig_sagemaker-stop`）。
+完成工作後，不要忘記停止實例以避免進一步收費（ :numref:`fig_sagemaker-stop`）。
 
-![停止SageMaker实例](../img/sagemaker-stop.png)
+![停止SageMaker實例](../img/sagemaker-stop.png)
 :width:`300px`
 :label:`fig_sagemaker-stop`
 
 ## 更新Notebook
 
 :begin_tab:`mxnet`
-这本开源书的notebook将定期在GitHub上的[d2l-ai/d2l-en-sagemaker](https://github.com/d2l-ai/d2l-en-sagemaker)存储库中更新。要更新至最新版本，你可以在SageMaker实例（ :numref:`fig_sagemaker-terminal`）上打开终端。
+這本開源書的notebook將定期在GitHub上的[d2l-ai/d2l-en-sagemaker](https://github.com/d2l-ai/d2l-en-sagemaker)儲存庫中更新。要更新至最新版本，你可以在SageMaker實例（ :numref:`fig_sagemaker-terminal`）上開啟終端。
 :end_tab:
 
 :begin_tab:`pytorch`
-这本开源书的notebook将定期在GitHub上的[d2l-ai/d2l-pytorch-sagemaker](https://github.com/d2l-ai/d2l-pytorch-sagemaker)存储库中更新。要更新至最新版本，你可以在SageMaker实例（ :numref:`fig_sagemaker-terminal`）上打开终端。
+這本開源書的notebook將定期在GitHub上的[d2l-ai/d2l-pytorch-sagemaker](https://github.com/d2l-ai/d2l-pytorch-sagemaker)儲存庫中更新。要更新至最新版本，你可以在SageMaker實例（ :numref:`fig_sagemaker-terminal`）上開啟終端。
 :end_tab:
 
 :begin_tab:`tensorflow`
-这本开源书的notebook将定期在GitHub上的[d2l-ai/d2l-tensorflow-sagemaker](https://github.com/d2l-ai/d2l-tensorflow-sagemaker)存储库中更新。要更新至最新版本，你可以在SageMaker实例（ :numref:`fig_sagemaker-terminal`）上打开终端。
+這本開源書的notebook將定期在GitHub上的[d2l-ai/d2l-tensorflow-sagemaker](https://github.com/d2l-ai/d2l-tensorflow-sagemaker)儲存庫中更新。要更新至最新版本，你可以在SageMaker實例（ :numref:`fig_sagemaker-terminal`）上開啟終端。
 :end_tab:
 
-![在SageMaker实例上打开终端](../img/sagemaker-terminal.png)
+![在SageMaker實例上開啟終端](../img/sagemaker-terminal.png)
 :width:`300px`
 :label:`fig_sagemaker-terminal`
 
-你可能希望在从远程存储库提取更新之前提交本地更改。否则，只需在终端中使用以下命令放弃所有本地更改：
+你可能希望在從遠端儲存函式庫提取更新之前送出本地更改。否則，只需在終端中使用以下指令放棄所有本地更改：
 
 :begin_tab:`mxnet`
 
@@ -111,14 +111,14 @@ git pull
 
 :end_tab:
 
-## 小结
+## 小結
 
-* 我们可以使用Amazon SageMaker创建一个GPU的notebook实例来运行本书的密集型代码。
-* 我们可以通过Amazon SageMaker实例上的终端更新notebooks。
+* 我們可以使用Amazon SageMaker建立一個GPU的notebook實例來執行本書的密集型程式碼。
+* 我們可以透過Amazon SageMaker實例上的終端更新notebooks。
 
-## 练习
+## 練習
 
-1. 使用Amazon SageMaker编辑并运行任何需要GPU的部分。
-1. 打开终端以访问保存本书所有notebooks的本地目录。
+1. 使用Amazon SageMaker編輯並執行任何需要GPU的部分。
+1. 開啟終端以訪問儲存本書所有notebooks的本地目錄。
 
 [Discussions](https://discuss.d2l.ai/t/5732)

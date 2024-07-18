@@ -1,75 +1,75 @@
-# 门控循环单元（GRU）
+# 門控迴圈單元（GRU）
 :label:`sec_gru`
 
 在 :numref:`sec_bptt`中，
-我们讨论了如何在循环神经网络中计算梯度，
-以及矩阵连续乘积可以导致梯度消失或梯度爆炸的问题。
-下面我们简单思考一下这种梯度异常在实践中的意义：
+我們討論瞭如何在迴圈神經網路中計算梯度，
+以及矩陣連續乘積可以導致梯度消失或梯度爆炸的問題。
+下面我們簡單思考一下這種梯度異常在實踐中的意義：
 
-* 我们可能会遇到这样的情况：早期观测值对预测所有未来观测值具有非常重要的意义。
-  考虑一个极端情况，其中第一个观测值包含一个校验和，
-  目标是在序列的末尾辨别校验和是否正确。
-  在这种情况下，第一个词元的影响至关重要。
-  我们希望有某些机制能够在一个记忆元里存储重要的早期信息。
-  如果没有这样的机制，我们将不得不给这个观测值指定一个非常大的梯度，
-  因为它会影响所有后续的观测值。
-* 我们可能会遇到这样的情况：一些词元没有相关的观测值。
-  例如，在对网页内容进行情感分析时，
-  可能有一些辅助HTML代码与网页传达的情绪无关。
-  我们希望有一些机制来*跳过*隐状态表示中的此类词元。
-* 我们可能会遇到这样的情况：序列的各个部分之间存在逻辑中断。
-  例如，书的章节之间可能会有过渡存在，
-  或者证券的熊市和牛市之间可能会有过渡存在。
-  在这种情况下，最好有一种方法来*重置*我们的内部状态表示。
+* 我們可能會遇到這樣的情況：早期觀測值對預測所有未來觀測值具有非常重要的意義。
+  考慮一個極端情況，其中第一個觀測值包含一個校驗和，
+  目標是在序列的末尾辨別校驗和是否正確。
+  在這種情況下，第一個詞元的影響至關重要。
+  我們希望有某些機制能夠在一個記憶元裡儲存重要的早期訊息。
+  如果沒有這樣的機制，我們將不得不給這個觀測值指定一個非常大的梯度，
+  因為它會影響所有後續的觀測值。
+* 我們可能會遇到這樣的情況：一些詞元沒有相關的觀測值。
+  例如，在對網頁內容進行情感分析時，
+  可能有一些輔助HTML程式碼與網頁傳達的情緒無關。
+  我們希望有一些機制來*跳過*隱狀態表示中的此類詞元。
+* 我們可能會遇到這樣的情況：序列的各個部分之間存在邏輯中斷。
+  例如，書的章節之間可能會有轉場存在，
+  或者證券的熊市和牛市之間可能會有轉場存在。
+  在這種情況下，最好有一種方法來*重置*我們的內部狀態表示。
 
-在学术界已经提出了许多方法来解决这类问题。
-其中最早的方法是"长短期记忆"（long-short-term memory，LSTM）
+在學術界已經提出了許多方法來解決這類問題。
+其中最早的方法是"長短期記憶"（long-short-term memory，LSTM）
  :cite:`Hochreiter.Schmidhuber.1997`，
-我们将在 :numref:`sec_lstm`中讨论。
-门控循环单元（gated recurrent unit，GRU）
+我們將在 :numref:`sec_lstm`中討論。
+門控迴圈單元（gated recurrent unit，GRU）
  :cite:`Cho.Van-Merrienboer.Bahdanau.ea.2014`
-是一个稍微简化的变体，通常能够提供同等的效果，
-并且计算 :cite:`Chung.Gulcehre.Cho.ea.2014`的速度明显更快。
-由于门控循环单元更简单，我们从它开始解读。
+是一個稍微簡化的變體，通常能夠提供同等的效果，
+並且計算 :cite:`Chung.Gulcehre.Cho.ea.2014`的速度明顯更快。
+由於門控迴圈單元更簡單，我們從它開始解讀。
 
-## 门控隐状态
+## 門控隱狀態
 
-门控循环单元与普通的循环神经网络之间的关键区别在于：
-前者支持隐状态的门控。
-这意味着模型有专门的机制来确定应该何时更新隐状态，
-以及应该何时重置隐状态。
-这些机制是可学习的，并且能够解决了上面列出的问题。
-例如，如果第一个词元非常重要，
-模型将学会在第一次观测之后不更新隐状态。
-同样，模型也可以学会跳过不相关的临时观测。
-最后，模型还将学会在需要的时候重置隐状态。
-下面我们将详细讨论各类门控。
+門控迴圈單元與普通的迴圈神經網路之間的關鍵區別在於：
+前者支援隱狀態的門控。
+這意味著模型有專門的機制來確定應該何時更新隱狀態，
+以及應該何時重置隱狀態。
+這些機制是可學習的，並且能夠解決了上面列出的問題。
+例如，如果第一個詞元非常重要，
+模型將學會在第一次觀測之後不更新隱狀態。
+同樣，模型也可以學會跳過不相關的臨時觀測。
+最後，模型還將學會在需要的時候重置隱狀態。
+下面我們將詳細討論各類門控。
 
-### 重置门和更新门
+### 重置門和更新門
 
-我们首先介绍*重置门*（reset gate）和*更新门*（update gate）。
-我们把它们设计成$(0, 1)$区间中的向量，
-这样我们就可以进行凸组合。
-重置门允许我们控制“可能还想记住”的过去状态的数量；
-更新门将允许我们控制新状态中有多少个是旧状态的副本。
+我們首先介紹*重置門*（reset gate）和*更新門*（update gate）。
+我們把它們設計成$(0, 1)$區間中的向量，
+這樣我們就可以進行凸組合。
+重置門允許我們控制『可能還想記住』的過去狀態的數量；
+更新門將允許我們控制新狀態中有多少個是舊狀態的副本。
 
-我们从构造这些门控开始。 :numref:`fig_gru_1`
-描述了门控循环单元中的重置门和更新门的输入，
-输入是由当前时间步的输入和前一时间步的隐状态给出。
-两个门的输出是由使用sigmoid激活函数的两个全连接层给出。
+我們從構造這些門控開始。 :numref:`fig_gru_1`
+描述了門控迴圈單元中的重置門和更新門的輸入，
+輸入是由當前時間步的輸入和前一時間步的隱狀態給出。
+兩個門的輸出是由使用sigmoid啟用函式的兩個全連線層給出。
 
-![在门控循环单元模型中计算重置门和更新门](../img/gru-1.svg)
+![在門控迴圈單元模型中計算重置門和更新門](../img/gru-1.svg)
 :label:`fig_gru_1`
 
-我们来看一下门控循环单元的数学表达。
-对于给定的时间步$t$，假设输入是一个小批量
+我們來看一下門控迴圈單元的數學表達。
+對於給定的時間步$t$，假設輸入是一個小批次
 $\mathbf{X}_t \in \mathbb{R}^{n \times d}$
-（样本个数$n$，输入个数$d$），
-上一个时间步的隐状态是
+（樣本個數$n$，輸入個數$d$），
+上一個時間步的隱狀態是
 $\mathbf{H}_{t-1} \in \mathbb{R}^{n \times h}$
-（隐藏单元个数$h$）。
-那么，重置门$\mathbf{R}_t \in \mathbb{R}^{n \times h}$和
-更新门$\mathbf{Z}_t \in \mathbb{R}^{n \times h}$的计算如下所示：
+（隱藏單元個數$h$）。
+那麼，重置門$\mathbf{R}_t \in \mathbb{R}^{n \times h}$和
+更新門$\mathbf{Z}_t \in \mathbb{R}^{n \times h}$的計算如下所示：
 
 $$
 \begin{aligned}
@@ -79,81 +79,81 @@ $$
 $$
 
 其中$\mathbf{W}_{xr}, \mathbf{W}_{xz} \in \mathbb{R}^{d \times h}$
-和$\mathbf{W}_{hr}, \mathbf{W}_{hz} \in \mathbb{R}^{h \times h}$是权重参数，
-$\mathbf{b}_r, \mathbf{b}_z \in \mathbb{R}^{1 \times h}$是偏置参数。
-请注意，在求和过程中会触发广播机制
-（请参阅 :numref:`subsec_broadcasting`）。
-我们使用sigmoid函数（如 :numref:`sec_mlp`中介绍的）
-将输入值转换到区间$(0, 1)$。
+和$\mathbf{W}_{hr}, \mathbf{W}_{hz} \in \mathbb{R}^{h \times h}$是權重引數，
+$\mathbf{b}_r, \mathbf{b}_z \in \mathbb{R}^{1 \times h}$是偏置引數。
+請注意，在求和過程中會觸發廣播機制
+（請參閱 :numref:`subsec_broadcasting`）。
+我們使用sigmoid函式（如 :numref:`sec_mlp`中介紹的）
+將輸入值轉換到區間$(0, 1)$。
 
-### 候选隐状态
+### 候選隱狀態
 
-接下来，让我们将重置门$\mathbf{R}_t$
-与 :eqref:`rnn_h_with_state`
-中的常规隐状态更新机制集成，
-得到在时间步$t$的*候选隐状态*（candidate hidden state）
+接下來，讓我們將重置門$\mathbf{R}_t$
+與 :eqref:`rnn_h_with_state`
+中的常規隱狀態更新機制整合，
+得到在時間步$t$的*候選隱狀態*（candidate hidden state）
 $\tilde{\mathbf{H}}_t \in \mathbb{R}^{n \times h}$。
 
 $$\tilde{\mathbf{H}}_t = \tanh(\mathbf{X}_t \mathbf{W}_{xh} + \left(\mathbf{R}_t \odot \mathbf{H}_{t-1}\right) \mathbf{W}_{hh} + \mathbf{b}_h),$$
 :eqlabel:`gru_tilde_H`
 
 其中$\mathbf{W}_{xh} \in \mathbb{R}^{d \times h}$
-和$\mathbf{W}_{hh} \in \mathbb{R}^{h \times h}$是权重参数，
-$\mathbf{b}_h \in \mathbb{R}^{1 \times h}$是偏置项，
-符号$\odot$是Hadamard积（按元素乘积）运算符。
-在这里，我们使用tanh非线性激活函数来确保候选隐状态中的值保持在区间$(-1, 1)$中。
+和$\mathbf{W}_{hh} \in \mathbb{R}^{h \times h}$是權重引數，
+$\mathbf{b}_h \in \mathbb{R}^{1 \times h}$是偏置項，
+符號$\odot$是Hadamard積（按元素乘積）運算符。
+在這裡，我們使用tanh非線性啟用函式來確保候選隱狀態中的值保持在區間$(-1, 1)$中。
 
-与 :eqref:`rnn_h_with_state`相比，
+與 :eqref:`rnn_h_with_state`相比，
  :eqref:`gru_tilde_H`中的$\mathbf{R}_t$和$\mathbf{H}_{t-1}$
-的元素相乘可以减少以往状态的影响。
-每当重置门$\mathbf{R}_t$中的项接近$1$时，
-我们恢复一个如 :eqref:`rnn_h_with_state`中的普通的循环神经网络。
-对于重置门$\mathbf{R}_t$中所有接近$0$的项，
-候选隐状态是以$\mathbf{X}_t$作为输入的多层感知机的结果。
-因此，任何预先存在的隐状态都会被*重置*为默认值。
+的元素相乘可以減少以往狀態的影響。
+每當重置門$\mathbf{R}_t$中的項接近$1$時，
+我們恢復一個如 :eqref:`rnn_h_with_state`中的普通的迴圈神經網路。
+對於重置門$\mathbf{R}_t$中所有接近$0$的項，
+候選隱狀態是以$\mathbf{X}_t$作為輸入的多層感知機的結果。
+因此，任何預先存在的隱狀態都會被*重置*為預設值。
 
- :numref:`fig_gru_2`说明了应用重置门之后的计算流程。
+ :numref:`fig_gru_2`說明了應用重置門之後的計算流程。
 
-![在门控循环单元模型中计算候选隐状态](../img/gru-2.svg)
+![在門控迴圈單元模型中計算候選隱狀態](../img/gru-2.svg)
 :label:`fig_gru_2`
 
-### 隐状态
+### 隱狀態
 
-上述的计算结果只是候选隐状态，我们仍然需要结合更新门$\mathbf{Z}_t$的效果。
-这一步确定新的隐状态$\mathbf{H}_t \in \mathbb{R}^{n \times h}$
-在多大程度上来自旧的状态$\mathbf{H}_{t-1}$和
-新的候选状态$\tilde{\mathbf{H}}_t$。
-更新门$\mathbf{Z}_t$仅需要在
+上述的計算結果只是候選隱狀態，我們仍然需要結合更新門$\mathbf{Z}_t$的效果。
+這一步確定新的隱狀態$\mathbf{H}_t \in \mathbb{R}^{n \times h}$
+在多大程度上來自舊的狀態$\mathbf{H}_{t-1}$和
+新的候選狀態$\tilde{\mathbf{H}}_t$。
+更新門$\mathbf{Z}_t$僅需要在
 $\mathbf{H}_{t-1}$和$\tilde{\mathbf{H}}_t$
-之间进行按元素的凸组合就可以实现这个目标。
-这就得出了门控循环单元的最终更新公式：
+之間進行按元素的凸組合就可以實現這個目標。
+這就得出了門控迴圈單元的最終更新公式：
 
 $$\mathbf{H}_t = \mathbf{Z}_t \odot \mathbf{H}_{t-1}  + (1 - \mathbf{Z}_t) \odot \tilde{\mathbf{H}}_t.$$
 
-每当更新门$\mathbf{Z}_t$接近$1$时，模型就倾向只保留旧状态。
-此时，来自$\mathbf{X}_t$的信息基本上被忽略，
-从而有效地跳过了依赖链条中的时间步$t$。
-相反，当$\mathbf{Z}_t$接近$0$时，
-新的隐状态$\mathbf{H}_t$就会接近候选隐状态$\tilde{\mathbf{H}}_t$。
-这些设计可以帮助我们处理循环神经网络中的梯度消失问题，
-并更好地捕获时间步距离很长的序列的依赖关系。
-例如，如果整个子序列的所有时间步的更新门都接近于$1$，
-则无论序列的长度如何，在序列起始时间步的旧隐状态都将很容易保留并传递到序列结束。
+每當更新門$\mathbf{Z}_t$接近$1$時，模型就傾向只保留舊狀態。
+此時，來自$\mathbf{X}_t$的訊息基本上被忽略，
+從而有效地跳過了依賴鏈條中的時間步$t$。
+相反，當$\mathbf{Z}_t$接近$0$時，
+新的隱狀態$\mathbf{H}_t$就會接近候選隱狀態$\tilde{\mathbf{H}}_t$。
+這些設計可以幫助我們處理迴圈神經網路中的梯度消失問題，
+並更好地捕獲時間步距離很長的序列的依賴關係。
+例如，如果整個子序列的所有時間步的更新門都接近於$1$，
+則無論序列的長度如何，在序列起始時間步的舊隱狀態都將很容易保留並傳遞到序列結束。
 
- :numref:`fig_gru_3`说明了更新门起作用后的计算流。
+ :numref:`fig_gru_3`說明了更新門起作用後的計算流。
 
-![计算门控循环单元模型中的隐状态](../img/gru-3.svg)
+![計算門控迴圈單元模型中的隱狀態](../img/gru-3.svg)
 :label:`fig_gru_3`
 
-总之，门控循环单元具有以下两个显著特征：
+總之，門控迴圈單元具有以下兩個顯著特徵：
 
-* 重置门有助于捕获序列中的短期依赖关系；
-* 更新门有助于捕获序列中的长期依赖关系。
+* 重置門有助於捕獲序列中的短期依賴關係；
+* 更新門有助於捕獲序列中的長期依賴關係。
 
-## 从零开始实现
+## 從零開始實現
 
-为了更好地理解门控循环单元模型，我们从零开始实现它。
-首先，我们读取 :numref:`sec_rnn_scratch`中使用的时间机器数据集：
+為了更好地理解門控迴圈單元模型，我們從零開始實現它。
+首先，我們讀取 :numref:`sec_rnn_scratch`中使用的時間機器資料集：
 
 ```{.python .input}
 from d2l import mxnet as d2l
@@ -197,12 +197,12 @@ batch_size, num_steps = 32, 35
 train_iter, vocab = d2l.load_data_time_machine(batch_size, num_steps)
 ```
 
-### [**初始化模型参数**]
+### [**初始化模型引數**]
 
-下一步是初始化模型参数。
-我们从标准差为$0.01$的高斯分布中提取权重，
-并将偏置项设为$0$，超参数`num_hiddens`定义隐藏单元的数量，
-实例化与更新门、重置门、候选隐状态和输出层相关的所有权重和偏置。
+下一步是初始化模型引數。
+我們從標準差為$0.01$的高斯分佈中提取權重，
+並將偏置項設為$0$，超引數`num_hiddens`定義隱藏單元的數量，
+實例化與更新門、重置門、候選隱狀態和輸出層相關的所有權重和偏置。
 
 ```{.python .input}
 def get_params(vocab_size, num_hiddens, device):
@@ -216,10 +216,10 @@ def get_params(vocab_size, num_hiddens, device):
                 normal((num_hiddens, num_hiddens)),
                 np.zeros(num_hiddens, ctx=device))
 
-    W_xz, W_hz, b_z = three()  # 更新门参数
-    W_xr, W_hr, b_r = three()  # 重置门参数
-    W_xh, W_hh, b_h = three()  # 候选隐状态参数
-    # 输出层参数
+    W_xz, W_hz, b_z = three()  # 更新門引數
+    W_xr, W_hr, b_r = three()  # 重置門引數
+    W_xh, W_hh, b_h = three()  # 候選隱狀態參數
+    # 輸出層引數
     W_hq = normal((num_hiddens, num_outputs))
     b_q = np.zeros(num_outputs, ctx=device)
     # 附加梯度
@@ -242,10 +242,10 @@ def get_params(vocab_size, num_hiddens, device):
                 normal((num_hiddens, num_hiddens)),
                 d2l.zeros(num_hiddens, device=device))
 
-    W_xz, W_hz, b_z = three()  # 更新门参数
-    W_xr, W_hr, b_r = three()  # 重置门参数
-    W_xh, W_hh, b_h = three()  # 候选隐状态参数
-    # 输出层参数
+    W_xz, W_hz, b_z = three()  # 更新門引數
+    W_xr, W_hr, b_r = three()  # 重置門引數
+    W_xh, W_hh, b_h = three()  # 候選隱狀態參數
+    # 輸出層引數
     W_hq = normal((num_hiddens, num_outputs))
     b_q = d2l.zeros(num_outputs, device=device)
     # 附加梯度
@@ -268,10 +268,10 @@ def get_params(vocab_size, num_hiddens):
                 tf.Variable(normal((num_hiddens, num_hiddens)), dtype=tf.float32),
                 tf.Variable(d2l.zeros(num_hiddens), dtype=tf.float32))
 
-    W_xz, W_hz, b_z = three()  # 更新门参数
-    W_xr, W_hr, b_r = three()  # 重置门参数
-    W_xh, W_hh, b_h = three()  # 候选隐状态参数
-    # 输出层参数
+    W_xz, W_hz, b_z = three()  # 更新門引數
+    W_xr, W_hr, b_r = three()  # 重置門引數
+    W_xh, W_hh, b_h = three()  # 候選隱狀態參數
+    # 輸出層引數
     W_hq = tf.Variable(normal((num_hiddens, num_outputs)), dtype=tf.float32)
     b_q = tf.Variable(d2l.zeros(num_outputs), dtype=tf.float32)
     params = [W_xz, W_hz, b_z, W_xr, W_hr, b_r, W_xh, W_hh, b_h, W_hq, b_q]
@@ -291,10 +291,10 @@ def get_params(vocab_size, num_hiddens):
                 normal((num_hiddens, num_hiddens)),
                 paddle.zeros([num_hiddens]))
 
-    W_xz, W_hz, b_z = three()  # 更新门参数
-    W_xr, W_hr, b_r = three()  # 重置门参数
-    W_xh, W_hh, b_h = three()  # 候选隐状态参数
-    # 输出层参数
+    W_xz, W_hz, b_z = three()  # 更新門引數
+    W_xr, W_hr, b_r = three()  # 重置門引數
+    W_xh, W_hh, b_h = three()  # 候選隱狀態參數
+    # 輸出層引數
     W_hq = normal((num_hiddens, num_outputs))
     b_q = paddle.zeros([num_outputs])
     # 附加梯度
@@ -304,11 +304,11 @@ def get_params(vocab_size, num_hiddens):
     return params
 ```
 
-### 定义模型
+### 定義模型
 
-现在我们将[**定义隐状态的初始化函数**]`init_gru_state`。
-与 :numref:`sec_rnn_scratch`中定义的`init_rnn_state`函数一样，
-此函数返回一个形状为（批量大小，隐藏单元个数）的张量，张量的值全部为零。
+現在我們將[**定義隱狀態的初始化函式**]`init_gru_state`。
+與 :numref:`sec_rnn_scratch`中定義的`init_rnn_state`函式一樣，
+此函式回傳一個形狀為（批次大小，隱藏單元個數）的張量，張量的值全部為零。
 
 ```{.python .input}
 def init_gru_state(batch_size, num_hiddens, device):
@@ -333,9 +333,9 @@ def init_gru_state(batch_size, num_hiddens):
     return (paddle.zeros([batch_size, num_hiddens]), )
 ```
 
-现在我们准备[**定义门控循环单元模型**]，
-模型的架构与基本的循环神经网络单元是相同的，
-只是权重更新公式更为复杂。
+現在我們準備[**定義門控迴圈單元模型**]，
+模型的架構與基本的迴圈神經網路單元是相同的，
+只是權重更新公式更為複雜。
 
 ```{.python .input}
 def gru(inputs, state, params):
@@ -401,11 +401,11 @@ def gru(inputs, state, params):
     return paddle.concat(outputs, axis=0), (H,*_)
 ```
 
-### [**训练**]与预测
+### [**訓練**]與預測
 
-训练和预测的工作方式与 :numref:`sec_rnn_scratch`完全相同。
-训练结束后，我们分别打印输出训练集的困惑度，
-以及前缀“time traveler”和“traveler”的预测序列上的困惑度。
+訓練和預測的工作方式與 :numref:`sec_rnn_scratch`完全相同。
+訓練結束後，我們分別列印輸出訓練集的困惑度，
+以及字首『time traveler』和『traveler』的預測序列上的困惑度。
 
 ```{.python .input}
 #@tab mxnet, pytorch
@@ -419,7 +419,7 @@ d2l.train_ch8(model, train_iter, vocab, lr, num_epochs, device)
 ```{.python .input}
 #@tab tensorflow
 vocab_size, num_hiddens, device_name = len(vocab), 256, d2l.try_gpu()._device_name
-# 定义训练策略
+# 定義訓練策略
 strategy = tf.distribute.OneDeviceStrategy(device_name)
 num_epochs, lr = 500, 1
 with strategy.scope():
@@ -437,12 +437,12 @@ model = d2l.RNNModelScratch(len(vocab), num_hiddens, get_params,
 d2l.train_ch8(model, train_iter, vocab, lr, num_epochs, device)
 ```
 
-## [**简洁实现**]
+## [**簡潔實現**]
 
-高级API包含了前文介绍的所有配置细节，
-所以我们可以直接实例化门控循环单元模型。
-这段代码的运行速度要快得多，
-因为它使用的是编译好的运算符而不是Python来处理之前阐述的许多细节。
+高階API包含了前文介紹的所有設定細節，
+所以我們可以直接實例化門控迴圈單元模型。
+這段程式碼的執行速度要快得多，
+因為它使用的是編譯好的運算符而不是Python來處理之前闡述的許多細節。
 
 ```{.python .input}
 gru_layer = rnn.GRU(num_hiddens)
@@ -482,19 +482,19 @@ model = d2l.RNNModel(gru_layer, len(vocab))
 d2l.train_ch8(model, train_iter, vocab, lr, num_epochs, device)
 ```
 
-## 小结
+## 小結
 
-* 门控循环神经网络可以更好地捕获时间步距离很长的序列上的依赖关系。
-* 重置门有助于捕获序列中的短期依赖关系。
-* 更新门有助于捕获序列中的长期依赖关系。
-* 重置门打开时，门控循环单元包含基本循环神经网络；更新门打开时，门控循环单元可以跳过子序列。
+* 門控迴圈神經網路可以更好地捕獲時間步距離很長的序列上的依賴關係。
+* 重置門有助於捕獲序列中的短期依賴關係。
+* 更新門有助於捕獲序列中的長期依賴關係。
+* 重置門開啟時，門控迴圈單元包含基本迴圈神經網路；更新門開啟時，門控迴圈單元可以跳過子序列。
 
-## 练习
+## 練習
 
-1. 假设我们只想使用时间步$t'$的输入来预测时间步$t > t'$的输出。对于每个时间步，重置门和更新门的最佳值是什么？
-1. 调整和分析超参数对运行时间、困惑度和输出顺序的影响。
-1. 比较`rnn.RNN`和`rnn.GRU`的不同实现对运行时间、困惑度和输出字符串的影响。
-1. 如果仅仅实现门控循环单元的一部分，例如，只有一个重置门或一个更新门会怎样？
+1. 假設我們只想使用時間步$t'$的輸入來預測時間步$t > t'$的輸出。對於每個時間步，重置門和更新門的最佳值是什麼？
+1. 調整和分析超引數對執行時間、困惑度和輸出順序的影響。
+1. 比較`rnn.RNN`和`rnn.GRU`的不同實現對執行時間、困惑度和輸出字串的影響。
+1. 如果僅僅實現門控迴圈單元的一部分，例如，只有一個重置門或一個更新門會怎樣？
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/2764)

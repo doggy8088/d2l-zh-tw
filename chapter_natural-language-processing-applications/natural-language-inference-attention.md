@@ -1,19 +1,19 @@
-# 自然语言推断：使用注意力
+# 自然語言推斷：使用注意力
 :label:`sec_natural-language-inference-attention`
 
-我们在 :numref:`sec_natural-language-inference-and-dataset`中介绍了自然语言推断任务和SNLI数据集。鉴于许多模型都是基于复杂而深度的架构，Parikh等人提出用注意力机制解决自然语言推断问题，并称之为“可分解注意力模型” :cite:`Parikh.Tackstrom.Das.ea.2016`。这使得模型没有循环层或卷积层，在SNLI数据集上以更少的参数实现了当时的最佳结果。本节将描述并实现这种基于注意力的自然语言推断方法（使用MLP），如 :numref:`fig_nlp-map-nli-attention`中所述。
+我們在 :numref:`sec_natural-language-inference-and-dataset`中介紹了自然語言推斷任務和SNLI資料集。鑑於許多模型都是基於複雜而深度的架構，Parikh等人提出用注意力機制解決自然語言推斷問題，並稱之為『可分解注意力模型』 :cite:`Parikh.Tackstrom.Das.ea.2016`。這使得模型沒有迴圈層或卷積層，在SNLI資料集上以更少的引數實現了當時的最佳結果。本節將描述並實現這種基於注意力的自然語言推斷方法（使用MLP），如 :numref:`fig_nlp-map-nli-attention`中所述。
 
-![将预训练GloVe送入基于注意力和MLP的自然语言推断架构](../img/nlp-map-nli-attention.svg)
+![將預訓練GloVe送入基於注意力和MLP的自然語言推斷架構](../img/nlp-map-nli-attention.svg)
 :label:`fig_nlp-map-nli-attention`
 
 ## 模型
 
-与保留前提和假设中词元的顺序相比，我们可以将一个文本序列中的词元与另一个文本序列中的每个词元对齐，然后比较和聚合这些信息，以预测前提和假设之间的逻辑关系。与机器翻译中源句和目标句之间的词元对齐类似，前提和假设之间的词元对齐可以通过注意力机制灵活地完成。
+與保留前提和假設中詞元的順序相比，我們可以將一個文字序列中的詞元與另一個文字序列中的每個詞元對齊，然後比較和聚合這些訊息，以預測前提和假設之間的邏輯關係。與機器翻譯中源句和目標句之間的詞元對齊類似，前提和假設之間的詞元對齊可以透過注意力機制靈活地完成。
 
-![利用注意力机制进行自然语言推断](../img/nli-attention.svg)
+![利用注意力機制進行自然語言推斷](../img/nli-attention.svg)
 :label:`fig_nli_attention`
 
- :numref:`fig_nli_attention`描述了使用注意力机制的自然语言推断方法。从高层次上讲，它由三个联合训练的步骤组成：对齐、比较和汇总。我们将在下面一步一步地对它们进行说明。
+ :numref:`fig_nli_attention`描述了使用注意力機制的自然語言推斷方法。從高層次上講，它由三個聯合訓練的步驟組成：對齊、比較和彙總。我們將在下面一步一步地對它們進行說明。
 
 ```{.python .input}
 from d2l import mxnet as d2l
@@ -43,14 +43,14 @@ from paddle.nn import functional as F
 
 ### 注意（Attending）
 
-第一步是将一个文本序列中的词元与另一个序列中的每个词元对齐。假设前提是“我确实需要睡眠”，假设是“我累了”。由于语义上的相似性，我们不妨将假设中的“我”与前提中的“我”对齐，将假设中的“累”与前提中的“睡眠”对齐。同样，我们可能希望将前提中的“我”与假设中的“我”对齐，将前提中的“需要”和“睡眠”与假设中的“累”对齐。请注意，这种对齐是使用加权平均的“软”对齐，其中理想情况下较大的权重与要对齐的词元相关联。为了便于演示， :numref:`fig_nli_attention`以“硬”对齐的方式显示了这种对齐方式。
+第一步是將一個文字序列中的詞元與另一個序列中的每個詞元對齊。假設前提是『我確實需要睡眠』，假設是『我累了』。由於語義上的相似性，我們不妨將假設中的『我』與前提中的『我』對齊，將假設中的『累』與前提中的『睡眠』對齊。同樣，我們可能希望將前提中的『我』與假設中的『我』對齊，將前提中的『需要』和『睡眠』與假設中的『累』對齊。請注意，這種對齊是使用加權平均的『軟』對齊，其中理想情況下較大的權重與要對齊的詞元相關聯。為了便於示範， :numref:`fig_nli_attention`以『硬』對齊的方式顯示了這種對齊方式。
 
-现在，我们更详细地描述使用注意力机制的软对齐。用$\mathbf{A} = (\mathbf{a}_1, \ldots, \mathbf{a}_m)$和$\mathbf{B} = (\mathbf{b}_1, \ldots, \mathbf{b}_n)$表示前提和假设，其词元数量分别为$m$和$n$，其中$\mathbf{a}_i, \mathbf{b}_j \in \mathbb{R}^{d}$（$i = 1, \ldots, m, j = 1, \ldots, n$）是$d$维的词向量。对于软对齐，我们将注意力权重$e_{ij} \in \mathbb{R}$计算为：
+現在，我們更詳細地描述使用注意力機制的軟對齊。用$\mathbf{A} = (\mathbf{a}_1, \ldots, \mathbf{a}_m)$和$\mathbf{B} = (\mathbf{b}_1, \ldots, \mathbf{b}_n)$表示前提和假設，其詞元數量分別為$m$和$n$，其中$\mathbf{a}_i, \mathbf{b}_j \in \mathbb{R}^{d}$（$i = 1, \ldots, m, j = 1, \ldots, n$）是$d$維的詞向量。對於軟對齊，我們將注意力權重$e_{ij} \in \mathbb{R}$計算為：
 
 $$e_{ij} = f(\mathbf{a}_i)^\top f(\mathbf{b}_j),$$
 :eqlabel:`eq_nli_e`
 
-其中函数$f$是在下面的`mlp`函数中定义的多层感知机。输出维度$f$由`mlp`的`num_hiddens`参数指定。
+其中函式$f$是在下面的`mlp`函式中定義的多層感知機。輸出維度$f$由`mlp`的`num_hiddens`引數指定。
 
 ```{.python .input}
 def mlp(num_hiddens, flatten):
@@ -96,21 +96,21 @@ def mlp(num_inputs, num_hiddens, flatten):
     return nn.Sequential(*net)
 ```
 
-值得注意的是，在 :eqref:`eq_nli_e`中，$f$分别输入$\mathbf{a}_i$和$\mathbf{b}_j$，而不是将它们一对放在一起作为输入。这种*分解*技巧导致$f$只有$m + n$个次计算（线性复杂度），而不是$mn$次计算（二次复杂度）
+值得注意的是，在 :eqref:`eq_nli_e`中，$f$分別輸入$\mathbf{a}_i$和$\mathbf{b}_j$，而不是將它們一對放在一起作為輸入。這種*分解*技巧導致$f$只有$m + n$個次計算（線性複雜度），而不是$mn$次計算（二次複雜度）
 
-对 :eqref:`eq_nli_e`中的注意力权重进行规范化，我们计算假设中所有词元向量的加权平均值，以获得假设的表示，该假设与前提中索引$i$的词元进行软对齐：
+對 :eqref:`eq_nli_e`中的注意力權重進行規範化，我們計算假設中所有詞元向量的加權平均值，以獲得假設的表示，該假設與前提中索引$i$的詞元進行軟對齊：
 
 $$
 \boldsymbol{\beta}_i = \sum_{j=1}^{n}\frac{\exp(e_{ij})}{ \sum_{k=1}^{n} \exp(e_{ik})} \mathbf{b}_j.
 $$
 
-同样，我们计算假设中索引为$j$的每个词元与前提词元的软对齐：
+同樣，我們計算假設中索引為$j$的每個詞元與前提詞元的軟對齊：
 
 $$
 \boldsymbol{\alpha}_j = \sum_{i=1}^{m}\frac{\exp(e_{ij})}{ \sum_{k=1}^{m} \exp(e_{kj})} \mathbf{a}_i.
 $$
 
-下面，我们定义`Attend`类来计算假设（`beta`）与输入前提`A`的软对齐以及前提（`alpha`）与输入假设`B`的软对齐。
+下面，我們定義`Attend`類來計算假設（`beta`）與輸入前提`A`的軟對齊以及前提（`alpha`）與輸入假設`B`的軟對齊。
 
 ```{.python .input}
 class Attend(nn.Block):
@@ -119,17 +119,17 @@ class Attend(nn.Block):
         self.f = mlp(num_hiddens=num_hiddens, flatten=False)
 
     def forward(self, A, B):
-        # A/B的形状：（批量大小，序列A/B的词元数，embed_size）
-        # f_A/f_B的形状：（批量大小，序列A/B的词元数，num_hiddens）
+        # A/B的形狀：（批次大小，序列A/B的詞元數，embed_size）
+        # f_A/f_B的形狀：（批次大小，序列A/B的詞元數，num_hiddens）
         f_A = self.f(A)
         f_B = self.f(B)
-        # e的形状：（批量大小，序列A的词元数，序列B的词元数）
+        # e的形狀：（批次大小，序列A的詞元數，序列B的詞元數）
         e = npx.batch_dot(f_A, f_B, transpose_b=True)
-        # beta的形状：（批量大小，序列A的词元数，embed_size），
-        # 意味着序列B被软对齐到序列A的每个词元(beta的第1个维度)
+        # beta的形狀：（批次大小，序列A的詞元數，embed_size），
+        # 意味著序列B被軟對齊到序列A的每個詞元(beta的第1個維度)
         beta = npx.batch_dot(npx.softmax(e), B)
-        # alpha的形状：（批量大小，序列B的词元数，embed_size），
-        # 意味着序列A被软对齐到序列B的每个词元(alpha的第1个维度)
+        # alpha的形狀：（批次大小，序列B的詞元數，embed_size），
+        # 意味著序列A被軟對齊到序列B的每個詞元(alpha的第1個維度)
         alpha = npx.batch_dot(npx.softmax(e.transpose(0, 2, 1)), A)
         return beta, alpha
 ```
@@ -142,17 +142,17 @@ class Attend(nn.Module):
         self.f = mlp(num_inputs, num_hiddens, flatten=False)
 
     def forward(self, A, B):
-        # A/B的形状：（批量大小，序列A/B的词元数，embed_size）
-        # f_A/f_B的形状：（批量大小，序列A/B的词元数，num_hiddens）
+        # A/B的形狀：（批次大小，序列A/B的詞元數，embed_size）
+        # f_A/f_B的形狀：（批次大小，序列A/B的詞元數，num_hiddens）
         f_A = self.f(A)
         f_B = self.f(B)
-        # e的形状：（批量大小，序列A的词元数，序列B的词元数）
+        # e的形狀：（批次大小，序列A的詞元數，序列B的詞元數）
         e = torch.bmm(f_A, f_B.permute(0, 2, 1))
-        # beta的形状：（批量大小，序列A的词元数，embed_size），
-        # 意味着序列B被软对齐到序列A的每个词元(beta的第1个维度)
+        # beta的形狀：（批次大小，序列A的詞元數，embed_size），
+        # 意味著序列B被軟對齊到序列A的每個詞元(beta的第1個維度)
         beta = torch.bmm(F.softmax(e, dim=-1), B)
-        # beta的形状：（批量大小，序列B的词元数，embed_size），
-        # 意味着序列A被软对齐到序列B的每个词元(alpha的第1个维度)
+        # beta的形狀：（批次大小，序列B的詞元數，embed_size），
+        # 意味著序列A被軟對齊到序列B的每個詞元(alpha的第1個維度)
         alpha = torch.bmm(F.softmax(e.permute(0, 2, 1), dim=-1), A)
         return beta, alpha
 ```
@@ -165,32 +165,32 @@ class Attend(nn.Layer):
         self.f = mlp(num_inputs, num_hiddens, flatten=False)
 
     def forward(self, A, B):
-        # A/B的形状：（批量大小，序列A/B的词元数，embed_size）
-        # f_A/f_B的形状：（批量大小，序列A/B的词元数，num_hiddens）
+        # A/B的形狀：（批次大小，序列A/B的詞元數，embed_size）
+        # f_A/f_B的形狀：（批次大小，序列A/B的詞元數，num_hiddens）
         f_A = self.f(A)
         f_B = self.f(B)
-        # e的形状：（批量大小，序列A的词元数，序列B的词元数）
+        # e的形狀：（批次大小，序列A的詞元數，序列B的詞元數）
         e = paddle.bmm(f_A, f_B.transpose([0, 2, 1]))
-        # beta的形状：（批量大小，序列A的词元数，embed_size），
-        # 意味着序列B被软对齐到序列A的每个词元(beta的第1个维度)
+        # beta的形狀：（批次大小，序列A的詞元數，embed_size），
+        # 意味著序列B被軟對齊到序列A的每個詞元(beta的第1個維度)
         beta = paddle.bmm(F.softmax(e, axis=-1), B)
-        # beta的形状：（批量大小，序列B的词元数，embed_size），
-        # 意味着序列A被软对齐到序列B的每个词元(alpha的第1个维度)
+        # beta的形狀：（批次大小，序列B的詞元數，embed_size），
+        # 意味著序列A被軟對齊到序列B的每個詞元(alpha的第1個維度)
         alpha = paddle.bmm(F.softmax(e.transpose([0, 2, 1]), axis=-1), A)
         return beta, alpha
 ```
 
-### 比较
+### 比較
 
-在下一步中，我们将一个序列中的词元与与该词元软对齐的另一个序列进行比较。请注意，在软对齐中，一个序列中的所有词元（尽管可能具有不同的注意力权重）将与另一个序列中的词元进行比较。为便于演示， :numref:`fig_nli_attention`对词元以*硬*的方式对齐。例如，上述的*注意*（attending）步骤确定前提中的“need”和“sleep”都与假设中的“tired”对齐，则将对“疲倦-需要睡眠”进行比较。
+在下一步中，我們將一個序列中的詞元與與該詞元軟對齊的另一個序列進行比較。請注意，在軟對齊中，一個序列中的所有詞元（儘管可能具有不同的注意力權重）將與另一個序列中的詞元進行比較。為便於示範， :numref:`fig_nli_attention`對詞元以*硬*的方式對齊。例如，上述的*注意*（attending）步驟確定前提中的『need』和『sleep』都與假設中的『tired』對齊，則將對『疲倦-需要睡眠』進行比較。
 
-在比较步骤中，我们将来自一个序列的词元的连结（运算符$[\cdot, \cdot]$）和来自另一序列的对齐的词元送入函数$g$（一个多层感知机）：
+在比較步驟中，我們將來自一個序列的詞元的連結（運算符$[\cdot, \cdot]$）和來自另一序列的對齊的詞元送入函式$g$（一個多層感知機）：
 
 $$\mathbf{v}_{A,i} = g([\mathbf{a}_i, \boldsymbol{\beta}_i]), i = 1, \ldots, m\\ \mathbf{v}_{B,j} = g([\mathbf{b}_j, \boldsymbol{\alpha}_j]), j = 1, \ldots, n.$$
 
 :eqlabel:`eq_nli_v_ab`
 
-在 :eqref:`eq_nli_v_ab`中，$\mathbf{v}_{A,i}$是指，所有假设中的词元与前提中词元$i$软对齐，再与词元$i$的比较；而$\mathbf{v}_{B,j}$是指，所有前提中的词元与假设中词元$i$软对齐，再与词元$i$的比较。下面的`Compare`个类定义了比较步骤。
+在 :eqref:`eq_nli_v_ab`中，$\mathbf{v}_{A,i}$是指，所有假設中的詞元與前提中詞元$i$軟對齊，再與詞元$i$的比較；而$\mathbf{v}_{B,j}$是指，所有前提中的詞元與假設中詞元$i$軟對齊，再與詞元$i$的比較。下面的`Compare`個類別定義了比較步驟。
 
 ```{.python .input}
 class Compare(nn.Block):
@@ -232,19 +232,19 @@ class Compare(nn.Layer):
 
 ### 聚合
 
-现在我们有两组比较向量$\mathbf{v}_{A,i}$（$i = 1, \ldots, m$）和$\mathbf{v}_{B,j}$（$j = 1, \ldots, n$）。在最后一步中，我们将聚合这些信息以推断逻辑关系。我们首先求和这两组比较向量：
+現在我們有兩組比較向量$\mathbf{v}_{A,i}$（$i = 1, \ldots, m$）和$\mathbf{v}_{B,j}$（$j = 1, \ldots, n$）。在最後一步中，我們將聚合這些訊息以推斷邏輯關係。我們首先求和這兩組比較向量：
 
 $$
 \mathbf{v}_A = \sum_{i=1}^{m} \mathbf{v}_{A,i}, \quad \mathbf{v}_B = \sum_{j=1}^{n}\mathbf{v}_{B,j}.
 $$
 
-接下来，我们将两个求和结果的连结提供给函数$h$（一个多层感知机），以获得逻辑关系的分类结果：
+接下來，我們將兩個求和結果的連結提供給函式$h$（一個多層感知機），以獲得邏輯關係的分類結果：
 
 $$
 \hat{\mathbf{y}} = h([\mathbf{v}_A, \mathbf{v}_B]).
 $$
 
-聚合步骤在以下`Aggregate`类中定义。
+聚合步驟在以下`Aggregate`類別中定義。
 
 ```{.python .input}
 class Aggregate(nn.Block):
@@ -254,10 +254,10 @@ class Aggregate(nn.Block):
         self.h.add(nn.Dense(num_outputs))
 
     def forward(self, V_A, V_B):
-        # 对两组比较向量分别求和
+        # 對兩組比較向量分別求和
         V_A = V_A.sum(axis=1)
         V_B = V_B.sum(axis=1)
-        # 将两个求和结果的连结送到多层感知机中
+        # 將兩個求和結果的連結送到多層感知機中
         Y_hat = self.h(np.concatenate([V_A, V_B], axis=1))
         return Y_hat
 ```
@@ -271,10 +271,10 @@ class Aggregate(nn.Module):
         self.linear = nn.Linear(num_hiddens, num_outputs)
 
     def forward(self, V_A, V_B):
-        # 对两组比较向量分别求和
+        # 對兩組比較向量分別求和
         V_A = V_A.sum(dim=1)
         V_B = V_B.sum(dim=1)
-        # 将两个求和结果的连结送到多层感知机中
+        # 將兩個求和結果的連結送到多層感知機中
         Y_hat = self.linear(self.h(torch.cat([V_A, V_B], dim=1)))
         return Y_hat
 ```
@@ -288,17 +288,17 @@ class Aggregate(nn.Layer):
         self.linear = nn.Linear(num_hiddens, num_outputs)
 
     def forward(self, V_A, V_B):
-        # 对两组比较向量分别求和
+        # 對兩組比較向量分別求和
         V_A = V_A.sum(axis=1)
         V_B = V_B.sum(axis=1)
-        # 将两个求和结果的连结送到多层感知机中
+        # 將兩個求和結果的連結送到多層感知機中
         Y_hat = self.linear(self.h(paddle.concat([V_A, V_B], axis=1)))
         return Y_hat
 ```
 
-### 整合代码
+### 整合程式碼
 
-通过将注意步骤、比较步骤和聚合步骤组合在一起，我们定义了可分解注意力模型来联合训练这三个步骤。
+透過將注意步驟、比較步驟和聚合步驟組合在一起，我們定義了可分解注意力模型來聯合訓練這三個步驟。
 
 ```{.python .input}
 class DecomposableAttention(nn.Block):
@@ -307,7 +307,7 @@ class DecomposableAttention(nn.Block):
         self.embedding = nn.Embedding(len(vocab), embed_size)
         self.attend = Attend(num_hiddens)
         self.compare = Compare(num_hiddens)
-        # 有3种可能的输出：蕴涵、矛盾和中性
+        # 有3種可能的輸出：蘊涵、矛盾和中性
         self.aggregate = Aggregate(num_hiddens, 3)
 
     def forward(self, X):
@@ -329,7 +329,7 @@ class DecomposableAttention(nn.Module):
         self.embedding = nn.Embedding(len(vocab), embed_size)
         self.attend = Attend(num_inputs_attend, num_hiddens)
         self.compare = Compare(num_inputs_compare, num_hiddens)
-        # 有3种可能的输出：蕴涵、矛盾和中性
+        # 有3種可能的輸出：蘊涵、矛盾和中性
         self.aggregate = Aggregate(num_inputs_agg, num_hiddens, num_outputs=3)
 
     def forward(self, X):
@@ -351,7 +351,7 @@ class DecomposableAttention(nn.Layer):
         self.embedding = nn.Embedding(len(vocab), embed_size)
         self.attend = Attend(num_inputs_attend, num_hiddens)
         self.compare = Compare(num_inputs_compare, num_hiddens)
-        # 有3种可能的输出：蕴涵、矛盾和中性
+        # 有3種可能的輸出：蘊涵、矛盾和中性
         self.aggregate = Aggregate(num_inputs_agg, num_hiddens, num_outputs=3)
 
     def forward(self, X):
@@ -364,13 +364,13 @@ class DecomposableAttention(nn.Layer):
         return Y_hat
 ```
 
-## 训练和评估模型
+## 訓練和評估模型
 
-现在，我们将在SNLI数据集上对定义好的可分解注意力模型进行训练和评估。我们从读取数据集开始。
+現在，我們將在SNLI資料集上對定義好的可分解注意力模型進行訓練和評估。我們從讀取資料集開始。
 
-### 读取数据集
+### 讀取資料集
 
-我们使用 :numref:`sec_natural-language-inference-and-dataset`中定义的函数下载并读取SNLI数据集。批量大小和序列长度分别设置为$256$和$50$。
+我們使用 :numref:`sec_natural-language-inference-and-dataset`中定義的函式下載並讀取SNLI資料集。批次大小和序列長度分別設定為$256$和$50$。
 
 ```{.python .input}
 #@tab mxnet, pytorch
@@ -381,7 +381,7 @@ train_iter, test_iter, vocab = d2l.load_data_snli(batch_size, num_steps)
 ```{.python .input}
 #@tab paddle
 def load_data_snli(batch_size, num_steps=50):
-    """下载SNLI数据集并返回数据迭代器和词表
+    """下載SNLI資料集並回傳資料迭代器和詞表
 
     Defined in :numref:`sec_natural-language-inference-and-dataset`"""
     data_dir = d2l.download_extract('SNLI')
@@ -404,9 +404,9 @@ batch_size, num_steps = 256, 50
 train_iter, test_iter, vocab = load_data_snli(batch_size, num_steps)
 ```
 
-### 创建模型
+### 建立模型
 
-我们使用预训练好的100维GloVe嵌入来表示输入词元。我们将向量$\mathbf{a}_i$和$\mathbf{b}_j$在 :eqref:`eq_nli_e`中的维数预定义为100。 :eqref:`eq_nli_e`中的函数$f$和 :eqref:`eq_nli_v_ab`中的函数$g$的输出维度被设置为200.然后我们创建一个模型实例，初始化它的参数，并加载GloVe嵌入来初始化输入词元的向量。
+我們使用預訓練好的100維GloVe嵌入來表示輸入詞元。我們將向量$\mathbf{a}_i$和$\mathbf{b}_j$在 :eqref:`eq_nli_e`中的維數預定義為100。 :eqref:`eq_nli_e`中的函式$f$和 :eqref:`eq_nli_v_ab`中的函式$g$的輸出維度被設定為200.然後我們建立一個模型實例，初始化它的引數，並載入GloVe嵌入來初始化輸入詞元的向量。
 
 ```{.python .input}
 embed_size, num_hiddens, devices = 100, 200, d2l.try_all_gpus()
@@ -435,20 +435,20 @@ embeds = glove_embedding[vocab.idx_to_token]
 net.embedding.weight.set_value(embeds);
 ```
 
-### 训练和评估模型
+### 訓練和評估模型
 
-与 :numref:`sec_multi_gpu`中接受单一输入（如文本序列或图像）的`split_batch`函数不同，我们定义了一个`split_batch_multi_inputs`函数以小批量接受多个输入，如前提和假设。
+與 :numref:`sec_multi_gpu`中接受單一輸入（如文字序列或影象）的`split_batch`函式不同，我們定義了一個`split_batch_multi_inputs`函式以小批次接受多個輸入，如前提和假設。
 
 ```{.python .input}
 #@save
 def split_batch_multi_inputs(X, y, devices):
-    """将多输入'X'和'y'拆分到多个设备"""
+    """將多輸入'X'和'y'拆分到多個裝置"""
     X = list(zip(*[gluon.utils.split_and_load(
         feature, devices, even_split=False) for feature in X]))
     return (X, gluon.utils.split_and_load(y, devices, even_split=False))
 ```
 
-现在我们可以在SNLI数据集上训练和评估模型。
+現在我們可以在SNLI資料集上訓練和評估模型。
 
 ```{.python .input}
 lr, num_epochs = 0.001, 4
@@ -478,12 +478,12 @@ d2l.train_ch13(net, train_iter, test_iter, loss, trainer, num_epochs,
 
 ### 使用模型
 
-最后，定义预测函数，输出一对前提和假设之间的逻辑关系。
+最後，定義預測函式，輸出一對前提和假設之間的邏輯關係。
 
 ```{.python .input}
 #@save
 def predict_snli(net, vocab, premise, hypothesis):
-    """预测前提和假设之间的逻辑关系"""
+    """預測前提和假設之間的邏輯關係"""
     premise = np.array(vocab[premise], ctx=d2l.try_gpu())
     hypothesis = np.array(vocab[hypothesis], ctx=d2l.try_gpu())
     label = np.argmax(net([premise.reshape((1, -1)),
@@ -496,7 +496,7 @@ def predict_snli(net, vocab, premise, hypothesis):
 #@tab pytorch
 #@save
 def predict_snli(net, vocab, premise, hypothesis):
-    """预测前提和假设之间的逻辑关系"""
+    """預測前提和假設之間的邏輯關係"""
     net.eval()
     premise = torch.tensor(vocab[premise], device=d2l.try_gpu())
     hypothesis = torch.tensor(vocab[hypothesis], device=d2l.try_gpu())
@@ -510,7 +510,7 @@ def predict_snli(net, vocab, premise, hypothesis):
 #@tab paddle
 #@save
 def predict_snli(net, vocab, premise, hypothesis):
-    """预测前提和假设之间的逻辑关系"""
+    """預測前提和假設之間的邏輯關係"""
     net.eval()
     premise = paddle.to_tensor(vocab[premise], place=d2l.try_gpu())
     hypothesis = paddle.to_tensor(vocab[hypothesis], place=d2l.try_gpu())
@@ -521,25 +521,25 @@ def predict_snli(net, vocab, premise, hypothesis):
             else 'neutral'
 ```
 
-我们可以使用训练好的模型来获得对示例句子的自然语言推断结果。
+我們可以使用訓練好的模型來獲得對範例句子的自然語言推斷結果。
 
 ```{.python .input}
 #@tab all
 predict_snli(net, vocab, ['he', 'is', 'good', '.'], ['he', 'is', 'bad', '.'])
 ```
 
-## 小结
+## 小結
 
-* 可分解注意模型包括三个步骤来预测前提和假设之间的逻辑关系：注意、比较和聚合。
-* 通过注意力机制，我们可以将一个文本序列中的词元与另一个文本序列中的每个词元对齐，反之亦然。这种对齐是使用加权平均的软对齐，其中理想情况下较大的权重与要对齐的词元相关联。
-* 在计算注意力权重时，分解技巧会带来比二次复杂度更理想的线性复杂度。
-* 我们可以使用预训练好的词向量作为下游自然语言处理任务（如自然语言推断）的输入表示。
+* 可分解注意模型包括三個步驟來預測前提和假設之間的邏輯關係：注意、比較和聚合。
+* 透過注意力機制，我們可以將一個文字序列中的詞元與另一個文字序列中的每個詞元對齊，反之亦然。這種對齊是使用加權平均的軟對齊，其中理想情況下較大的權重與要對齊的詞元相關聯。
+* 在計算注意力權重時，分解技巧會帶來比二次複雜度更理想的線性複雜度。
+* 我們可以使用預訓練好的詞向量作為下游自然語言處理任務（如自然語言推斷）的輸入表示。
 
-## 练习
+## 練習
 
-1. 使用其他超参数组合训练模型，能在测试集上获得更高的准确度吗？
-1. 自然语言推断的可分解注意模型的主要缺点是什么？
-1. 假设我们想要获得任何一对句子的语义相似级别（例如，0～1之间的连续值）。我们应该如何收集和标注数据集？请尝试设计一个有注意力机制的模型。
+1. 使用其他超引數組合訓練模型，能在測試集上獲得更高的準確度嗎？
+1. 自然語言推斷的可分解注意模型的主要缺點是什麼？
+1. 假設我們想要獲得任何一對句子的語義相似級別（例如，0～1之間的連續值）。我們應該如何收集和標註資料集？請嘗試設計一個有注意力機制的模型。
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/5727)

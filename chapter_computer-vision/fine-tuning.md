@@ -1,44 +1,44 @@
-# 微调
+# 微調
 :label:`sec_fine_tuning`
 
-前面的一些章节介绍了如何在只有6万张图像的Fashion-MNIST训练数据集上训练模型。
-我们还描述了学术界当下使用最广泛的大规模图像数据集ImageNet，它有超过1000万的图像和1000类的物体。
-然而，我们平常接触到的数据集的规模通常在这两者之间。
+前面的一些章節介紹瞭如何在只有6萬張影象的Fashion-MNIST訓練資料集上訓練模型。
+我們還描述了學術界當下使用最廣泛的大規模影象資料集ImageNet，它有超過1000萬的影象和1000類別的物體。
+然而，我們平常接觸到的資料集的規模通常在這兩者之間。
 
-假如我们想识别图片中不同类型的椅子，然后向用户推荐购买链接。
-一种可能的方法是首先识别100把普通椅子，为每把椅子拍摄1000张不同角度的图像，然后在收集的图像数据集上训练一个分类模型。
-尽管这个椅子数据集可能大于Fashion-MNIST数据集，但实例数量仍然不到ImageNet中的十分之一。
-适合ImageNet的复杂模型可能会在这个椅子数据集上过拟合。
-此外，由于训练样本数量有限，训练模型的准确性可能无法满足实际要求。
+假如我們想識別圖片中不同型別的椅子，然後向用戶推薦購買連結。
+一種可能的方法是首先識別100把普通椅子，為每把椅子拍攝1000張不同角度的影象，然後在收集的影象資料集上訓練一個分類模型。
+儘管這個椅子資料集可能大於Fashion-MNIST資料集，但實例數量仍然不到ImageNet中的十分之一。
+適合ImageNet的複雜模型可能會在這個椅子資料集上過擬合。
+此外，由於訓練樣本數量有限，訓練模型的準確性可能無法滿足實際要求。
 
-为了解决上述问题，一个显而易见的解决方案是收集更多的数据。
-但是，收集和标记数据可能需要大量的时间和金钱。
-例如，为了收集ImageNet数据集，研究人员花费了数百万美元的研究资金。
-尽管目前的数据收集成本已大幅降低，但这一成本仍不能忽视。
+為了解決上述問題，一個顯而易見的解決方案是收集更多的資料。
+但是，收集和標記資料可能需要大量的時間和金錢。
+例如，為了收集ImageNet資料集，研究人員花費了數百萬美元的研究資金。
+儘管目前的資料收集成本已大幅降低，但這一成本仍不能忽視。
 
-另一种解决方案是应用*迁移学习*（transfer learning）将从*源数据集*学到的知识迁移到*目标数据集*。
-例如，尽管ImageNet数据集中的大多数图像与椅子无关，但在此数据集上训练的模型可能会提取更通用的图像特征，这有助于识别边缘、纹理、形状和对象组合。
-这些类似的特征也可能有效地识别椅子。
+另一種解決方案是應用*遷移學習*（transfer learning）將從*源資料集*學到的知識遷移到*目標資料集*。
+例如，儘管ImageNet資料集中的大多數影象與椅子無關，但在此資料集上訓練的模型可能會提取更通用的影象特徵，這有助於識別邊緣、紋理、形狀和物件組合。
+這些類似的特徵也可能有效地識別椅子。
 
-## 步骤
+## 步驟
 
-本节将介绍迁移学习中的常见技巧:*微调*（fine-tuning）。如 :numref:`fig_finetune`所示，微调包括以下四个步骤。
+本節將介紹遷移學習中的常見技巧:*微調*（fine-tuning）。如 :numref:`fig_finetune`所示，微調包括以下四個步驟。
 
-1. 在源数据集（例如ImageNet数据集）上预训练神经网络模型，即*源模型*。
-1. 创建一个新的神经网络模型，即*目标模型*。这将复制源模型上的所有模型设计及其参数（输出层除外）。我们假定这些模型参数包含从源数据集中学到的知识，这些知识也将适用于目标数据集。我们还假设源模型的输出层与源数据集的标签密切相关；因此不在目标模型中使用该层。
-1. 向目标模型添加输出层，其输出数是目标数据集中的类别数。然后随机初始化该层的模型参数。
-1. 在目标数据集（如椅子数据集）上训练目标模型。输出层将从头开始进行训练，而所有其他层的参数将根据源模型的参数进行微调。
+1. 在源資料集（例如ImageNet資料集）上預訓練神經網路模型，即*源模型*。
+1. 建立一個新的神經網路模型，即*目標模型*。這將複製源模型上的所有模型設計及其引數（輸出層除外）。我們假定這些模型引數包含從源資料集中學到的知識，這些知識也將適用於目標資料集。我們還假設源模型的輸出層與源資料集的標籤密切相關；因此不在目標模型中使用該層。
+1. 向目標模型新增輸出層，其輸出數是目標資料集中的類別數。然後隨機初始化該層的模型引數。
+1. 在目標資料集（如椅子資料集）上訓練目標模型。輸出層將從頭開始進行訓練，而所有其他層的引數將根據源模型的引數進行微調。
 
-![微调。](../img/finetune.svg)
+![微調。](../img/finetune.svg)
 :label:`fig_finetune`
 
-当目标数据集比源数据集小得多时，微调有助于提高模型的泛化能力。
+當目標資料集比源資料集小得多時，微調有助於提高模型的泛化能力。
 
-## 热狗识别
+## 熱狗識別
 
-让我们通过具体案例演示微调：热狗识别。
-我们将在一个小型数据集上微调ResNet模型。该模型已在ImageNet数据集上进行了预训练。
-这个小型数据集包含数千张包含热狗和不包含热狗的图像，我们将使用微调模型来识别图像中是否包含热狗。
+讓我們透過具體案例示範微調：熱狗識別。
+我們將在一個小型資料集上微調ResNet模型。該模型已在ImageNet資料集上進行了預訓練。
+這個小型資料集包含數千張包含熱狗和不包含熱狗的影象，我們將使用微調模型來識別影象中是否包含熱狗。
 
 ```{.python .input}
 %matplotlib inline
@@ -72,15 +72,15 @@ import paddle.vision as paddlevision
 import os
 ```
 
-### 获取数据集
+### 獲取資料集
 
-我们使用的[**热狗数据集来源于网络**]。
-该数据集包含1400张热狗的“正类”图像，以及包含尽可能多的其他食物的“负类”图像。
-含着两个类别的1000张图片用于训练，其余的则用于测试。
+我們使用的[**熱狗資料集來源於網路**]。
+該資料集包含1400張熱狗的『正類』影象，以及包含儘可能多的其他食物的『負類』影象。
+含著兩個類別的1000張圖片用於訓練，其餘的則用於測試。
 
-解压下载的数据集，我们获得了两个文件夹`hotdog/train`和`hotdog/test`。
-这两个文件夹都有`hotdog`（有热狗）和`not-hotdog`（无热狗）两个子文件夹，
-子文件夹内都包含相应类的图像。
+解壓下載的資料集，我們獲得了兩個資料夾`hotdog/train`和`hotdog/test`。
+這兩個資料夾都有`hotdog`（有熱狗）和`not-hotdog`（無熱狗）兩個子資料夾，
+子資料夾內都包含相應類別的影象。
 
 ```{.python .input}
 #@tab all
@@ -91,7 +91,7 @@ d2l.DATA_HUB['hotdog'] = (d2l.DATA_URL + 'hotdog.zip',
 data_dir = d2l.download_extract('hotdog')
 ```
 
-我们创建两个实例来分别读取训练和测试数据集中的所有图像文件。
+我們建立兩個實例來分別讀取訓練和測試資料集中的所有影象檔案。
 
 ```{.python .input}
 train_imgs = gluon.data.vision.ImageFolderDataset(
@@ -112,7 +112,7 @@ train_imgs = paddlevision.datasets.DatasetFolder(os.path.join(data_dir, 'train')
 test_imgs = paddlevision.datasets.DatasetFolder(os.path.join(data_dir, 'test'))
 ```
 
-下面显示了前8个正类样本图片和最后8张负类样本图片。正如所看到的，[**图像的大小和纵横比各有不同**]。
+下面顯示了前8個正類樣本圖片和最後8張負類樣本圖片。正如所看到的，[**影象的大小和縱橫比各有不同**]。
 
 ```{.python .input}
 #@tab all
@@ -121,15 +121,15 @@ not_hotdogs = [train_imgs[-i - 1][0] for i in range(8)]
 d2l.show_images(hotdogs + not_hotdogs, 2, 8, scale=1.4);
 ```
 
-在训练期间，我们首先从图像中裁切随机大小和随机长宽比的区域，然后将该区域缩放为$224 \times 224$输入图像。
-在测试过程中，我们将图像的高度和宽度都缩放到256像素，然后裁剪中央$224 \times 224$区域作为输入。
-此外，对于RGB（红、绿和蓝）颜色通道，我们分别*标准化*每个通道。
-具体而言，该通道的每个值减去该通道的平均值，然后将结果除以该通道的标准差。
+在訓練期間，我們首先從影象中裁切隨機大小和隨機長寬比的區域，然後將該區域縮放為$224 \times 224$輸入影象。
+在測試過程中，我們將影象的高度和寬度都縮放到256畫素，然後裁剪中央$224 \times 224$區域作為輸入。
+此外，對於RGB（紅、綠和藍）顏色通道，我們分別*標準化*每個通道。
+具體而言，該通道的每個值減去該通道的平均值，然後將結果除以該通道的標準差。
 
-[~~数据增广~~]
+[~~資料增廣~~]
 
 ```{.python .input}
-# 使用RGB通道的均值和标准差，以标准化每个通道
+# 使用RGB通道的均值和標準差，以標準化每個通道
 normalize = gluon.data.vision.transforms.Normalize(
     [0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 
@@ -148,7 +148,7 @@ test_augs = gluon.data.vision.transforms.Compose([
 
 ```{.python .input}
 #@tab pytorch
-# 使用RGB通道的均值和标准差，以标准化每个通道
+# 使用RGB通道的均值和標準差，以標準化每個通道
 normalize = torchvision.transforms.Normalize(
     [0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 
@@ -167,7 +167,7 @@ test_augs = torchvision.transforms.Compose([
 
 ```{.python .input}
 #@tab paddle
-# 使用RGB通道的均值和标准差，以标准化每个通道
+# 使用RGB通道的均值和標準差，以標準化每個通道
 normalize = paddle.vision.transforms.Normalize(
     [0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
 
@@ -184,11 +184,11 @@ test_augs = paddlevision.transforms.Compose([
     normalize])
 ```
 
-### [**定义和初始化模型**]
+### [**定義和初始化模型**]
 
-我们使用在ImageNet数据集上预训练的ResNet-18作为源模型。
-在这里，我们指定`pretrained=True`以自动下载预训练的模型参数。
-如果首次使用此模型，则需要连接互联网才能下载。
+我們使用在ImageNet資料集上預訓練的ResNet-18作為源模型。
+在這裡，我們指定`pretrained=True`以自動下載預訓練的模型引數。
+如果首次使用此模型，則需要連線網際網路才能下載。
 
 ```{.python .input}
 pretrained_net = gluon.model_zoo.vision.resnet18_v2(pretrained=True)
@@ -205,22 +205,22 @@ pretrained_net = paddlevision.models.resnet18(pretrained=True)
 ```
 
 :begin_tab:`mxnet`
-预训练的源模型实例包含两个成员变量：`features`和`output`。
-前者包含除输出层以外的模型的所有层，后者是模型的输出层。
-此划分的主要目的是促进对除输出层以外所有层的模型参数进行微调。
-源模型的成员变量`output`如下所示。
+預訓練的源模型實例包含兩個成員變數：`features`和`output`。
+前者包含除輸出層以外的模型的所有層，後者是模型的輸出層。
+此劃分的主要目的是促進對除輸出層以外所有層的模型引數進行微調。
+源模型的成員變數`output`如下所示。
 :end_tab:
 
 :begin_tab:`pytorch`
-预训练的源模型实例包含许多特征层和一个输出层`fc`。
-此划分的主要目的是促进对除输出层以外所有层的模型参数进行微调。
-下面给出了源模型的成员变量`fc`。
+預訓練的源模型實例包含許多特徵層和一個輸出層`fc`。
+此劃分的主要目的是促進對除輸出層以外所有層的模型引數進行微調。
+下面給出了源模型的成員變數`fc`。
 :end_tab:
 
 :begin_tab:`paddle`
-预训练的源模型实例包含许多特征层和一个输出层`fc`。
-此划分的主要目的是促进对除输出层以外所有层的模型参数进行微调。
-下面给出了源模型的成员变量`fc`。
+預訓練的源模型實例包含許多特徵層和一個輸出層`fc`。
+此劃分的主要目的是促進對除輸出層以外所有層的模型引數進行微調。
+下面給出了源模型的成員變數`fc`。
 :end_tab:
 
 ```{.python .input}
@@ -232,21 +232,21 @@ pretrained_net.output
 pretrained_net.fc
 ```
 
-在ResNet的全局平均汇聚层后，全连接层转换为ImageNet数据集的1000个类输出。
-之后，我们构建一个新的神经网络作为目标模型。
-它的定义方式与预训练源模型的定义方式相同，只是最终层中的输出数量被设置为目标数据集中的类数（而不是1000个）。
+在ResNet的全域平均彙聚層後，全連線層轉換為ImageNet資料集的1000個類輸出。
+之後，我們建立一個新的神經網路作為目標模型。
+它的定義方式與預訓練源模型的定義方式相同，只是最終層中的輸出數量被設定為目標資料集中的類數（而不是1000個）。
 
-在下面的代码中，目标模型`finetune_net`中成员变量`features`的参数被初始化为源模型相应层的模型参数。
-由于模型参数是在ImageNet数据集上预训练的，并且足够好，因此通常只需要较小的学习率即可微调这些参数。
+在下面的程式碼中，目標模型`finetune_net`中成員變數`features`的引數被初始化為源模型相應層的模型引數。
+由於模型引數是在ImageNet資料集上預訓練的，並且足夠好，因此通常只需要較小的學習率即可微調這些引數。
 
-成员变量`output`的参数是随机初始化的，通常需要更高的学习率才能从头开始训练。
-假设`Trainer`实例中的学习率为$\eta$，我们将成员变量`output`中参数的学习率设置为$10\eta$。
+成員變數`output`的引數是隨機初始化的，通常需要更高的學習率才能從頭開始訓練。
+假設`Trainer`實例中的學習率為$\eta$，我們將成員變數`output`中引數的學習率設定為$10\eta$。
 
 ```{.python .input}
 finetune_net = gluon.model_zoo.vision.resnet18_v2(classes=2)
 finetune_net.features = pretrained_net.features
 finetune_net.output.initialize(init.Xavier())
-# 输出层中的学习率比其他层的学习率大十倍
+# 輸出層中的學習率比其他層的學習率大十倍
 finetune_net.output.collect_params().setattr('lr_mult', 10)
 ```
 
@@ -264,9 +264,9 @@ finetune_net.fc = nn.Linear(pretrained_net.fc.state_dict()['weight'].shape[0], 2
 nn.initializer.XavierUniform(pretrained_net.fc.state_dict()['weight']);
 ```
 
-### [**微调模型**]
+### [**微調模型**]
 
-首先，我们定义了一个训练函数`train_fine_tuning`，该函数使用微调，因此可以多次调用。
+首先，我們定義了一個訓練函式`train_fine_tuning`，該函式使用微調，因此可以多次呼叫。
 
 ```{.python .input}
 def train_fine_tuning(net, learning_rate, batch_size=128, num_epochs=5):
@@ -286,7 +286,7 @@ def train_fine_tuning(net, learning_rate, batch_size=128, num_epochs=5):
 
 ```{.python .input}
 #@tab pytorch
-# 如果param_group=True，输出层中的模型参数将使用十倍的学习率
+# 如果param_group=True，輸出層中的模型引數將使用十倍的學習率
 def train_fine_tuning(net, learning_rate, batch_size=128, num_epochs=5,
                       param_group=True):
     train_iter = torch.utils.data.DataLoader(torchvision.datasets.ImageFolder(
@@ -313,7 +313,7 @@ def train_fine_tuning(net, learning_rate, batch_size=128, num_epochs=5,
 
 ```{.python .input}
 #@tab paddle
-# 如果param_group=True，输出层中的模型参数将使用十倍的学习率
+# 如果param_group=True，輸出層中的模型引數將使用十倍的學習率
 def train_fine_tuning(net, learning_rate, batch_size=128, num_epochs=5,
                       param_group=True):
     train_iter = paddle.io.DataLoader(paddle.vision.datasets.DatasetFolder(
@@ -337,7 +337,7 @@ def train_fine_tuning(net, learning_rate, batch_size=128, num_epochs=5,
     d2l.train_ch13(net, train_iter, test_iter, loss, trainer, num_epochs, devices)
 ```
 
-我们[**使用较小的学习率**]，通过*微调*预训练获得的模型参数。
+我們[**使用較小的學習率**]，透過*微調*預訓練獲得的模型引數。
 
 ```{.python .input}
 train_fine_tuning(finetune_net, 0.01)
@@ -348,8 +348,8 @@ train_fine_tuning(finetune_net, 0.01)
 train_fine_tuning(finetune_net, 5e-5)
 ```
 
-[**为了进行比较，**]我们定义了一个相同的模型，但是将其(**所有模型参数初始化为随机值**)。
-由于整个模型需要从头开始训练，因此我们需要使用更大的学习率。
+[**為了進行比較，**]我們定義了一個相同的模型，但是將其(**所有模型引數初始化為隨機值**)。
+由於整個模型需要從頭開始訓練，因此我們需要使用更大的學習率。
 
 ```{.python .input}
 scratch_net = gluon.model_zoo.vision.resnet18_v2(classes=2)
@@ -371,19 +371,19 @@ scratch_net.fc = nn.Linear(pretrained_net.fc.state_dict()['weight'].shape[0], 2)
 train_fine_tuning(scratch_net, 5e-4, param_group=False)
 ```
 
-意料之中，微调模型往往表现更好，因为它的初始参数值更有效。
+意料之中，微調模型往往表現更好，因為它的初始引數值更有效。
 
-## 小结
+## 小結
 
-* 迁移学习将从源数据集中学到的知识*迁移*到目标数据集，微调是迁移学习的常见技巧。
-* 除输出层外，目标模型从源模型中复制所有模型设计及其参数，并根据目标数据集对这些参数进行微调。但是，目标模型的输出层需要从头开始训练。
-* 通常，微调参数使用较小的学习率，而从头开始训练输出层可以使用更大的学习率。
+* 遷移學習將從源資料集中學到的知識*遷移*到目標資料集，微調是遷移學習的常見技巧。
+* 除輸出層外，目標模型從源模型中複製所有模型設計及其引數，並根據目標資料集對這些引數進行微調。但是，目標模型的輸出層需要從頭開始訓練。
+* 通常，微調引數使用較小的學習率，而從頭開始訓練輸出層可以使用更大的學習率。
 
-## 练习
+## 練習
 
-1. 继续提高`finetune_net`的学习率，模型的准确性如何变化？
-2. 在比较实验中进一步调整`finetune_net`和`scratch_net`的超参数。它们的准确性还有不同吗？
-3. 将输出层`finetune_net`之前的参数设置为源模型的参数，在训练期间不要更新它们。模型的准确性如何变化？提示：可以使用以下代码。
+1. 繼續提高`finetune_net`的學習率，模型的準確性如何變化？
+2. 在比較實驗中進一步調整`finetune_net`和`scratch_net`的超引數。它們的準確性還有不同嗎？
+3. 將輸出層`finetune_net`之前的引數設定為源模型的引數，在訓練期間不要更新它們。模型的準確性如何變化？提示：可以使用以下程式碼。
 
 ```{.python .input}
 finetune_net.features.collect_params().setattr('grad_req', 'null')
@@ -401,7 +401,7 @@ for param in finetune_net.parameters():
     param.stop_gradient = True
 ```
 
-4. 事实上，`ImageNet`数据集中有一个“热狗”类别。我们可以通过以下代码获取其输出层中的相应权重参数，但是我们怎样才能利用这个权重参数？
+4. 事實上，`ImageNet`資料集中有一個『熱狗』類別。我們可以透過以下程式碼獲取其輸出層中的相應權重引數，但是我們怎樣才能利用這個權重引數？
 
 ```{.python .input}
 weight = pretrained_net.output.weight

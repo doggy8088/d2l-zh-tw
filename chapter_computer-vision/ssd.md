@@ -1,46 +1,46 @@
-# 单发多框检测（SSD）
+# 單發多框檢測（SSD）
 :label:`sec_ssd`
 
-在 :numref:`sec_bbox`— :numref:`sec_object-detection-dataset`中，我们分别介绍了边界框、锚框、多尺度目标检测和用于目标检测的数据集。
-现在我们已经准备好使用这样的背景知识来设计一个目标检测模型：单发多框检测（SSD） :cite:`Liu.Anguelov.Erhan.ea.2016`。
-该模型简单、快速且被广泛使用。尽管这只是其中一种目标检测模型，但本节中的一些设计原则和实现细节也适用于其他模型。
+在 :numref:`sec_bbox`— :numref:`sec_object-detection-dataset`中，我們分別介紹了邊界框、錨框、多尺度目標檢測和用於目標檢測的資料集。
+現在我們已經準備好使用這樣的背景知識來設計一個目標檢測模型：單發多框檢測（SSD） :cite:`Liu.Anguelov.Erhan.ea.2016`。
+該模型簡單、快速且被廣泛使用。儘管這只是其中一種目標檢測模型，但本節中的一些設計原則和實現細節也適用於其他模型。
 
 ## 模型
 
- :numref:`fig_ssd`描述了单发多框检测模型的设计。
-此模型主要由基础网络组成，其后是几个多尺度特征块。
-基本网络用于从输入图像中提取特征，因此它可以使用深度卷积神经网络。
-单发多框检测论文中选用了在分类层之前截断的VGG :cite:`Liu.Anguelov.Erhan.ea.2016`，现在也常用ResNet替代。
-我们可以设计基础网络，使它输出的高和宽较大。
-这样一来，基于该特征图生成的锚框数量较多，可以用来检测尺寸较小的目标。
-接下来的每个多尺度特征块将上一层提供的特征图的高和宽缩小（如减半），并使特征图中每个单元在输入图像上的感受野变得更广阔。
+ :numref:`fig_ssd`描述了單發多框檢測模型的設計。
+此模型主要由基礎網路組成，其後是幾個多尺度特徵區塊。
+基本網路用於從輸入影象中提取特徵，因此它可以使用深度卷積神經網路。
+單發多框檢測論文中選用了在分類層之前截斷的VGG :cite:`Liu.Anguelov.Erhan.ea.2016`，現在也常用ResNet替代。
+我們可以設計基礎網路，使它輸出的高和寬較大。
+這樣一來，基於該特徵圖生成的錨框數量較多，可以用來檢測尺寸較小的目標。
+接下來的每個多尺度特徵區塊將上一層提供的特徵圖的高和寬縮小（如減半），並使特徵圖中每個單元在輸入影象上的感受野變得更廣闊。
 
-回想一下在 :numref:`sec_multiscale-object-detection`中，通过深度神经网络分层表示图像的多尺度目标检测的设计。
-由于接近 :numref:`fig_ssd`顶部的多尺度特征图较小，但具有较大的感受野，它们适合检测较少但较大的物体。
-简而言之，通过多尺度特征块，单发多框检测生成不同大小的锚框，并通过预测边界框的类别和偏移量来检测大小不同的目标，因此这是一个多尺度目标检测模型。
+回想一下在 :numref:`sec_multiscale-object-detection`中，透過深度神經網路分層表示影象的多尺度目標檢測的設計。
+由於接近 :numref:`fig_ssd`頂部的多尺度特徵圖較小，但具有較大的感受野，它們適合檢測較少但較大的物體。
+簡而言之，透過多尺度特徵區塊，單發多框檢測生成不同大小的錨框，並透過預測邊界框的類別和偏移量來檢測大小不同的目標，因此這是一個多尺度目標檢測模型。
 
-![单发多框检测模型主要由一个基础网络块和若干多尺度特征块串联而成。](../img/ssd.svg)
+![單發多框檢測模型主要由一個基礎網路區塊和若干多尺度特徵區塊串聯而成。](../img/ssd.svg)
 :label:`fig_ssd`
 
-在下面，我们将介绍 :numref:`fig_ssd`中不同块的实施细节。
-首先，我们将讨论如何实施类别和边界框预测。
+在下面，我們將介紹 :numref:`fig_ssd`中不同區塊的實施細節。
+首先，我們將討論如何實施類別和邊界框預測。
 
-### [**类别预测层**]
+### [**類別預測層**]
 
-设目标类别的数量为$q$。这样一来，锚框有$q+1$个类别，其中0类是背景。
-在某个尺度下，设特征图的高和宽分别为$h$和$w$。
-如果以其中每个单元为中心生成$a$个锚框，那么我们需要对$hwa$个锚框进行分类。
-如果使用全连接层作为输出，很容易导致模型参数过多。
-回忆 :numref:`sec_nin`一节介绍的使用卷积层的通道来输出类别预测的方法，
-单发多框检测采用同样的方法来降低模型复杂度。
+設目標類別別的數量為$q$。這樣一來，錨框有$q+1$個類別，其中0類是背景。
+在某個尺度下，設特徵圖的高和寬分別為$h$和$w$。
+如果以其中每個單元為中心生成$a$個錨框，那麼我們需要對$hwa$個錨框進行分類。
+如果使用全連線層作為輸出，很容易導致模型引數過多。
+回憶 :numref:`sec_nin`一節介紹的使用卷積層的通道來輸出類別預測的方法，
+單發多框檢測採用同樣的方法來降低模型複雜度。
 
-具体来说，类别预测层使用一个保持输入高和宽的卷积层。
-这样一来，输出和输入在特征图宽和高上的空间坐标一一对应。
-考虑输出和输入同一空间坐标（$x$、$y$）：输出特征图上（$x$、$y$）坐标的通道里包含了以输入特征图（$x$、$y$）坐标为中心生成的所有锚框的类别预测。
-因此输出通道数为$a(q+1)$，其中索引为$i(q+1) + j$（$0 \leq j \leq q$）的通道代表了索引为$i$的锚框有关类别索引为$j$的预测。
+具體來說，類別預測層使用一個保持輸入高和寬的卷積層。
+這樣一來，輸出和輸入在特徵圖寬和高上的空間坐標一一對應。
+考慮輸出和輸入同一空間坐標（$x$、$y$）：輸出特徵圖上（$x$、$y$）坐標的通道裡包含了以輸入特徵圖（$x$、$y$）坐標為中心生成的所有錨框的類別預測。
+因此輸出通道數為$a(q+1)$，其中索引為$i(q+1) + j$（$0 \leq j \leq q$）的通道代表了索引為$i$的錨框有關類別索引為$j$的預測。
 
-在下面，我们定义了这样一个类别预测层，通过参数`num_anchors`和`num_classes`分别指定了$a$和$q$。
-该图层使用填充为1的$3\times3$的卷积层。此卷积层的输入和输出的宽度和高度保持不变。
+在下面，我們定義了這樣一個類別預測層，透過引數`num_anchors`和`num_classes`分別指定了$a$和$q$。
+該圖層使用填充為1的$3\times3$的卷積層。此卷積層的輸入和輸出的寬度和高度保持不變。
 
 ```{.python .input}
 %matplotlib inline
@@ -85,10 +85,10 @@ def cls_predictor(num_inputs, num_anchors, num_classes):
                      kernel_size=3, padding=1)
 ```
 
-### (**边界框预测层**)
+### (**邊界框預測層**)
 
-边界框预测层的设计与类别预测层的设计类似。
-唯一不同的是，这里需要为每个锚框预测4个偏移量，而不是$q+1$个类别。
+邊界框預測層的設計與類別預測層的設計類似。
+唯一不同的是，這裡需要為每個錨框預測4個偏移量，而不是$q+1$個類別。
 
 ```{.python .input}
 def bbox_predictor(num_anchors):
@@ -107,15 +107,15 @@ def bbox_predictor(num_inputs, num_anchors):
     return nn.Conv2D(num_inputs, num_anchors * 4, kernel_size=3, padding=1)
 ```
 
-### [**连结多尺度的预测**]
+### [**連結多尺度的預測**]
 
-正如我们所提到的，单发多框检测使用多尺度特征图来生成锚框并预测其类别和偏移量。
-在不同的尺度下，特征图的形状或以同一单元为中心的锚框的数量可能会有所不同。
-因此，不同尺度下预测输出的形状可能会有所不同。
+正如我們所提到的，單發多框檢測使用多尺度特徵圖來生成錨框並預測其類別和偏移量。
+在不同的尺度下，特徵圖的形狀或以同一單元為中心的錨框的數量可能會有所不同。
+因此，不同尺度下預測輸出的形狀可能會有所不同。
 
-在以下示例中，我们为同一个小批量构建两个不同比例（`Y1`和`Y2`）的特征图，其中`Y2`的高度和宽度是`Y1`的一半。
-以类别预测为例，假设`Y1`和`Y2`的每个单元分别生成了$5$个和$3$个锚框。
-进一步假设目标类别的数量为$10$，对于特征图`Y1`和`Y2`，类别预测输出中的通道数分别为$5\times(10+1)=55$和$3\times(10+1)=33$，其中任一输出的形状是（批量大小，通道数，高度，宽度）。
+在以下範例中，我們為同一個小批次建立兩個不同比例（`Y1`和`Y2`）的特徵圖，其中`Y2`的高度和寬度是`Y1`的一半。
+以類別預測為例，假設`Y1`和`Y2`的每個單元分別生成了$5$個和$3$個錨框。
+進一步假設目標類別別的數量為$10$，對於特徵圖`Y1`和`Y2`，類別預測輸出中的通道數分別為$5\times(10+1)=55$和$3\times(10+1)=33$，其中任一輸出的形狀是（批次大小，通道數，高度，寬度）。
 
 ```{.python .input}
 def forward(x, block):
@@ -147,11 +147,11 @@ Y2 = forward(paddle.zeros((2, 16, 10, 10)), cls_predictor(16, 3, 10))
 Y1.shape, Y2.shape
 ```
 
-正如我们所看到的，除了批量大小这一维度外，其他三个维度都具有不同的尺寸。
-为了将这两个预测输出链接起来以提高计算效率，我们将把这些张量转换为更一致的格式。
+正如我們所看到的，除了批次大小這一維度外，其他三個維度都具有不同的尺寸。
+為了將這兩個預測輸出連結起來以提高計算效率，我們將把這些張量轉換為更一致的格式。
 
-通道维包含中心相同的锚框的预测结果。我们首先将通道维移到最后一维。
-因为不同尺度下批量大小仍保持不变，我们可以将预测结果转成二维的（批量大小，高$\times$宽$\times$通道数）的格式，以方便之后在维度$1$上的连结。
+通道維包含中心相同的錨框的預測結果。我們首先將通道維移到最後一維。
+因為不同尺度下批次大小仍保持不變，我們可以將預測結果轉成二維的（批次大小，高$\times$寬$\times$通道數）的格式，以方便之後在維度$1$上的連結。
 
 ```{.python .input}
 def flatten_pred(pred):
@@ -179,20 +179,20 @@ def concat_preds(preds):
     return paddle.concat([flatten_pred(p) for p in preds], axis=1)
 ```
 
-这样一来，尽管`Y1`和`Y2`在通道数、高度和宽度方面具有不同的大小，我们仍然可以在同一个小批量的两个不同尺度上连接这两个预测输出。
+這樣一來，儘管`Y1`和`Y2`在通道數、高度和寬度方面具有不同的大小，我們仍然可以在同一個小批次的兩個不同尺度上連線這兩個預測輸出。
 
 ```{.python .input}
 #@tab all
 concat_preds([Y1, Y2]).shape
 ```
 
-### [**高和宽减半块**]
+### [**高和寬減半區塊**]
 
-为了在多个尺度下检测目标，我们在下面定义了高和宽减半块`down_sample_blk`，该模块将输入特征图的高度和宽度减半。
-事实上，该块应用了在 :numref:`subsec_vgg-blocks`中的VGG模块设计。
-更具体地说，每个高和宽减半块由两个填充为$1$的$3\times3$的卷积层、以及步幅为$2$的$2\times2$最大汇聚层组成。
-我们知道，填充为$1$的$3\times3$卷积层不改变特征图的形状。但是，其后的$2\times2$的最大汇聚层将输入特征图的高度和宽度减少了一半。
-对于此高和宽减半块的输入和输出特征图，因为$1\times 2+(3-1)+(3-1)=6$，所以输出中的每个单元在输入上都有一个$6\times6$的感受野。因此，高和宽减半块会扩大每个单元在其输出特征图中的感受野。
+為了在多個尺度下檢測目標，我們在下面定義了高和寬減半區塊`down_sample_blk`，該模組將輸入特徵圖的高度和寬度減半。
+事實上，該區塊應用了在 :numref:`subsec_vgg-blocks`中的VGG模組設計。
+更具體地說，每個高和寬減半區塊由兩個填充為$1$的$3\times3$的卷積層、以及步幅為$2$的$2\times2$最大彙聚層組成。
+我們知道，填充為$1$的$3\times3$卷積層不改變特徵圖的形狀。但是，其後的$2\times2$的最大彙聚層將輸入特徵圖的高度和寬度減少了一半。
+對於此高和寬減半區塊的輸入和輸出特徵圖，因為$1\times 2+(3-1)+(3-1)=6$，所以輸出中的每個單元在輸入上都有一個$6\times6$的感受野。因此，高和寬減半區塊會擴大每個單元在其輸出特徵圖中的感受野。
 
 ```{.python .input}
 def down_sample_blk(num_channels):
@@ -233,7 +233,7 @@ def down_sample_blk(in_channels, out_channels):
     return nn.Sequential(*blk)
 ```
 
-在以下示例中，我们构建的高和宽减半块会更改输入通道的数量，并将输入特征图的高度和宽度减半。
+在以下範例中，我們建立的高和寬減半區塊會更改輸入通道的數量，並將輸入特徵圖的高度和寬度減半。
 
 ```{.python .input}
 forward(np.zeros((2, 3, 20, 20)), down_sample_blk(10)).shape
@@ -249,11 +249,11 @@ forward(torch.zeros((2, 3, 20, 20)), down_sample_blk(3, 10)).shape
 forward(paddle.zeros((2, 3, 20, 20)), down_sample_blk(3, 10)).shape
 ```
 
-### [**基本网络块**]
+### [**基本網路區塊**]
 
-基本网络块用于从输入图像中抽取特征。
-为了计算简洁，我们构造了一个小的基础网络，该网络串联3个高和宽减半块，并逐步将通道数翻倍。
-给定输入图像的形状为$256\times256$，此基本网络块输出的特征图形状为$32 \times 32$（$256/2^3=32$）。
+基本網路區塊用於從輸入影象中抽取特徵。
+為了計算簡潔，我們構造了一個小的基礎網路，該網路串聯3個高和寬減半區塊，並逐步將通道數翻倍。
+給定輸入影象的形狀為$256\times256$，此基本網路區塊輸出的特徵圖形狀為$32 \times 32$（$256/2^3=32$）。
 
 ```{.python .input}
 def base_net():
@@ -291,7 +291,7 @@ forward(paddle.zeros((2, 3, 256, 256)), base_net()).shape
 
 ### 完整的模型
 
-[**完整的单发多框检测模型由五个模块组成**]。每个块生成的特征图既用于生成锚框，又用于预测这些锚框的类别和偏移量。在这五个模块中，第一个是基本网络块，第二个到第四个是高和宽减半块，最后一个模块使用全局最大池将高度和宽度都降到1。从技术上讲，第二到第五个区块都是 :numref:`fig_ssd`中的多尺度特征块。
+[**完整的單發多框檢測模型由五個模組組成**]。每個區塊生成的特徵圖既用於生成錨框，又用於預測這些錨框的類別和偏移量。在這五個模組中，第一個是基本網路區塊，第二個到第四個是高和寬減半區塊，最後一個模組使用全域最大池將高度和寬度都降到1。從技術上講，第二到第五個區塊都是 :numref:`fig_ssd`中的多尺度特徵區塊。
 
 ```{.python .input}
 def get_blk(i):
@@ -332,7 +332,7 @@ def get_blk(i):
     return blk
 ```
 
-现在我们[**为每个块定义前向传播**]。与图像分类任务不同，此处的输出包括：CNN特征图`Y`；在当前尺度下根据`Y`生成的锚框；预测的这些锚框的类别和偏移量（基于`Y`）。
+現在我們[**為每個區塊定義前向傳播**]。與影象分類任務不同，此處的輸出包括：CNN特徵圖`Y`；在當前尺度下根據`Y`生成的錨框；預測的這些錨框的類別和偏移量（基於`Y`）。
 
 ```{.python .input}
 def blk_forward(X, blk, size, ratio, cls_predictor, bbox_predictor):
@@ -363,12 +363,12 @@ def blk_forward(X, blk, size, ratio, cls_predictor, bbox_predictor):
     return (Y, anchors, cls_preds, bbox_preds)
 ```
 
-回想一下，在 :numref:`fig_ssd`中，一个较接近顶部的多尺度特征块是用于检测较大目标的，因此需要生成更大的锚框。
-在上面的前向传播中，在每个多尺度特征块上，我们通过调用的`multibox_prior`函数（见 :numref:`sec_anchor`）的`sizes`参数传递两个比例值的列表。
-在下面，0.2和1.05之间的区间被均匀分成五个部分，以确定五个模块的在不同尺度下的较小值：0.2、0.37、0.54、0.71和0.88。
-之后，他们较大的值由$\sqrt{0.2 \times 0.37} = 0.272$、$\sqrt{0.37 \times 0.54} = 0.447$等给出。
+回想一下，在 :numref:`fig_ssd`中，一個較接近頂部的多尺度特徵區塊是用於檢測較大目標的，因此需要生成更大的錨框。
+在上面的前向傳播中，在每個多尺度特徵區塊上，我們透過呼叫的`multibox_prior`函式（見 :numref:`sec_anchor`）的`sizes`引數傳遞兩個比例值的清單。
+在下面，0.2和1.05之間的區間被均勻分成五個部分，以確定五個模組的在不同尺度下的較小值：0.2、0.37、0.54、0.71和0.88。
+之後，他們較大的值由$\sqrt{0.2 \times 0.37} = 0.272$、$\sqrt{0.37 \times 0.54} = 0.447$等給出。
 
-[~~超参数~~]
+[~~超引數~~]
 
 ```{.python .input}
 #@tab all
@@ -378,7 +378,7 @@ ratios = [[1, 2, 0.5]] * 5
 num_anchors = len(sizes[0]) + len(ratios[0]) - 1
 ```
 
-现在，我们就可以按如下方式[**定义完整的模型**]`TinySSD`了。
+現在，我們就可以按如下方式[**定義完整的模型**]`TinySSD`了。
 
 ```{.python .input}
 class TinySSD(nn.Block):
@@ -386,7 +386,7 @@ class TinySSD(nn.Block):
         super(TinySSD, self).__init__(**kwargs)
         self.num_classes = num_classes
         for i in range(5):
-            # 即赋值语句self.blk_i=get_blk(i)
+            # 即賦值語句self.blk_i=get_blk(i)
             setattr(self, f'blk_{i}', get_blk(i))
             setattr(self, f'cls_{i}', cls_predictor(num_anchors, num_classes))
             setattr(self, f'bbox_{i}', bbox_predictor(num_anchors))
@@ -394,7 +394,7 @@ class TinySSD(nn.Block):
     def forward(self, X):
         anchors, cls_preds, bbox_preds = [None] * 5, [None] * 5, [None] * 5
         for i in range(5):
-            # getattr(self,'blk_%d'%i)即访问self.blk_i
+            # getattr(self,'blk_%d'%i)即訪問self.blk_i
             X, anchors[i], cls_preds[i], bbox_preds[i] = blk_forward(
                 X, getattr(self, f'blk_{i}'), sizes[i], ratios[i],
                 getattr(self, f'cls_{i}'), getattr(self, f'bbox_{i}'))
@@ -414,7 +414,7 @@ class TinySSD(nn.Module):
         self.num_classes = num_classes
         idx_to_in_channels = [64, 128, 128, 128, 128]
         for i in range(5):
-            # 即赋值语句self.blk_i=get_blk(i)
+            # 即賦值語句self.blk_i=get_blk(i)
             setattr(self, f'blk_{i}', get_blk(i))
             setattr(self, f'cls_{i}', cls_predictor(idx_to_in_channels[i],
                                                     num_anchors, num_classes))
@@ -424,7 +424,7 @@ class TinySSD(nn.Module):
     def forward(self, X):
         anchors, cls_preds, bbox_preds = [None] * 5, [None] * 5, [None] * 5
         for i in range(5):
-            # getattr(self,'blk_%d'%i)即访问self.blk_i
+            # getattr(self,'blk_%d'%i)即訪問self.blk_i
             X, anchors[i], cls_preds[i], bbox_preds[i] = blk_forward(
                 X, getattr(self, f'blk_{i}'), sizes[i], ratios[i],
                 getattr(self, f'cls_{i}'), getattr(self, f'bbox_{i}'))
@@ -444,7 +444,7 @@ class TinySSD(nn.Layer):
         self.num_classes = num_classes
         idx_to_in_channels = [64, 128, 128, 128, 128]
         for i in range(5):
-            # 即赋值语句self.blk_i=get_blk(i)
+            # 即賦值語句self.blk_i=get_blk(i)
             setattr(self, f'blk_{i}', get_blk(i))
             setattr(self, f'cls_{i}', cls_predictor(idx_to_in_channels[i],
                                                     num_anchors, num_classes))
@@ -454,7 +454,7 @@ class TinySSD(nn.Layer):
     def forward(self, X):
         anchors, cls_preds, bbox_preds = [None] * 5, [None] * 5, [None] * 5
         for i in range(5):
-            # getattr(self,'blk_%d'%i)即访问self.blk_i
+            # getattr(self,'blk_%d'%i)即訪問self.blk_i
             X, anchors[i], cls_preds[i], bbox_preds[i] = blk_forward(
                 X, getattr(self, f'blk_{i}'), sizes[i], ratios[i],
                 getattr(self, f'cls_{i}'), getattr(self, f'bbox_{i}'))
@@ -466,11 +466,11 @@ class TinySSD(nn.Layer):
         return anchors, cls_preds, bbox_preds
 ```
 
-我们[**创建一个模型实例，然后使用它**]对一个$256 \times 256$像素的小批量图像`X`(**执行前向传播**)。
+我們[**建立一個模型實例，然後使用它**]對一個$256 \times 256$畫素的小批次影象`X`(**執行前向傳播**)。
 
-如本节前面部分所示，第一个模块输出特征图的形状为$32 \times 32$。
-回想一下，第二到第四个模块为高和宽减半块，第五个模块为全局汇聚层。
-由于以特征图的每个单元为中心有$4$个锚框生成，因此在所有五个尺度下，每个图像总共生成$(32^2 + 16^2 + 8^2 + 4^2 + 1)\times 4 = 5444$个锚框。
+如本節前面部分所示，第一個模組輸出特徵圖的形狀為$32 \times 32$。
+回想一下，第二到第四個模組為高和寬減半區塊，第五個模組為全域彙聚層。
+由於以特徵圖的每個單元為中心有$4$個錨框生成，因此在所有五個尺度下，每個影象總共生成$(32^2 + 16^2 + 8^2 + 4^2 + 1)\times 4 = 5444$個錨框。
 
 ```{.python .input}
 net = TinySSD(num_classes=1)
@@ -505,13 +505,13 @@ print('output class preds:', cls_preds.shape)
 print('output bbox preds:', bbox_preds.shape)
 ```
 
-## 训练模型
+## 訓練模型
 
-现在，我们将描述如何训练用于目标检测的单发多框检测模型。
+現在，我們將描述如何訓練用於目標檢測的單發多框檢測模型。
 
-### 读取数据集和初始化
+### 讀取資料集和初始化
 
-首先，让我们[**读取**] :numref:`sec_object-detection-dataset`中描述的(**香蕉检测数据集**)。
+首先，讓我們[**讀取**] :numref:`sec_object-detection-dataset`中描述的(**香蕉檢測資料集**)。
 
 ```{.python .input}
 #@tab all
@@ -519,8 +519,8 @@ batch_size = 32
 train_iter, _ = d2l.load_data_bananas(batch_size)
 ```
 
-香蕉检测数据集中，目标的类别数为1。
-定义好模型后，我们需要(**初始化其参数并定义优化算法**)。
+香蕉檢測資料集中，目標的類別數為1。
+定義好模型後，我們需要(**初始化其引數並定義最佳化演算法**)。
 
 ```{.python .input}
 device, net = d2l.try_gpu(), TinySSD(num_classes=1)
@@ -543,14 +543,14 @@ trainer = paddle.optimizer.SGD(learning_rate=0.2,
                                weight_decay=5e-4)
 ```
 
-### [**定义损失函数和评价函数**]
+### [**定義損失函式和評價函式**]
 
-目标检测有两种类型的损失。
-第一种有关锚框类别的损失：我们可以简单地复用之前图像分类问题里一直使用的交叉熵损失函数来计算；
-第二种有关正类锚框偏移量的损失：预测偏移量是一个回归问题。
-但是，对于这个回归问题，我们在这里不使用 :numref:`subsec_normal_distribution_and_squared_loss`中描述的平方损失，而是使用$L_1$范数损失，即预测值和真实值之差的绝对值。
-掩码变量`bbox_masks`令负类锚框和填充锚框不参与损失的计算。
-最后，我们将锚框类别和偏移量的损失相加，以获得模型的最终损失函数。
+目標檢測有兩種型別的損失。
+第一種有關錨框類別的損失：我們可以簡單地複用之前影象分類問題裡一直使用的交叉熵損失函式來計算；
+第二種有關正類錨框偏移量的損失：預測偏移量是一個迴歸問題。
+但是，對於這個迴歸問題，我們在這裡不使用 :numref:`subsec_normal_distribution_and_squared_loss`中描述的平方損失，而是使用$L_1$範數損失，即預測值和真實值之差的絕對值。
+掩碼變數`bbox_masks`令負類錨框和填充錨框不參與損失的計算。
+最後，我們將錨框類別和偏移量的損失相加，以獲得模型的最終損失函式。
 
 ```{.python .input}
 cls_loss = gluon.loss.SoftmaxCrossEntropyLoss()
@@ -590,12 +590,12 @@ def calc_loss(cls_preds, cls_labels, bbox_preds, bbox_labels, bbox_masks):
     return cls + bbox
 ```
 
-我们可以沿用准确率评价分类结果。
-由于偏移量使用了$L_1$范数损失，我们使用*平均绝对误差*来评价边界框的预测结果。这些预测结果是从生成的锚框及其预测偏移量中获得的。
+我們可以沿用準確率評價分類結果。
+由於偏移量使用了$L_1$範數損失，我們使用*平均絕對誤差*來評價邊界框的預測結果。這些預測結果是從生成的錨框及其預測偏移量中獲得的。
 
 ```{.python .input}
 def cls_eval(cls_preds, cls_labels):
-    # 由于类别预测结果放在最后一维，argmax需要指定最后一维。
+    # 由於類別預測結果放在最後一維，argmax需要指定最後一維。
     return float((cls_preds.argmax(axis=-1).astype(
         cls_labels.dtype) == cls_labels).sum())
 
@@ -606,7 +606,7 @@ def bbox_eval(bbox_preds, bbox_labels, bbox_masks):
 ```{.python .input}
 #@tab pytorch
 def cls_eval(cls_preds, cls_labels):
-    # 由于类别预测结果放在最后一维，argmax需要指定最后一维。
+    # 由於類別預測結果放在最後一維，argmax需要指定最後一維。
     return float((cls_preds.argmax(dim=-1).type(
         cls_labels.dtype) == cls_labels).sum())
 
@@ -617,7 +617,7 @@ def bbox_eval(bbox_preds, bbox_labels, bbox_masks):
 ```{.python .input}
 #@tab paddle
 def cls_eval(cls_preds, cls_labels):
-    # 由于类别预测结果放在最后一维，argmax需要指定最后一维。
+    # 由於類別預測結果放在最後一維，argmax需要指定最後一維。
     return float((cls_preds.argmax(axis=-1).astype(
         cls_labels.dtype) == cls_labels).sum())
 
@@ -625,31 +625,31 @@ def bbox_eval(bbox_preds, bbox_labels, bbox_masks):
     return float((paddle.abs((bbox_labels - bbox_preds) * bbox_masks)).sum())
 ```
 
-### [**训练模型**]
+### [**訓練模型**]
 
-在训练模型时，我们需要在模型的前向传播过程中生成多尺度锚框（`anchors`），并预测其类别（`cls_preds`）和偏移量（`bbox_preds`）。
-然后，我们根据标签信息`Y`为生成的锚框标记类别（`cls_labels`）和偏移量（`bbox_labels`）。
-最后，我们根据类别和偏移量的预测和标注值计算损失函数。为了代码简洁，这里没有评价测试数据集。
+在訓練模型時，我們需要在模型的前向傳播過程中生成多尺度錨框（`anchors`），並預測其類別（`cls_preds`）和偏移量（`bbox_preds`）。
+然後，我們根據標籤訊息`Y`為生成的錨框標記類別（`cls_labels`）和偏移量（`bbox_labels`）。
+最後，我們根據類別和偏移量的預測和標註值計算損失函式。為了程式碼簡潔，這裡沒有評價測試資料集。
 
 ```{.python .input}
 num_epochs, timer = 20, d2l.Timer()
 animator = d2l.Animator(xlabel='epoch', xlim=[1, num_epochs],
                         legend=['class error', 'bbox mae'])
 for epoch in range(num_epochs):
-    # 指标包括：训练精确度的和，训练精确度的和中的示例数，
-    # 绝对误差的和，绝对误差的和中的示例数
+    # 指標包括：訓練精確度的和，訓練精確度的和中的範例數，
+    # 絕對誤差的和，絕對誤差的和中的範例數
     metric = d2l.Accumulator(4)
     for features, target in train_iter:
         timer.start()
         X = features.as_in_ctx(device)
         Y = target.as_in_ctx(device)
         with autograd.record():
-            # 生成多尺度的锚框，为每个锚框预测类别和偏移量
+            # 生成多尺度的錨框，為每個錨框預測類別和偏移量
             anchors, cls_preds, bbox_preds = net(X)
-            # 为每个锚框标注类别和偏移量
+            # 為每個錨框標註類別和偏移量
             bbox_labels, bbox_masks, cls_labels = d2l.multibox_target(anchors,
                                                                       Y)
-            # 根据类别和偏移量的预测和标注值计算损失函数
+            # 根據類別和偏移量的預測和標註值計算損失函式
             l = calc_loss(cls_preds, cls_labels, bbox_preds, bbox_labels,
                           bbox_masks)
         l.backward()
@@ -671,19 +671,19 @@ animator = d2l.Animator(xlabel='epoch', xlim=[1, num_epochs],
                         legend=['class error', 'bbox mae'])
 net = net.to(device)
 for epoch in range(num_epochs):
-    # 训练精确度的和，训练精确度的和中的示例数
-    # 绝对误差的和，绝对误差的和中的示例数
+    # 訓練精確度的和，訓練精確度的和中的範例數
+    # 絕對誤差的和，絕對誤差的和中的範例數
     metric = d2l.Accumulator(4)
     net.train()
     for features, target in train_iter:
         timer.start()
         trainer.zero_grad()
         X, Y = features.to(device), target.to(device)
-        # 生成多尺度的锚框，为每个锚框预测类别和偏移量
+        # 生成多尺度的錨框，為每個錨框預測類別和偏移量
         anchors, cls_preds, bbox_preds = net(X)
-        # 为每个锚框标注类别和偏移量
+        # 為每個錨框標註類別和偏移量
         bbox_labels, bbox_masks, cls_labels = d2l.multibox_target(anchors, Y)
-        # 根据类别和偏移量的预测和标注值计算损失函数
+        # 根據類別和偏移量的預測和標註值計算損失函式
         l = calc_loss(cls_preds, cls_labels, bbox_preds, bbox_labels,
                       bbox_masks)
         l.mean().backward()
@@ -704,19 +704,19 @@ num_epochs, timer = 20, d2l.Timer()
 animator = d2l.Animator(xlabel='epoch', xlim=[1, num_epochs],
                         legend=['class error', 'bbox mae'])
 for epoch in range(num_epochs):
-    # 训练精确度的和，训练精确度的和中的示例数
-    # 绝对误差的和，绝对误差的和中的示例数
+    # 訓練精確度的和，訓練精確度的和中的範例數
+    # 絕對誤差的和，絕對誤差的和中的範例數
     metric = d2l.Accumulator(4)
     net.train()
     for features, target in train_iter:
         timer.start()
         trainer.clear_grad()
         X, Y = features, target
-        # 生成多尺度的锚框，为每个锚框预测类别和偏移量
+        # 生成多尺度的錨框，為每個錨框預測類別和偏移量
         anchors, cls_preds, bbox_preds = net(X)
-        # 为每个锚框标注类别和偏移量
+        # 為每個錨框標註類別和偏移量
         bbox_labels, bbox_masks, cls_labels = d2l.multibox_target(anchors, Y)
-        # 根据类别和偏移量的预测和标注值计算损失函数
+        # 根據類別和偏移量的預測和標註值計算損失函式
         l = calc_loss(cls_preds, cls_labels, bbox_preds, bbox_labels,
                       bbox_masks)
         l.mean().backward()
@@ -731,9 +731,9 @@ print(f'{len(train_iter.dataset) / timer.stop():.1f} examples/sec on '
       f'{str(device)}')
 ```
 
-## [**预测目标**]
+## [**預測目標**]
 
-在预测阶段，我们希望能把图像里面所有我们感兴趣的目标检测出来。在下面，我们读取并调整测试图像的大小，然后将其转成卷积层需要的四维格式。
+在預測階段，我們希望能把影象裡面所有我們感興趣的目標檢測出來。在下面，我們讀取並調整測試影象的大小，然後將其轉成卷積層需要的四維格式。
 
 ```{.python .input}
 img = image.imread('../img/banana.jpg')
@@ -757,7 +757,7 @@ X = paddle.to_tensor(
 img = X.squeeze(0).transpose([1, 2, 0]).astype(paddle.int64)
 ```
 
-使用下面的`multibox_detection`函数，我们可以根据锚框及其预测偏移量得到预测边界框。然后，通过非极大值抑制来移除相似的预测边界框。
+使用下面的`multibox_detection`函式，我們可以根據錨框及其預測偏移量得到預測邊界框。然後，透過非極大值抑制來移除相似的預測邊界框。
 
 ```{.python .input}
 def predict(X):
@@ -796,7 +796,7 @@ def predict(X):
 output = predict(X)
 ```
 
-最后，我们[**筛选所有置信度不低于0.9的边界框，做为最终输出**]。
+最後，我們[**篩選所有置信度不低於0.9的邊界框，做為最終輸出**]。
 
 ```{.python .input}
 def display(img, output, threshold):
@@ -845,14 +845,14 @@ def display(img, output, threshold):
 display(img, output.cpu(), threshold=0.9)
 ```
 
-## 小结
+## 小結
 
-* 单发多框检测是一种多尺度目标检测模型。基于基础网络块和各个多尺度特征块，单发多框检测生成不同数量和不同大小的锚框，并通过预测这些锚框的类别和偏移量检测不同大小的目标。
-* 在训练单发多框检测模型时，损失函数是根据锚框的类别和偏移量的预测及标注值计算得出的。
+* 單發多框檢測是一種多尺度目標檢測模型。基於基礎網路區塊和各個多尺度特徵區塊，單發多框檢測生成不同數量和不同大小的錨框，並透過預測這些錨框的類別和偏移量檢測不同大小的目標。
+* 在訓練單發多框檢測模型時，損失函式是根據錨框的類別和偏移量的預測及標註值計算得出的。
 
-## 练习
+## 練習
 
-1. 能通过改进损失函数来改进单发多框检测吗？例如，将预测偏移量用到的$L_1$范数损失替换为平滑$L_1$范数损失。它在零点附近使用平方函数从而更加平滑，这是通过一个超参数$\sigma$来控制平滑区域的：
+1. 能透過改進損失函式來改進單發多框檢測嗎？例如，將預測偏移量用到的$L_1$範數損失替換為平滑$L_1$範數損失。它在零點附近使用平方函式從而更加平滑，這是透過一個超引數$\sigma$來控制平滑區域的：
 
 $$
 f(x) =
@@ -862,7 +862,7 @@ f(x) =
     \end{cases}
 $$
 
-当$\sigma$非常大时，这种损失类似于$L_1$范数损失。当它的值较小时，损失函数较平滑。
+當$\sigma$非常大時，這種損失類似於$L_1$範數損失。當它的值較小時，損失函式較平滑。
 
 ```{.python .input}
 sigmas = [10, 1, 0.5]
@@ -920,11 +920,11 @@ for l, s in zip(lines, sigmas):
 d2l.plt.legend();
 ```
 
-此外，在类别预测时，实验中使用了交叉熵损失：设真实类别$j$的预测概率是$p_j$，交叉熵损失为$-\log p_j$。我们还可以使用焦点损失 :cite:`Lin.Goyal.Girshick.ea.2017`。给定超参数$\gamma > 0$和$\alpha > 0$，此损失的定义为：
+此外，在類別預測時，實驗中使用了交叉熵損失：設真實類別$j$的預測機率是$p_j$，交叉熵損失為$-\log p_j$。我們還可以使用焦點損失 :cite:`Lin.Goyal.Girshick.ea.2017`。給定超引數$\gamma > 0$和$\alpha > 0$，此損失的定義為：
 
 $$ - \alpha (1-p_j)^{\gamma} \log p_j.$$
 
-可以看到，增大$\gamma$可以有效地减少正类预测概率较大时（例如$p_j > 0.5$）的相对损失，因此训练可以更集中在那些错误分类的困难示例上。
+可以看到，增大$\gamma$可以有效地減少正類預測機率較大時（例如$p_j > 0.5$）的相對損失，因此訓練可以更集中在那些錯誤分類的困難範例上。
 
 ```{.python .input}
 def focal_loss(gamma, x):
@@ -959,11 +959,11 @@ for l, gamma in zip(lines, [0, 1, 5]):
 d2l.plt.legend();
 ```
 
-2. 由于篇幅限制，我们在本节中省略了单发多框检测模型的一些实现细节。能否从以下几个方面进一步改进模型：
-    1. 当目标比图像小得多时，模型可以将输入图像调大；
-    1. 通常会存在大量的负锚框。为了使类别分布更加平衡，我们可以将负锚框的高和宽减半；
-    1. 在损失函数中，给类别损失和偏移损失设置不同比重的超参数；
-    1. 使用其他方法评估目标检测模型，例如单发多框检测论文 :cite:`Liu.Anguelov.Erhan.ea.2016`中的方法。
+2. 由於篇幅限制，我們在本節中省略了單發多框檢測模型的一些實現細節。能否從以下幾個方面進一步改進模型：
+    1. 當目標比影象小得多時，模型可以將輸入影象調大；
+    1. 通常會存在大量的負錨框。為了使類別分佈更加平衡，我們可以將負錨框的高和寬減半；
+    1. 在損失函式中，給類別損失和偏移損失設定不同比重的超引數；
+    1. 使用其他方法評估目標檢測模型，例如單發多框檢測論文 :cite:`Liu.Anguelov.Erhan.ea.2016`中的方法。
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/3205)

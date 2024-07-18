@@ -1,21 +1,21 @@
-# 实战 Kaggle 比赛：图像分类 (CIFAR-10)
+# 實戰 Kaggle 比賽：影象分類 (CIFAR-10)
 :label:`sec_kaggle_cifar10`
 
-之前几节中，我们一直在使用深度学习框架的高级API直接获取张量格式的图像数据集。
-但是在实践中，图像数据集通常以图像文件的形式出现。
-本节将从原始图像文件开始，然后逐步组织、读取并将它们转换为张量格式。
+之前幾節中，我們一直在使用深度學習框架的高階API直接獲取張量格式的影象資料集。
+但是在實踐中，影象資料集通常以影象檔案的形式出現。
+本節將從原始影象檔案開始，然後逐步組織、讀取並將它們轉換為張量格式。
 
-我们在 :numref:`sec_image_augmentation`中对CIFAR-10数据集做了一个实验。CIFAR-10是计算机视觉领域中的一个重要的数据集。
-本节将运用我们在前几节中学到的知识来参加CIFAR-10图像分类问题的Kaggle竞赛，(**比赛的网址是https://www.kaggle.com/c/cifar-10**)。
+我們在 :numref:`sec_image_augmentation`中對CIFAR-10資料集做了一個實驗。CIFAR-10是電腦視覺領域中的一個重要的資料集。
+本節將運用我們在前幾節中學到的知識來參加CIFAR-10影象分類問題的Kaggle競賽，(**比賽的網址是https://www.kaggle.com/c/cifar-10**)。
 
- :numref:`fig_kaggle_cifar10`显示了竞赛网站页面上的信息。
-为了能提交结果，首先需要注册一个Kaggle账户。
+ :numref:`fig_kaggle_cifar10`顯示了競賽網站頁面上的訊息。
+為了能送出結果，首先需要註冊一個Kaggle賬戶。
 
-![CIFAR-10 图像分类竞赛页面上的信息。竞赛用的数据集可通过点击“Data”选项卡获取。](../img/kaggle-cifar10.png)
+![CIFAR-10 影象分類競賽頁面上的訊息。競賽用的資料集可透過點選『Data』頁籤獲取。](../img/kaggle-cifar10.png)
 :width:`600px`
 :label:`fig_kaggle_cifar10`
 
-首先，导入竞赛所需的包和模块。
+首先，匯入競賽所需的套件和模組。
 
 ```{.python .input}
 import collections
@@ -58,29 +58,29 @@ from paddle import nn
 import paddle.vision as paddlevision
 ```
 
-## 获取并组织数据集
+## 獲取並組織資料集
 
-比赛数据集分为训练集和测试集，其中训练集包含50000张、测试集包含300000张图像。
-在测试集中，10000张图像将被用于评估，而剩下的290000张图像将不会被进行评估，包含它们只是为了防止手动标记测试集并提交标记结果。
-两个数据集中的图像都是png格式，高度和宽度均为32像素并有三个颜色通道（RGB）。
-这些图片共涵盖10个类别：飞机、汽车、鸟类、猫、鹿、狗、青蛙、马、船和卡车。
- :numref:`fig_kaggle_cifar10`的左上角显示了数据集中飞机、汽车和鸟类的一些图像。
+比賽資料集分為訓練集和測試集，其中訓練集包含50000張、測試集包含300000張影象。
+在測試集中，10000張影象將被用於評估，而剩下的290000張影象將不會被進行評估，包含它們只是為了防止手動標記測試集並送出標記結果。
+兩個資料集中的影象都是png格式，高度和寬度均為32畫素並有三個顏色通道（RGB）。
+這些圖片共涵蓋10個類別：飛機、汽車、鳥類、貓、鹿、狗、青蛙、馬、船和卡車。
+ :numref:`fig_kaggle_cifar10`的左上角顯示了資料集中飛機、汽車和鳥類的一些影象。
 
-### 下载数据集
+### 下載資料集
 
-登录Kaggle后，我们可以点击 :numref:`fig_kaggle_cifar10`中显示的CIFAR-10图像分类竞赛网页上的“Data”选项卡，然后单击“Download All”按钮下载数据集。
-在`../data`中解压下载的文件并在其中解压缩`train.7z`和`test.7z`后，在以下路径中可以找到整个数据集：
+登入Kaggle後，我們可以點選 :numref:`fig_kaggle_cifar10`中顯示的CIFAR-10影象分類競賽網頁上的『Data』頁籤，然後單擊『Download All』按鈕下載資料集。
+在`../data`中解壓下載的檔案並在其中解壓縮`train.7z`和`test.7z`後，在以下路徑中可以找到整個資料集：
 
 * `../data/cifar-10/train/[1-50000].png`
 * `../data/cifar-10/test/[1-300000].png`
 * `../data/cifar-10/trainLabels.csv`
 * `../data/cifar-10/sampleSubmission.csv`
 
-`train`和`test`文件夹分别包含训练和测试图像，`trainLabels.csv`含有训练图像的标签，
-`sample_submission.csv`是提交文件的范例。
+`train`和`test`資料夾分別包含訓練和測試影象，`trainLabels.csv`含有訓練影象的標籤，
+`sample_submission.csv`是送出檔案的範例。
 
-为了便于入门，[**我们提供包含前1000个训练图像和5个随机测试图像的数据集的小规模样本**]。
-要使用Kaggle竞赛的完整数据集，需要将以下`demo`变量设置为`False`。
+為了便於入門，[**我們提供包含前1000個訓練影象和5個隨機測試影象的資料集的小規模樣本**]。
+要使用Kaggle競賽的完整資料集，需要將以下`demo`變數設定為`False`。
 
 ```{.python .input}
 #@tab all
@@ -88,7 +88,7 @@ import paddle.vision as paddlevision
 d2l.DATA_HUB['cifar10_tiny'] = (d2l.DATA_URL + 'kaggle_cifar10_tiny.zip',
                                 '2068874e4b9a9f0fb07ebe0ad2b29754449ccacd')
 
-# 如果使用完整的Kaggle竞赛的数据集，设置demo为False
+# 如果使用完整的Kaggle競賽的資料集，設定demo為False
 demo = True
 
 if demo:
@@ -97,48 +97,48 @@ else:
     data_dir = '../data/cifar-10/'
 ```
 
-### [**整理数据集**]
+### [**整理資料集**]
 
-我们需要整理数据集来训练和测试模型。
-首先，我们用以下函数读取CSV文件中的标签，它返回一个字典，该字典将文件名中不带扩展名的部分映射到其标签。
+我們需要整理資料集來訓練和測試模型。
+首先，我們用以下函式讀取CSV檔案中的標籤，它回傳一個字典，該字典將檔案名中不帶副檔名的部分對映到其標籤。
 
 ```{.python .input}
 #@tab all
 #@save
 def read_csv_labels(fname):
-    """读取fname来给标签字典返回一个文件名"""
+    """讀取fname來給標籤字典回傳一個檔案名"""
     with open(fname, 'r') as f:
-        # 跳过文件头行(列名)
+        # 跳過檔案頭行(列名)
         lines = f.readlines()[1:]
     tokens = [l.rstrip().split(',') for l in lines]
     return dict(((name, label) for name, label in tokens))
 
 labels = read_csv_labels(os.path.join(data_dir, 'trainLabels.csv'))
-print('# 训练样本 :', len(labels))
-print('# 类别 :', len(set(labels.values())))
+print('# 訓練樣本 :', len(labels))
+print('# 類別 :', len(set(labels.values())))
 ```
 
-接下来，我们定义`reorg_train_valid`函数来[**将验证集从原始的训练集中拆分出来**]。
-此函数中的参数`valid_ratio`是验证集中的样本数与原始训练集中的样本数之比。
-更具体地说，令$n$等于样本最少的类别中的图像数量，而$r$是比率。
-验证集将为每个类别拆分出$\max(\lfloor nr\rfloor,1)$张图像。
-让我们以`valid_ratio=0.1`为例，由于原始的训练集有50000张图像，因此`train_valid_test/train`路径中将有45000张图像用于训练，而剩下5000张图像将作为路径`train_valid_test/valid`中的验证集。
-组织数据集后，同类别的图像将被放置在同一文件夹下。
+接下來，我們定義`reorg_train_valid`函式來[**將驗證集從原始的訓練集中拆分出來**]。
+此函式中的引數`valid_ratio`是驗證集中的樣本數與原始訓練集中的樣本數之比。
+更具體地說，令$n$等於樣本最少的類別中的影象數量，而$r$是比率。
+驗證集將為每個類別拆分出$\max(\lfloor nr\rfloor,1)$張影象。
+讓我們以`valid_ratio=0.1`為例，由於原始的訓練集有50000張影象，因此`train_valid_test/train`路徑中將有45000張影象用於訓練，而剩下5000張影象將作為路徑`train_valid_test/valid`中的驗證集。
+組織資料集後，同類別的影象將被放置在同一資料夾下。
 
 ```{.python .input}
 #@tab all
 #@save
 def copyfile(filename, target_dir):
-    """将文件复制到目标目录"""
+    """將檔案複製到目標目錄"""
     os.makedirs(target_dir, exist_ok=True)
     shutil.copy(filename, target_dir)
 
 #@save
 def reorg_train_valid(data_dir, labels, valid_ratio):
-    """将验证集从原始的训练集中拆分出来"""
-    # 训练数据集中样本最少的类别中的样本数
+    """將驗證集從原始的訓練集中拆分出來"""
+    # 訓練資料集中樣本最少的類別中的樣本數
     n = collections.Counter(labels.values()).most_common()[-1][1]
-    # 验证集中每个类别的样本数
+    # 驗證集中每個類別的樣本數
     n_valid_per_label = max(1, math.floor(n * valid_ratio))
     label_count = {}
     for train_file in os.listdir(os.path.join(data_dir, 'train')):
@@ -156,20 +156,20 @@ def reorg_train_valid(data_dir, labels, valid_ratio):
     return n_valid_per_label
 ```
 
-下面的`reorg_test`函数用来[**在预测期间整理测试集，以方便读取**]。
+下面的`reorg_test`函式用來[**在預測期間整理測試集，以方便讀取**]。
 
 ```{.python .input}
 #@tab all
 #@save
 def reorg_test(data_dir):
-    """在预测期间整理测试集，以方便读取"""
+    """在預測期間整理測試集，以方便讀取"""
     for test_file in os.listdir(os.path.join(data_dir, 'test')):
         copyfile(os.path.join(data_dir, 'test', test_file),
                  os.path.join(data_dir, 'train_valid_test', 'test',
                               'unknown'))
 ```
 
-最后，我们使用一个函数来[**调用前面定义的函数**]`read_csv_labels`、`reorg_train_valid`和`reorg_test`。
+最後，我們使用一個函式來[**呼叫前面定義的函式**]`read_csv_labels`、`reorg_train_valid`和`reorg_test`。
 
 ```{.python .input}
 #@tab all
@@ -179,9 +179,9 @@ def reorg_cifar10_data(data_dir, valid_ratio):
     reorg_test(data_dir)
 ```
 
-在这里，我们只将样本数据集的批量大小设置为32。
-在实际训练和测试中，应该使用Kaggle竞赛的完整数据集，并将`batch_size`设置为更大的整数，例如128。
-我们将10％的训练样本作为调整超参数的验证集。
+在這裡，我們只將樣本數據集的批次大小設定為32。
+在實際訓練和測試中，應該使用Kaggle競賽的完整資料集，並將`batch_size`設定為更大的整數，例如128。
+我們將10％的訓練樣本作為調整超引數的驗證集。
 
 ```{.python .input}
 #@tab all
@@ -190,24 +190,24 @@ valid_ratio = 0.1
 reorg_cifar10_data(data_dir, valid_ratio)
 ```
 
-## [**图像增广**]
+## [**影象增廣**]
 
-我们使用图像增广来解决过拟合的问题。例如在训练中，我们可以随机水平翻转图像。
-我们还可以对彩色图像的三个RGB通道执行标准化。
-下面，我们列出了其中一些可以调整的操作。
+我們使用影象增廣來解決過擬合的問題。例如在訓練中，我們可以隨機水平翻轉影象。
+我們還可以對彩色影象的三個RGB通道執行標準化。
+下面，我們列出了其中一些可以調整的操作。
 
 ```{.python .input}
 transform_train = gluon.data.vision.transforms.Compose([
-    # 在高度和宽度上将图像放大到40像素的正方形
+    # 在高度和寬度上將影象放大到40畫素的正方形
     gluon.data.vision.transforms.Resize(40),
-    # 随机裁剪出一个高度和宽度均为40像素的正方形图像，
-    # 生成一个面积为原始图像面积0.64～1倍的小正方形，
-    # 然后将其缩放为高度和宽度均为32像素的正方形
+    # 隨機裁剪出一個高度和寬度均為40畫素的正方形影象，
+    # 生成一個面積為原始影象面積0.64～1倍的小正方形，
+    # 然後將其縮放為高度和寬度均為32畫素的正方形
     gluon.data.vision.transforms.RandomResizedCrop(32, scale=(0.64, 1.0),
                                                    ratio=(1.0, 1.0)),
     gluon.data.vision.transforms.RandomFlipLeftRight(),
     gluon.data.vision.transforms.ToTensor(),
-    # 标准化图像的每个通道
+    # 標準化影象的每個通道
     gluon.data.vision.transforms.Normalize([0.4914, 0.4822, 0.4465],
                                            [0.2023, 0.1994, 0.2010])])
 ```
@@ -215,16 +215,16 @@ transform_train = gluon.data.vision.transforms.Compose([
 ```{.python .input}
 #@tab pytorch
 transform_train = torchvision.transforms.Compose([
-    # 在高度和宽度上将图像放大到40像素的正方形
+    # 在高度和寬度上將影象放大到40畫素的正方形
     torchvision.transforms.Resize(40),
-    # 随机裁剪出一个高度和宽度均为40像素的正方形图像，
-    # 生成一个面积为原始图像面积0.64～1倍的小正方形，
-    # 然后将其缩放为高度和宽度均为32像素的正方形
+    # 隨機裁剪出一個高度和寬度均為40畫素的正方形影象，
+    # 生成一個面積為原始影象面積0.64～1倍的小正方形，
+    # 然後將其縮放為高度和寬度均為32畫素的正方形
     torchvision.transforms.RandomResizedCrop(32, scale=(0.64, 1.0),
                                                    ratio=(1.0, 1.0)),
     torchvision.transforms.RandomHorizontalFlip(),
     torchvision.transforms.ToTensor(),
-    # 标准化图像的每个通道
+    # 標準化影象的每個通道
     torchvision.transforms.Normalize([0.4914, 0.4822, 0.4465],
                                      [0.2023, 0.1994, 0.2010])])
 ```
@@ -232,21 +232,21 @@ transform_train = torchvision.transforms.Compose([
 ```{.python .input}
 #@tab paddle
 transform_train = paddlevision.transforms.Compose([
-    # 在高度和宽度上将图像放大到40像素的正方形
+    # 在高度和寬度上將影象放大到40畫素的正方形
     paddlevision.transforms.Resize(40),
-    # 随机裁剪出一个高度和宽度均为40像素的正方形图像，
-    # 生成一个面积为原始图像面积0.64到1倍的小正方形，
-    # 然后将其缩放为高度和宽度均为32像素的正方形
+    # 隨機裁剪出一個高度和寬度均為40畫素的正方形影象，
+    # 生成一個面積為原始影象面積0.64到1倍的小正方形，
+    # 然後將其縮放為高度和寬度均為32畫素的正方形
     paddlevision.transforms.RandomResizedCrop(32, scale=(0.64, 1.0),
                                               ratio=(1.0, 1.0)),
     paddlevision.transforms.RandomHorizontalFlip(),
     paddlevision.transforms.ToTensor(),
-    # 标准化图像的每个通道
+    # 標準化影象的每個通道
     paddlevision.transforms.Normalize([0.4914, 0.4822, 0.4465],
                                      [0.2023, 0.1994, 0.2010])])
 ```
 
-在测试期间，我们只对图像执行标准化，以消除评估结果中的随机性。
+在測試期間，我們只對影象執行標準化，以消除評估結果中的隨機性。
 
 ```{.python .input}
 transform_test = gluon.data.vision.transforms.Compose([
@@ -271,9 +271,9 @@ transform_test = paddlevision.transforms.Compose([
                                      [0.2023, 0.1994, 0.2010])])
 ```
 
-## 读取数据集
+## 讀取資料集
 
-接下来，我们[**读取由原始图像组成的数据集**]，每个样本都包括一张图片和一个标签。
+接下來，我們[**讀取由原始影象組成的資料集**]，每個樣本都包括一張圖片和一個標籤。
 
 ```{.python .input}
 train_ds, valid_ds, train_valid_ds, test_ds = [
@@ -304,9 +304,9 @@ valid_ds, test_ds = [paddlevision.datasets.DatasetFolder(
     transform=transform_test) for folder in ['valid', 'test']]
 ```
 
-在训练期间，我们需要[**指定上面定义的所有图像增广操作**]。
-当验证集在超参数调整过程中用于模型评估时，不应引入图像增广的随机性。
-在最终预测之前，我们根据训练集和验证集组合而成的训练模型进行训练，以充分利用所有标记的数据。
+在訓練期間，我們需要[**指定上面定義的所有影象增廣操作**]。
+當驗證集在超引數調整過程中用於模型評估時，不應引入影象增廣的隨機性。
+在最終預測之前，我們根據訓練集和驗證集組合而成的訓練模型進行訓練，以充分利用所有標記的資料。
 
 ```{.python .input}
 train_iter, train_valid_iter = [gluon.data.DataLoader(
@@ -348,10 +348,10 @@ test_iter = paddle.io.DataLoader(test_ds, batch_size=batch_size, shuffle=False,
                                  drop_last=False)
 ```
 
-## 定义[**模型**]
+## 定義[**模型**]
 
 :begin_tab:`mxnet`
-在这里，我们基于`HybridBlock`类构建剩余块，这与 :numref:`sec_resnet`中描述的实现方法略有不同，是为了提高计算效率。
+在這裡，我們基於`HybridBlock`類建立剩餘區塊，這與 :numref:`sec_resnet`中描述的實現方法略有不同，是為了提高計算效率。
 :end_tab:
 
 ```{.python .input}
@@ -378,7 +378,7 @@ class Residual(nn.HybridBlock):
 ```
 
 :begin_tab:`mxnet`
-接下来，我们定义Resnet-18模型。
+接下來，我們定義Resnet-18模型。
 :end_tab:
 
 ```{.python .input}
@@ -405,15 +405,15 @@ def resnet18(num_classes):
 ```
 
 :begin_tab:`mxnet`
-在训练开始之前，我们使用 :numref:`subsec_xavier`中描述的Xavier初始化。
+在訓練開始之前，我們使用 :numref:`subsec_xavier`中描述的Xavier初始化。
 :end_tab:
 
 :begin_tab:`pytorch`
-我们定义了 :numref:`sec_resnet`中描述的Resnet-18模型。
+我們定義了 :numref:`sec_resnet`中描述的Resnet-18模型。
 :end_tab:
 
 :begin_tab:`paddle`
-我们定义了 :numref:`sec_resnet`中描述的Resnet-18模型。
+我們定義了 :numref:`sec_resnet`中描述的Resnet-18模型。
 :end_tab:
 
 ```{.python .input}
@@ -446,10 +446,10 @@ def get_net():
 loss = nn.CrossEntropyLoss(reduction="none")
 ```
 
-## 定义[**训练函数**]
+## 定義[**訓練函式**]
 
-我们将根据模型在验证集上的表现来选择模型并调整超参数。
-下面我们定义了模型训练函数`train`。
+我們將根據模型在驗證集上的表現來選擇模型並調整超引數。
+下面我們定義了模型訓練函式`train`。
 
 ```{.python .input}
 def train(net, train_iter, valid_iter, num_epochs, lr, wd, devices, lr_period,
@@ -567,11 +567,11 @@ def train(net, train_iter, valid_iter, num_epochs, lr, wd, devices, lr_period,
           f' examples/sec on {str(devices)}')
 ```
 
-## [**训练和验证模型**]
+## [**訓練和驗證模型**]
 
-现在，我们可以训练和验证模型了，而以下所有超参数都可以调整。
-例如，我们可以增加周期的数量。当`lr_period`和`lr_decay`分别设置为4和0.9时，优化算法的学习速率将在每4个周期乘以0.9。
-为便于演示，我们在这里只训练20个周期。
+現在，我們可以訓練和驗證模型了，而以下所有超引數都可以調整。
+例如，我們可以增加週期的數量。當`lr_period`和`lr_decay`分別設定為4和0.9時，最佳化演算法的學習速率將在每4個週期乘以0.9。
+為便於示範，我們在這裡只訓練20個週期。
 
 ```{.python .input}
 devices, num_epochs, lr, wd = d2l.try_all_gpus(), 20, 0.02, 5e-4
@@ -597,9 +597,9 @@ train(net, train_iter, valid_iter, num_epochs, lr, wd, devices, lr_period,
       lr_decay)
 ```
 
-## 在 Kaggle 上[**对测试集进行分类并提交结果**]
+## 在 Kaggle 上[**對測試集進行分類並送出結果**]
 
-在获得具有超参数的满意的模型后，我们使用所有标记的数据（包括验证集）来重新训练模型并对测试集进行分类。
+在獲得具有超引數的滿意的模型後，我們使用所有標記的資料（包括驗證集）來重新訓練模型並對測試集進行分類。
 
 ```{.python .input}
 net, preds = get_net(devices), []
@@ -649,29 +649,29 @@ df['label'] = df['label'].apply(lambda x: train_valid_ds.classes[x])
 df.to_csv('submission.csv', index=False)
 ```
 
-向Kaggle提交结果的方法与 :numref:`sec_kaggle_house`中的方法类似，上面的代码将生成一个
-`submission.csv`文件，其格式符合Kaggle竞赛的要求。
+向Kaggle送出結果的方法與 :numref:`sec_kaggle_house`中的方法類似，上面的程式碼將生成一個
+`submission.csv`檔案，其格式符合Kaggle競賽的要求。
 
-## 小结
+## 小結
 
-* 将包含原始图像文件的数据集组织为所需格式后，我们可以读取它们。
+* 將包含原始影象檔案的資料集組織為所需格式後，我們可以讀取它們。
 
 :begin_tab:`mxnet`
-* 我们可以在图像分类竞赛中使用卷积神经网络、图像增广和混合编程。
+* 我們可以在影象分類競賽中使用卷積神經網路、影象增廣和混合程式設計。
 :end_tab:
 
 :begin_tab:`pytorch`
-* 我们可以在图像分类竞赛中使用卷积神经网络和图像增广。
+* 我們可以在影象分類競賽中使用卷積神經網路和影象增廣。
 :end_tab:
 
 :begin_tab:`paddle`
-* 我们可以在图像分类竞赛中使用卷积神经网络和图像增广。
+* 我們可以在影象分類競賽中使用卷積神經網路和影象增廣。
 :end_tab:
 
-## 练习
+## 練習
 
-1. 在这场Kaggle竞赛中使用完整的CIFAR-10数据集。将超参数设为`batch_size = 128`，`num_epochs = 100`，`lr = 0.1`，`lr_period = 50`，`lr_decay = 0.1`。看看在这场比赛中能达到什么准确度和排名。能进一步改进吗？
-1. 不使用图像增广时，能获得怎样的准确度？
+1. 在這場Kaggle競賽中使用完整的CIFAR-10資料集。將超引數設為`batch_size = 128`，`num_epochs = 100`，`lr = 0.1`，`lr_period = 50`，`lr_decay = 0.1`。看看在這場比賽中能達到什麼準確度和排名。能進一步改進嗎？
+1. 不使用影象增廣時，能獲得怎樣的準確度？
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/2830)

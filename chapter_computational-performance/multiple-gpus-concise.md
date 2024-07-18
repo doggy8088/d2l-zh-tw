@@ -1,7 +1,7 @@
-# 多GPU的简洁实现
+# 多GPU的簡潔實現
 :label:`sec_multi_gpu_concise`
 
-每个新模型的并行计算都从零开始实现是无趣的。此外，优化同步工具以获得高性能也是有好处的。下面我们将展示如何使用深度学习框架的高级API来实现这一点。数学和算法与 :numref:`sec_multi_gpu`中的相同。本节的代码至少需要两个GPU来运行。
+每個新模型的並行計算都從零開始實現是無趣的。此外，最佳化同步工具以獲得高效能也是有好處的。下面我們將展示如何使用深度學習框架的高階API來實現這一點。數學和演算法與 :numref:`sec_multi_gpu`中的相同。本節的程式碼至少需要兩個GPU來執行。
 
 ```{.python .input}
 from d2l import mxnet as d2l
@@ -26,9 +26,9 @@ import paddle
 from paddle import nn
 ```
 
-## [**简单网络**]
+## [**簡單網路**]
 
-让我们使用一个比 :numref:`sec_multi_gpu`的LeNet更有意义的网络，它依然能够容易地和快速地训练。我们选择的是 :cite:`He.Zhang.Ren.ea.2016`中的ResNet-18。因为输入的图像很小，所以稍微修改了一下。与 :numref:`sec_resnet`的区别在于，我们在开始时使用了更小的卷积核、步长和填充，而且删除了最大汇聚层。
+讓我們使用一個比 :numref:`sec_multi_gpu`的LeNet更有意義的網路，它依然能夠容易地和快速地訓練。我們選擇的是 :cite:`He.Zhang.Ren.ea.2016`中的ResNet-18。因為輸入的影象很小，所以稍微修改了一下。與 :numref:`sec_resnet`的區別在於，我們在開始時使用了更小的卷積核、步長和填充，而且刪除了最大彙聚層。
 
 ```{.python .input}
 #@save
@@ -45,7 +45,7 @@ def resnet18(num_classes):
         return blk
 
     net = nn.Sequential()
-    # 该模型使用了更小的卷积核、步长和填充，而且删除了最大汇聚层
+    # 該模型使用了更小的卷積核、步長和填充，而且刪除了最大彙聚層
     net.add(nn.Conv2D(64, kernel_size=3, strides=1, padding=1),
             nn.BatchNorm(), nn.Activation('relu'))
     net.add(resnet_block(64, 2, first_block=True),
@@ -72,7 +72,7 @@ def resnet18(num_classes, in_channels=1):
                 blk.append(d2l.Residual(out_channels, out_channels))
         return nn.Sequential(*blk)
 
-    # 该模型使用了更小的卷积核、步长和填充，而且删除了最大汇聚层
+    # 該模型使用了更小的卷積核、步長和填充，而且刪除了最大彙聚層
     net = nn.Sequential(
         nn.Conv2d(in_channels, 64, kernel_size=3, stride=1, padding=1),
         nn.BatchNorm2d(64),
@@ -104,7 +104,7 @@ def resnet18(num_classes, in_channels=1):
                 blk.append(d2l.Residual(out_channels, out_channels))
         return nn.Sequential(*blk)
 
-    # 该模型使用了更小的卷积核、步长和填充，而且删除了最大汇聚层
+    # 該模型使用了更小的卷積核、步長和填充，而且刪除了最大彙聚層
     net = nn.Sequential(
         nn.Conv2D(in_channels, 64, kernel_size=3, stride=1, padding=1),
         nn.BatchNorm2D(64),
@@ -120,42 +120,42 @@ def resnet18(num_classes, in_channels=1):
     return net
 ```
 
-## 网络初始化
+## 網路初始化
 
 :begin_tab:`mxnet`
-`initialize`函数允许我们在所选设备上初始化参数。请参阅 :numref:`sec_numerical_stability`复习初始化方法。这个函数在多个设备上初始化网络时特别方便。下面在实践中试一试它的运作方式。
+`initialize`函式允許我們在所選裝置上初始化引數。請參閱 :numref:`sec_numerical_stability`複習初始化方法。這個函式在多個裝置上初始化網路時特別方便。下面在實踐中試一試它的運作方式。
 :end_tab:
 
 :begin_tab:`pytorch`
-我们将在训练回路中初始化网络。请参见 :numref:`sec_numerical_stability`复习初始化方法。
+我們將在訓練迴路中初始化網路。請參見 :numref:`sec_numerical_stability`複習初始化方法。
 :end_tab:
 
 ```{.python .input}
 net = resnet18(10)
-# 获取GPU列表
+# 獲取GPU清單
 devices = d2l.try_all_gpus()
-# 初始化网络的所有参数
+# 初始化網路的所有引數
 net.initialize(init=init.Normal(sigma=0.01), ctx=devices)
 ```
 
 ```{.python .input}
 #@tab pytorch
 net = resnet18(10)
-# 获取GPU列表
+# 獲取GPU清單
 devices = d2l.try_all_gpus()
-# 我们将在训练代码实现中初始化网络
+# 我們將在訓練程式碼實現中初始化網路
 ```
 
 ```{.python .input}
 #@tab paddle
 net = resnet18(10)
-# 获取GPU列表
+# 獲取GPU清單
 devices = d2l.try_all_gpus()
-# 我们将在训练代码实现中初始化网络
+# 我們將在訓練程式碼實現中初始化網路
 ```
 
 :begin_tab:`mxnet`
-使用 :numref:`sec_multi_gpu`中引入的`split_and_load`函数可以切分一个小批量数据，并将切分后的分块数据复制到`devices`变量提供的设备列表中。网络实例自动使用适当的GPU来计算前向传播的值。我们将在下面生成$4$个观测值，并在GPU上将它们拆分。
+使用 :numref:`sec_multi_gpu`中引入的`split_and_load`函式可以切分一個小批次資料，並將切分後的分塊資料複製到`devices`變數提供的裝置清單中。網路實例自動使用適當的GPU來計算前向傳播的值。我們將在下面生成$4$個觀測值，並在GPU上將它們拆分。
 :end_tab:
 
 ```{.python .input}
@@ -165,7 +165,7 @@ net(x_shards[0]), net(x_shards[1])
 ```
 
 :begin_tab:`mxnet`
-一旦数据通过网络，网络对应的参数就会在*有数据通过的设备上初始化*。这意味着初始化是基于每个设备进行的。由于我们选择的是GPU0和GPU1，所以网络只在这两个GPU上初始化，而不是在CPU上初始化。事实上，CPU上甚至没有这些参数。我们可以通过打印参数和观察可能出现的任何错误来验证这一点。
+一旦資料透過網路，網路對應的引數就會在*有數據透過的裝置上初始化*。這意味著初始化是基於每個裝置進行的。由於我們選擇的是GPU0和GPU1，所以網路只在這兩個GPU上初始化，而不是在CPU上初始化。事實上，CPU上甚至沒有這些引數。我們可以透過列印引數和觀察可能出現的任何錯誤來驗證這一點。
 :end_tab:
 
 ```{.python .input}
@@ -179,21 +179,21 @@ weight.data(devices[0])[0], weight.data(devices[1])[0]
 ```
 
 :begin_tab:`mxnet`
-接下来，让我们使用[**在多个设备上并行工作**]的代码来替换前面的[**评估模型**]的代码。
-这里主要是 :numref:`sec_lenet`的`evaluate_accuracy_gpu`函数的替代，代码的主要区别在于在调用网络之前拆分了一个小批量，其他在本质上是一样的。
+接下來，讓我們使用[**在多個裝置上並行工作**]的程式碼來替換前面的[**評估模型**]的程式碼。
+這裡主要是 :numref:`sec_lenet`的`evaluate_accuracy_gpu`函式的替代，程式碼的主要區別在於在呼叫網路之前拆分了一個小批次，其他在本質上是一樣的。
 :end_tab:
 
 ```{.python .input}
 #@save
 def evaluate_accuracy_gpus(net, data_iter, split_f=d2l.split_batch):
-    """使用多个GPU计算数据集上模型的精度"""
-    # 查询设备列表
+    """使用多個GPU計算資料集上模型的精度"""
+    # 查詢裝置清單
     devices = list(net.collect_params().values())[0].list_ctx()
-    # 正确预测的数量，预测的总数量
+    # 正確預測的數量，預測的總數量
     metric = d2l.Accumulator(2)
     for features, labels in data_iter:
         X_shards, y_shards = split_f(features, labels, devices)
-        # 并行运行
+        # 並行執行
         pred_shards = [net(X_shard) for X_shard in X_shards]
         metric.add(sum(float(d2l.accuracy(pred_shard, y_shard)) for
                        pred_shard, y_shard in zip(
@@ -201,16 +201,16 @@ def evaluate_accuracy_gpus(net, data_iter, split_f=d2l.split_batch):
     return metric[0] / metric[1]
 ```
 
-## [**训练**]
+## [**訓練**]
 
-如前所述，用于训练的代码需要执行几个基本功能才能实现高效并行：
+如前所述，用於訓練的程式碼需要執行幾個基本功能才能實現高效並行：
 
-* 需要在所有设备上初始化网络参数；
-* 在数据集上迭代时，要将小批量数据分配到所有设备上；
-* 跨设备并行计算损失及其梯度；
-* 聚合梯度，并相应地更新参数。
+* 需要在所有裝置上初始化網路引數；
+* 在資料集上迭代時，要將小批次資料分配到所有裝置上；
+* 跨裝置並行計算損失及其梯度；
+* 聚合梯度，並相應地更新引數。
 
-最后，并行地计算精确度和发布网络的最终性能。除了需要拆分和聚合数据外，训练代码与前几章的实现非常相似。
+最後，並行地計算精確度和發布網路的最終效能。除了需要拆分和聚合資料外，訓練程式碼與前幾章的實現非常相似。
 
 ```{.python .input}
 def train(num_gpus, batch_size, lr):
@@ -235,7 +235,7 @@ def train(num_gpus, batch_size, lr):
         npx.waitall()
         timer.stop()
         animator.add(epoch + 1, (evaluate_accuracy_gpus(net, test_iter),))
-    print(f'测试精度：{animator.Y[0][-1]:.2f}，{timer.avg():.1f}秒/轮，'
+    print(f'測試精度：{animator.Y[0][-1]:.2f}，{timer.avg():.1f}秒/輪，'
           f'在{str(ctx)}')
 ```
 
@@ -248,7 +248,7 @@ def train(net, num_gpus, batch_size, lr):
         if type(m) in [nn.Linear, nn.Conv2d]:
             nn.init.normal_(m.weight, std=0.01)
     net.apply(init_weights)
-    # 在多个GPU上设置模型
+    # 在多個GPU上設定模型
     net = nn.DataParallel(net, device_ids=devices)
     trainer = torch.optim.SGD(net.parameters(), lr)
     loss = nn.CrossEntropyLoss()
@@ -265,7 +265,7 @@ def train(net, num_gpus, batch_size, lr):
             trainer.step()
         timer.stop()
         animator.add(epoch + 1, (d2l.evaluate_accuracy_gpu(net, test_iter),))
-    print(f'测试精度：{animator.Y[0][-1]:.2f}，{timer.avg():.1f}秒/轮，'
+    print(f'測試精度：{animator.Y[0][-1]:.2f}，{timer.avg():.1f}秒/輪，'
           f'在{str(devices)}')
 ```
 
@@ -280,7 +280,7 @@ def train(net, num_gpus, batch_size, lr):
         if type(i) in [nn.Linear, nn.Conv2D]:        
             init_normal(i.weight)
 
-    # 在多个 GPU 上设置模型
+    # 在多個 GPU 上設定模型
     net = paddle.DataParallel(net)
     trainer = paddle.optimizer.SGD(parameters=net.parameters(), learning_rate=lr)
     loss = nn.CrossEntropyLoss()
@@ -297,11 +297,11 @@ def train(net, num_gpus, batch_size, lr):
             trainer.step()
         timer.stop()
         animator.add(epoch + 1, (d2l.evaluate_accuracy_gpu(net, test_iter),))
-    print(f'测试精度：{animator.Y[0][-1]:.2f}, {timer.avg():.1f}秒/轮，'
+    print(f'測試精度：{animator.Y[0][-1]:.2f}, {timer.avg():.1f}秒/輪，'
           f'在{str(devices)}')
 ```
 
-接下来看看这在实践中是如何运作的。我们先[**在单个GPU上训练网络**]进行预热。
+接下來看看這在實踐中是如何運作的。我們先[**在單個GPU上訓練網路**]進行預熱。
 
 ```{.python .input}
 train(num_gpus=1, batch_size=256, lr=0.1)
@@ -312,7 +312,7 @@ train(num_gpus=1, batch_size=256, lr=0.1)
 train(net, num_gpus=1, batch_size=256, lr=0.1)
 ```
 
-接下来我们[**使用2个GPU进行训练**]。与 :numref:`sec_multi_gpu`中评估的LeNet相比，ResNet-18的模型要复杂得多。这就是显示并行化优势的地方，计算所需时间明显大于同步参数需要的时间。因为并行化开销的相关性较小，因此这种操作提高了模型的可伸缩性。
+接下來我們[**使用2個GPU進行訓練**]。與 :numref:`sec_multi_gpu`中評估的LeNet相比，ResNet-18的模型要複雜得多。這就是顯示並行化優勢的地方，計算所需時間明顯大於同步引數需要的時間。因為並行化開銷的相關性較小，因此這種操作提高了模型的可伸縮性。
 
 ```{.python .input}
 train(num_gpus=2, batch_size=512, lr=0.2)
@@ -323,32 +323,32 @@ train(num_gpus=2, batch_size=512, lr=0.2)
 train(net, num_gpus=2, batch_size=512, lr=0.2)
 ```
 
-## 小结
+## 小結
 
 :begin_tab:`mxnet`
-* Gluon通过提供一个上下文列表，为跨多个设备的模型初始化提供原语。
-* 神经网络可以在（可找到数据的）单GPU上进行自动评估。
-* 每台设备上的网络需要先初始化，然后再尝试访问该设备上的参数，否则会遇到错误。
-* 优化算法在多个GPU上自动聚合。
+* Gluon透過提供一個上下文清單，為跨多個裝置的模型初始化提供原語。
+* 神經網路可以在（可找到資料的）單GPU上進行自動評估。
+* 每台裝置上的網路需要先初始化，然後再嘗試訪問該裝置上的引數，否則會遇到錯誤。
+* 最佳化演算法在多個GPU上自動聚合。
 :end_tab:
 
 :begin_tab:`pytorch, paddle`
-* 神经网络可以在（可找到数据的）单GPU上进行自动评估。
-* 每台设备上的网络需要先初始化，然后再尝试访问该设备上的参数，否则会遇到错误。
-* 优化算法在多个GPU上自动聚合。
+* 神經網路可以在（可找到資料的）單GPU上進行自動評估。
+* 每台裝置上的網路需要先初始化，然後再嘗試訪問該裝置上的引數，否則會遇到錯誤。
+* 最佳化演算法在多個GPU上自動聚合。
 :end_tab:
 
-## 练习
+## 練習
 
 :begin_tab:`mxnet`
-1. 本节使用ResNet-18，请尝试不同的迭代周期数、批量大小和学习率，以及使用更多的GPU进行计算。如果使用$16$个GPU（例如，在AWS p2.16xlarge实例上）尝试此操作，会发生什么？
-1. 有时候不同的设备提供了不同的计算能力，我们可以同时使用GPU和CPU，那应该如何分配工作？为什么？
-1. 如果去掉`npx.waitall()`会怎样？该如何修改训练，以使并行操作最多有两个步骤重叠？
+1. 本節使用ResNet-18，請嘗試不同的迭代週期數、批次大小和學習率，以及使用更多的GPU進行計算。如果使用$16$個GPU（例如，在AWS p2.16xlarge實例上）嘗試此操作，會發生什麼？
+1. 有時候不同的裝置提供了不同的計算能力，我們可以同時使用GPU和CPU，那應該如何分配工作？為什麼？
+1. 如果去掉`npx.waitall()`會怎樣？該如何修改訓練，以使並行操作最多有兩個步驟重疊？
 :end_tab:
 
 :begin_tab:`pytorch, paddle`
-1. 本节使用ResNet-18，请尝试不同的迭代周期数、批量大小和学习率，以及使用更多的GPU进行计算。如果使用$16$个GPU（例如，在AWS p2.16xlarge实例上）尝试此操作，会发生什么？
-1. 有时候不同的设备提供了不同的计算能力，我们可以同时使用GPU和CPU，那应该如何分配工作？为什么？
+1. 本節使用ResNet-18，請嘗試不同的迭代週期數、批次大小和學習率，以及使用更多的GPU進行計算。如果使用$16$個GPU（例如，在AWS p2.16xlarge實例上）嘗試此操作，會發生什麼？
+1. 有時候不同的裝置提供了不同的計算能力，我們可以同時使用GPU和CPU，那應該如何分配工作？為什麼？
 :end_tab:
 
 :begin_tab:`mxnet`

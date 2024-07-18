@@ -1,93 +1,93 @@
-# 权重衰减
+# 權重衰減
 :label:`sec_weight_decay`
 
-前一节我们描述了过拟合的问题，本节我们将介绍一些正则化模型的技术。
-我们总是可以通过去收集更多的训练数据来缓解过拟合。
-但这可能成本很高，耗时颇多，或者完全超出我们的控制，因而在短期内不可能做到。
-假设我们已经拥有尽可能多的高质量数据，我们便可以将重点放在正则化技术上。
+前一節我們描述了過擬合的問題，本節我們將介紹一些正則化模型的技術。
+我們總是可以透過去收集更多的訓練資料來緩解過擬合。
+但這可能成本很高，耗時頗多，或者完全超出我們的控制，因而在短期內不可能做到。
+假設我們已經擁有儘可能多的高質量資料，我們便可以將重點放在正則化技術上。
 
-回想一下，在多项式回归的例子（ :numref:`sec_model_selection`）中，
-我们可以通过调整拟合多项式的阶数来限制模型的容量。
-实际上，限制特征的数量是缓解过拟合的一种常用技术。
-然而，简单地丢弃特征对这项工作来说可能过于生硬。
-我们继续思考多项式回归的例子，考虑高维输入可能发生的情况。
-多项式对多变量数据的自然扩展称为*单项式*（monomials），
-也可以说是变量幂的乘积。
-单项式的阶数是幂的和。
-例如，$x_1^2 x_2$和$x_3 x_5^2$都是3次单项式。
+回想一下，在多項式迴歸的例子（ :numref:`sec_model_selection`）中，
+我們可以透過調整擬合多項式的階數來限制模型的容量。
+實際上，限制特徵的數量是緩解過擬合的一種常用技術。
+然而，簡單地丟棄特徵對這項工作來說可能過於生硬。
+我們繼續思考多項式迴歸的例子，考慮高維輸入可能發生的情況。
+多項式對多變量資料的自然擴充套件稱為*單項式*（monomials），
+也可以說是變數冪的乘積。
+單項式的階數是冪的和。
+例如，$x_1^2 x_2$和$x_3 x_5^2$都是3次單項式。
 
-注意，随着阶数$d$的增长，带有阶数$d$的项数迅速增加。 
-给定$k$个变量，阶数为$d$的项的个数为
+注意，隨著階數$d$的增長，帶有階數$d$的項數迅速增加。 
+給定$k$個變數，階數為$d$的項的個數為
 ${k - 1 + d} \choose {k - 1}$，即$C^{k-1}_{k-1+d} = \frac{(k-1+d)!}{(d)!(k-1)!}$。
-因此即使是阶数上的微小变化，比如从$2$到$3$，也会显著增加我们模型的复杂性。
-仅仅通过简单的限制特征数量（在多项式回归中体现为限制阶数），可能仍然使模型在过简单和过复杂中徘徊，
-我们需要一个更细粒度的工具来调整函数的复杂性，使其达到一个合适的平衡位置。
-## 范数与权重衰减
+因此即使是階數上的微小變化，比如從$2$到$3$，也會顯著增加我們模型的複雜性。
+僅僅透過簡單的限制特徵數量（在多項式迴歸中體現為限制階數），可能仍然使模型在過簡單和過複雜中徘徊，
+我們需要一個更細粒度的工具來調整函式的複雜性，使其達到一個合適的平衡位置。
+## 範數與權重衰減
 
 在 :numref:`subsec_lin-algebra-norms`中，
-我们已经描述了$L_2$范数和$L_1$范数，
-它们是更为一般的$L_p$范数的特殊情况。
-(~~权重衰减是最广泛使用的正则化的技术之一~~)
-在训练参数化机器学习模型时，
-*权重衰减*（weight decay）是最广泛使用的正则化的技术之一，
-它通常也被称为$L_2$*正则化*。
-这项技术通过函数与零的距离来衡量函数的复杂度，
-因为在所有函数$f$中，函数$f = 0$（所有输入都得到值$0$）
-在某种意义上是最简单的。
-但是我们应该如何精确地测量一个函数和零之间的距离呢？
-没有一个正确的答案。
-事实上，函数分析和巴拿赫空间理论的研究，都在致力于回答这个问题。
+我們已經描述了$L_2$範數和$L_1$範數，
+它們是更為一般的$L_p$範數的特殊情況。
+(~~權重衰減是最廣泛使用的正則化的技術之一~~)
+在訓練引數化機器學習模型時，
+*權重衰減*（weight decay）是最廣泛使用的正則化的技術之一，
+它通常也被稱為$L_2$*正則化*。
+這項技術透過函式與零的距離來衡量函式的複雜度，
+因為在所有函式$f$中，函式$f = 0$（所有輸入都得到值$0$）
+在某種意義上是最簡單的。
+但是我們應該如何精確地測量一個函式和零之間的距離呢？
+沒有一個正確的答案。
+事實上，函式分析和巴拿赫空間理論的研究，都在致力於回答這個問題。
 
-一种简单的方法是通过线性函数
+一種簡單的方法是透過線性函式
 $f(\mathbf{x}) = \mathbf{w}^\top \mathbf{x}$
-中的权重向量的某个范数来度量其复杂性，
+中的權重向量的某個範數來度量其複雜性，
 例如$\| \mathbf{w} \|^2$。
-要保证权重向量比较小，
-最常用方法是将其范数作为惩罚项加到最小化损失的问题中。
-将原来的训练目标*最小化训练标签上的预测损失*，
-调整为*最小化预测损失和惩罚项之和*。
-现在，如果我们的权重向量增长的太大，
-我们的学习算法可能会更集中于最小化权重范数$\| \mathbf{w} \|^2$。
-这正是我们想要的。
-让我们回顾一下 :numref:`sec_linear_regression`中的线性回归例子。
-我们的损失由下式给出：
+要保證權重向量比較小，
+最常用方法是將其範數作為懲罰項加到最小化損失的問題中。
+將原來的訓練目標*最小化訓練標籤上的預測損失*，
+調整為*最小化預測損失和懲罰項之和*。
+現在，如果我們的權重向量增長的太大，
+我們的學習演算法可能會更集中於最小化權重範數$\| \mathbf{w} \|^2$。
+這正是我們想要的。
+讓我們回顧一下 :numref:`sec_linear_regression`中的線性迴歸例子。
+我們的損失由下式給出：
 
 $$L(\mathbf{w}, b) = \frac{1}{n}\sum_{i=1}^n \frac{1}{2}\left(\mathbf{w}^\top \mathbf{x}^{(i)} + b - y^{(i)}\right)^2.$$
 
-回想一下，$\mathbf{x}^{(i)}$是样本$i$的特征，
-$y^{(i)}$是样本$i$的标签，
-$(\mathbf{w}, b)$是权重和偏置参数。
-为了惩罚权重向量的大小，
-我们必须以某种方式在损失函数中添加$\| \mathbf{w} \|^2$，
-但是模型应该如何平衡这个新的额外惩罚的损失？
-实际上，我们通过*正则化常数*$\lambda$来描述这种权衡，
-这是一个非负超参数，我们使用验证数据拟合：
+回想一下，$\mathbf{x}^{(i)}$是樣本$i$的特徵，
+$y^{(i)}$是樣本$i$的標籤，
+$(\mathbf{w}, b)$是權重和偏置引數。
+為了懲罰權重向量的大小，
+我們必須以某種方式在損失函式中新增$\| \mathbf{w} \|^2$，
+但是模型應該如何平衡這個新的額外懲罰的損失？
+實際上，我們透過*正則化常數*$\lambda$來描述這種權衡，
+這是一個非負超引數，我們使用驗證資料擬合：
 
 $$L(\mathbf{w}, b) + \frac{\lambda}{2} \|\mathbf{w}\|^2,$$
 
-对于$\lambda = 0$，我们恢复了原来的损失函数。
-对于$\lambda > 0$，我们限制$\| \mathbf{w} \|$的大小。
-这里我们仍然除以$2$：当我们取一个二次函数的导数时，
-$2$和$1/2$会抵消，以确保更新表达式看起来既漂亮又简单。
-为什么在这里我们使用平方范数而不是标准范数（即欧几里得距离）？
-我们这样做是为了便于计算。
-通过平方$L_2$范数，我们去掉平方根，留下权重向量每个分量的平方和。
-这使得惩罚的导数很容易计算：导数的和等于和的导数。
+對於$\lambda = 0$，我們恢復了原來的損失函式。
+對於$\lambda > 0$，我們限制$\| \mathbf{w} \|$的大小。
+這裡我們仍然除以$2$：當我們取一個二次函式的導數時，
+$2$和$1/2$會抵消，以確保更新表示式看起來既漂亮又簡單。
+為什麼在這裡我們使用平方範數而不是標準範數（即歐幾里得距離）？
+我們這樣做是為了便於計算。
+透過平方$L_2$範數，我們去掉平方根，留下權重向量每個分量的平方和。
+這使得懲罰的導數很容易計算：導數的和等於和的導數。
 
-此外，为什么我们首先使用$L_2$范数，而不是$L_1$范数。
-事实上，这个选择在整个统计领域中都是有效的和受欢迎的。
-$L_2$正则化线性模型构成经典的*岭回归*（ridge regression）算法，
-$L_1$正则化线性回归是统计学中类似的基本模型，
-通常被称为*套索回归*（lasso regression）。
-使用$L_2$范数的一个原因是它对权重向量的大分量施加了巨大的惩罚。
-这使得我们的学习算法偏向于在大量特征上均匀分布权重的模型。
-在实践中，这可能使它们对单个变量中的观测误差更为稳定。
-相比之下，$L_1$惩罚会导致模型将权重集中在一小部分特征上，
-而将其他权重清除为零。
-这称为*特征选择*（feature selection），这可能是其他场景下需要的。
+此外，為什麼我們首先使用$L_2$範數，而不是$L_1$範數。
+事實上，這個選擇在整個統計領域中都是有效的和受歡迎的。
+$L_2$正則化線性模型構成經典的*嶺迴歸*（ridge regression）演算法，
+$L_1$正則化線性迴歸是統計學中類似的基本模型，
+通常被稱為*套索迴歸*（lasso regression）。
+使用$L_2$範數的一個原因是它對權重向量的大分量施加了巨大的懲罰。
+這使得我們的學習演算法偏向於在大量特徵上均勻分佈權重的模型。
+在實踐中，這可能使它們對單個變數中的觀測誤差更為穩定。
+相比之下，$L_1$懲罰會導致模型將權重集中在一小部分特徵上，
+而將其他權重清除為零。
+這稱為*特徵選擇*（feature selection），這可能是其他場景下需要的。
 
-使用与 :eqref:`eq_linreg_batch_update`中的相同符号，
-$L_2$正则化回归的小批量随机梯度下降更新如下式：
+使用與 :eqref:`eq_linreg_batch_update`中的相同符號，
+$L_2$正則化迴歸的小批次隨機梯度下降更新如下式：
 
 $$
 \begin{aligned}
@@ -95,21 +95,21 @@ $$
 \end{aligned}
 $$
 
-根据之前章节所讲的，我们根据估计值与观测值之间的差异来更新$\mathbf{w}$。
-然而，我们同时也在试图将$\mathbf{w}$的大小缩小到零。
-这就是为什么这种方法有时被称为*权重衰减*。
-我们仅考虑惩罚项，优化算法在训练的每一步*衰减*权重。
-与特征选择相比，权重衰减为我们提供了一种连续的机制来调整函数的复杂度。
-较小的$\lambda$值对应较少约束的$\mathbf{w}$，
-而较大的$\lambda$值对$\mathbf{w}$的约束更大。
+根據之前章節所講的，我們根據估計值與觀測值之間的差異來更新$\mathbf{w}$。
+然而，我們同時也在試圖將$\mathbf{w}$的大小縮小到零。
+這就是為什麼這種方法有時被稱為*權重衰減*。
+我們僅考慮懲罰項，最佳化演算法在訓練的每一步*衰減*權重。
+與特徵選擇相比，權重衰減為我們提供了一種連續的機制來調整函式的複雜度。
+較小的$\lambda$值對應較少約束的$\mathbf{w}$，
+而較大的$\lambda$值對$\mathbf{w}$的約束更大。
 
-是否对相应的偏置$b^2$进行惩罚在不同的实践中会有所不同，
-在神经网络的不同层中也会有所不同。
-通常，网络输出层的偏置项不会被正则化。
+是否對相應的偏置$b^2$進行懲罰在不同的實踐中會有所不同，
+在神經網路的不同層中也會有所不同。
+通常，網路輸出層的偏置項不會被正則化。
 
-## 高维线性回归
+## 高維線性迴歸
 
-我们通过一个简单的例子来演示权重衰减。
+我們透過一個簡單的例子來示範權重衰減。
 
 ```{.python .input}
 %matplotlib inline
@@ -144,15 +144,15 @@ import paddle
 from paddle import nn
 ```
 
-首先，我们[**像以前一样生成一些数据**]，生成公式如下：
+首先，我們[**像以前一樣生成一些資料**]，生成公式如下：
 
 (**$$y = 0.05 + \sum_{i = 1}^d 0.01 x_i + \epsilon \text{ where }
 \epsilon \sim \mathcal{N}(0, 0.01^2).$$**)
 
-我们选择标签是关于输入的线性函数。
-标签同时被均值为0，标准差为0.01高斯噪声破坏。
-为了使过拟合的效果更加明显，我们可以将问题的维数增加到$d = 200$，
-并使用一个只包含20个样本的小训练集。
+我們選擇標籤是關於輸入的線性函式。
+標籤同時被均值為0，標準差為0.01高斯噪聲破壞。
+為了使過擬合的效果更加明顯，我們可以將問題的維數增加到$d = 200$，
+並使用一個只包含20個樣本的小訓練集。
 
 ```{.python .input}
 #@tab all
@@ -164,13 +164,13 @@ test_data = d2l.synthetic_data(true_w, true_b, n_test)
 test_iter = d2l.load_array(test_data, batch_size, is_train=False)
 ```
 
-## 从零开始实现
+## 從零開始實現
 
-下面我们将从头开始实现权重衰减，只需将$L_2$的平方惩罚添加到原始目标函数中。
+下面我們將從頭開始實現權重衰減，只需將$L_2$的平方懲罰新增到原始目標函式中。
 
-### [**初始化模型参数**]
+### [**初始化模型引數**]
 
-首先，我们将定义一个函数来随机初始化模型参数。
+首先，我們將定義一個函式來隨機初始化模型引數。
 
 ```{.python .input}
 def init_params():
@@ -207,9 +207,9 @@ def init_params():
     return [w, b]
 ```
 
-### (**定义$L_2$范数惩罚**)
+### (**定義$L_2$範數懲罰**)
 
-实现这一惩罚最方便的方法是对所有项求平方后并将它们求和。
+實現這一懲罰最方便的方法是對所有項求平方後並將它們求和。
 
 ```{.python .input}
 def l2_penalty(w):
@@ -234,12 +234,12 @@ def l2_penalty(w):
     return paddle.sum(w.pow(2)) / 2
 ```
 
-### [**定义训练代码实现**]
+### [**定義訓練程式碼實現**]
 
-下面的代码将模型拟合训练数据集，并在测试数据集上进行评估。
-从 :numref:`chap_linear`以来，线性网络和平方损失没有变化，
-所以我们通过`d2l.linreg`和`d2l.squared_loss`导入它们。
-唯一的变化是损失现在包括了惩罚项。
+下面的程式碼將模型擬合訓練資料集，並在測試資料集上進行評估。
+從 :numref:`chap_linear`以來，線性網路和平方損失沒有變化，
+所以我們透過`d2l.linreg`和`d2l.squared_loss`匯入它們。
+唯一的變化是損失現在包括了懲罰項。
 
 ```{.python .input}
 def train(lambd):
@@ -251,15 +251,15 @@ def train(lambd):
     for epoch in range(num_epochs):
         for X, y in train_iter:
             with autograd.record():
-                # 增加了L2范数惩罚项，
-                # 广播机制使l2_penalty(w)成为一个长度为batch_size的向量
+                # 增加了L2範數懲罰項，
+                # 廣播機制使l2_penalty(w)成為一個長度為batch_size的向量
                 l = loss(net(X), y) + lambd * l2_penalty(w)
             l.backward()
             d2l.sgd([w, b], lr, batch_size)
         if (epoch + 1) % 5 == 0:
             animator.add(epoch + 1, (d2l.evaluate_loss(net, train_iter, loss),
                                      d2l.evaluate_loss(net, test_iter, loss)))
-    print('w的L2范数是：', np.linalg.norm(w))
+    print('w的L2範數是：', np.linalg.norm(w))
 ```
 
 ```{.python .input}
@@ -272,15 +272,15 @@ def train(lambd):
                             xlim=[5, num_epochs], legend=['train', 'test'])
     for epoch in range(num_epochs):
         for X, y in train_iter:
-            # 增加了L2范数惩罚项，
-            # 广播机制使l2_penalty(w)成为一个长度为batch_size的向量
+            # 增加了L2範數懲罰項，
+            # 廣播機制使l2_penalty(w)成為一個長度為batch_size的向量
             l = loss(net(X), y) + lambd * l2_penalty(w)
             l.sum().backward()
             d2l.sgd([w, b], lr, batch_size)
         if (epoch + 1) % 5 == 0:
             animator.add(epoch + 1, (d2l.evaluate_loss(net, train_iter, loss),
                                      d2l.evaluate_loss(net, test_iter, loss)))
-    print('w的L2范数是：', torch.norm(w).item())
+    print('w的L2範數是：', torch.norm(w).item())
 ```
 
 ```{.python .input}
@@ -294,15 +294,15 @@ def train(lambd):
     for epoch in range(num_epochs):
         for X, y in train_iter:
             with tf.GradientTape() as tape:
-                # 增加了L2范数惩罚项，
-                # 广播机制使l2_penalty(w)成为一个长度为batch_size的向量
+                # 增加了L2範數懲罰項，
+                # 廣播機制使l2_penalty(w)成為一個長度為batch_size的向量
                 l = loss(net(X), y) + lambd * l2_penalty(w)
             grads = tape.gradient(l, [w, b])
             d2l.sgd([w, b], grads, lr, batch_size)
         if (epoch + 1) % 5 == 0:
             animator.add(epoch + 1, (d2l.evaluate_loss(net, train_iter, loss),
                                      d2l.evaluate_loss(net, test_iter, loss)))
-    print('w的L2范数是：', tf.norm(w).numpy())
+    print('w的L2範數是：', tf.norm(w).numpy())
 ```
 
 ```{.python .input}
@@ -315,65 +315,65 @@ def train(lambd):
                             xlim=[5, num_epochs], legend=['train', 'test'])
     for epoch in range(num_epochs):
         for X, y in train_iter():
-            # 增加了L2范数惩罚项,
-            # 广播机制使l2_penalty(w)成为一个长度为`batch_size`的向量
+            # 增加了L2範數懲罰項,
+            # 廣播機制使l2_penalty(w)成為一個長度為`batch_size`的向量
             l = loss(net(X), y) + lambd * l2_penalty(w)
             l.sum().backward()
             d2l.sgd([w, b], lr, batch_size)
         if (epoch + 1) % 5 == 0:
             animator.add(epoch + 1, (d2l.evaluate_loss(net, train_iter, loss),
                                      d2l.evaluate_loss(net, test_iter, loss)))
-    print('w的L2范数是：', paddle.norm(w).item())
+    print('w的L2範數是：', paddle.norm(w).item())
 ```
 
-### [**忽略正则化直接训练**]
+### [**忽略正則化直接訓練**]
 
-我们现在用`lambd = 0`禁用权重衰减后运行这个代码。
-注意，这里训练误差有了减少，但测试误差没有减少，
-这意味着出现了严重的过拟合。
+我們現在用`lambd = 0`停用權重衰減後執行這個程式碼。
+注意，這裡訓練誤差有了減少，但測試誤差沒有減少，
+這意味著出現了嚴重的過擬合。
 
 ```{.python .input}
 #@tab all
 train(lambd=0)
 ```
 
-### [**使用权重衰减**]
+### [**使用權重衰減**]
 
-下面，我们使用权重衰减来运行代码。
-注意，在这里训练误差增大，但测试误差减小。
-这正是我们期望从正则化中得到的效果。
+下面，我們使用權重衰減來執行程式碼。
+注意，在這裡訓練誤差增大，但測試誤差減小。
+這正是我們期望從正則化中得到的效果。
 
 ```{.python .input}
 #@tab all
 train(lambd=3)
 ```
 
-## [**简洁实现**]
+## [**簡潔實現**]
 
-由于权重衰减在神经网络优化中很常用，
-深度学习框架为了便于我们使用权重衰减，
-将权重衰减集成到优化算法中，以便与任何损失函数结合使用。
-此外，这种集成还有计算上的好处，
-允许在不增加任何额外的计算开销的情况下向算法中添加权重衰减。
-由于更新的权重衰减部分仅依赖于每个参数的当前值，
-因此优化器必须至少接触每个参数一次。
+由於權重衰減在神經網路最佳化中很常用，
+深度學習框架為了便於我們使用權重衰減，
+將權重衰減整合到最佳化演算法中，以便與任何損失函式結合使用。
+此外，這種整合還有計算上的好處，
+允許在不增加任何額外的計算開銷的情況下向演算法中新增權重衰減。
+由於更新的權重衰減部分僅依賴於每個引數的當前值，
+因此最佳化器必須至少接觸每個引數一次。
 
 :begin_tab:`mxnet`
-在下面的代码中，我们在实例化`Trainer`时直接通过`wd`指定weight decay超参数。
-默认情况下，Gluon同时衰减权重和偏置。
-注意，更新模型参数时，超参数`wd`将乘以`wd_mult`。
-因此，如果我们将`wd_mult`设置为零，则偏置参数$b$将不会被衰减。
+在下面的程式碼中，我們在實例化`Trainer`時直接透過`wd`指定weight decay超引數。
+預設情況下，Gluon同時衰減權重和偏置。
+注意，更新模型引數時，超引數`wd`將乘以`wd_mult`。
+因此，如果我們將`wd_mult`設定為零，則偏置引數$b$將不會被衰減。
 :end_tab:
 
 :begin_tab:`pytorch`
-在下面的代码中，我们在实例化优化器时直接通过`weight_decay`指定weight decay超参数。
-默认情况下，PyTorch同时衰减权重和偏移。
-这里我们只为权重设置了`weight_decay`，所以偏置参数$b$不会衰减。
+在下面的程式碼中，我們在實例化最佳化器時直接透過`weight_decay`指定weight decay超引數。
+預設情況下，PyTorch同時衰減權重和偏移。
+這裡我們只為權重設定了`weight_decay`，所以偏置引數$b$不會衰減。
 :end_tab:
 
 :begin_tab:`tensorflow`
-在下面的代码中，我们使用权重衰减超参数`wd`创建一个$L_2$正则化器，
-并通过`kernel_regularizer`参数将其应用于网络层。
+在下面的程式碼中，我們使用權重衰減超引數`wd`建立一個$L_2$正則化器，
+並透過`kernel_regularizer`引數將其應用於網路層。
 :end_tab:
 
 ```{.python .input}
@@ -385,7 +385,7 @@ def train_concise(wd):
     num_epochs, lr = 100, 0.003
     trainer = gluon.Trainer(net.collect_params(), 'sgd',
                             {'learning_rate': lr, 'wd': wd})
-    # 偏置参数没有衰减。偏置名称通常以“bias”结尾
+    # 偏置引數沒有衰減。偏置名稱通常以『bias』結尾
     net.collect_params('.*bias').setattr('wd_mult', 0)
     animator = d2l.Animator(xlabel='epochs', ylabel='loss', yscale='log',
                             xlim=[5, num_epochs], legend=['train', 'test'])
@@ -398,7 +398,7 @@ def train_concise(wd):
         if (epoch + 1) % 5 == 0:
             animator.add(epoch + 1, (d2l.evaluate_loss(net, train_iter, loss),
                                      d2l.evaluate_loss(net, test_iter, loss)))
-    print('w的L2范数：', np.linalg.norm(net[0].weight.data()))
+    print('w的L2範數：', np.linalg.norm(net[0].weight.data()))
 ```
 
 ```{.python .input}
@@ -409,7 +409,7 @@ def train_concise(wd):
         param.data.normal_()
     loss = nn.MSELoss(reduction='none')
     num_epochs, lr = 100, 0.003
-    # 偏置参数没有衰减
+    # 偏置引數沒有衰減
     trainer = torch.optim.SGD([
         {"params":net[0].weight,'weight_decay': wd},
         {"params":net[0].bias}], lr=lr)
@@ -425,7 +425,7 @@ def train_concise(wd):
             animator.add(epoch + 1,
                          (d2l.evaluate_loss(net, train_iter, loss),
                           d2l.evaluate_loss(net, test_iter, loss)))
-    print('w的L2范数：', net[0].weight.norm().item())
+    print('w的L2範數：', net[0].weight.norm().item())
 ```
 
 ```{.python .input}
@@ -444,14 +444,14 @@ def train_concise(wd):
     for epoch in range(num_epochs):
         for X, y in train_iter:
             with tf.GradientTape() as tape:
-                # tf.keras需要为自定义训练代码手动添加损失。
+                # tf.keras需要為自定義訓練程式碼手動新增損失。
                 l = loss(net(X), y) + net.losses
             grads = tape.gradient(l, net.trainable_variables)
             trainer.apply_gradients(zip(grads, net.trainable_variables))
         if (epoch + 1) % 5 == 0:
             animator.add(epoch + 1, (d2l.evaluate_loss(net, train_iter, loss),
                                      d2l.evaluate_loss(net, test_iter, loss)))
-    print('w的L2范数：', tf.norm(net.get_weights()[0]).numpy())
+    print('w的L2範數：', tf.norm(net.get_weights()[0]).numpy())
 ```
 
 ```{.python .input}
@@ -462,7 +462,7 @@ def train_concise(wd):
     net = nn.Sequential(nn.Linear(num_inputs, 1, weight_attr=weight_attr, bias_attr=bias_attr))
     loss = nn.MSELoss()
     num_epochs, lr = 100, 0.003
-    # 偏置参数没有衰减。
+    # 偏置引數沒有衰減。
     trainer = paddle.optimizer.SGD(parameters=net[0].parameters(), learning_rate=lr, weight_decay=wd*1.0)
     animator = d2l.Animator(xlabel='epochs', ylabel='loss', yscale='log',
                             xlim=[5, num_epochs], legend=['train', 'test'])
@@ -475,12 +475,12 @@ def train_concise(wd):
         if (epoch + 1) % 5 == 0:
             animator.add(epoch + 1, (d2l.evaluate_loss(net, train_iter, loss),
                                      d2l.evaluate_loss(net, test_iter, loss)))
-    print('w的L2范数：', net[0].weight.norm().item())
+    print('w的L2範數：', net[0].weight.norm().item())
 ```
 
-[**这些图看起来和我们从零开始实现权重衰减时的图相同**]。
-然而，它们运行得更快，更容易实现。
-对于更复杂的问题，这一好处将变得更加明显。
+[**這些圖看起來和我們從零開始實現權重衰減時的圖相同**]。
+然而，它們執行得更快，更容易實現。
+對於更復雜的問題，這一好處將變得更加明顯。
 
 ```{.python .input}
 #@tab all
@@ -492,28 +492,28 @@ train_concise(0)
 train_concise(3)
 ```
 
-到目前为止，我们只接触到一个简单线性函数的概念。
-此外，由什么构成一个简单的非线性函数可能是一个更复杂的问题。
-例如，[再生核希尔伯特空间（RKHS）](https://en.wikipedia.org/wiki/Reproducing_kernel_Hilbert_space)
-允许在非线性环境中应用为线性函数引入的工具。
-不幸的是，基于RKHS的算法往往难以应用到大型、高维的数据。
-在这本书中，我们将默认使用简单的启发式方法，即在深层网络的所有层上应用权重衰减。
+到目前為止，我們只接觸到一個簡單線性函式的概念。
+此外，由什麼構成一個簡單的非線性函式可能是一個更復雜的問題。
+例如，[再生核希爾伯特空間（RKHS）](https://en.wikipedia.org/wiki/Reproducing_kernel_Hilbert_space)
+允許在非線性環境中應用為線性函式引入的工具。
+不幸的是，基於RKHS的演算法往往難以應用到大型、高維的資料。
+在這本書中，我們將預設使用簡單的啟發式方法，即在深層網路的所有層上應用權重衰減。
 
-## 小结
+## 小結
 
-* 正则化是处理过拟合的常用方法：在训练集的损失函数中加入惩罚项，以降低学习到的模型的复杂度。
-* 保持模型简单的一个特别的选择是使用$L_2$惩罚的权重衰减。这会导致学习算法更新步骤中的权重衰减。
-* 权重衰减功能在深度学习框架的优化器中提供。
-* 在同一训练代码实现中，不同的参数集可以有不同的更新行为。
+* 正則化是處理過擬合的常用方法：在訓練集的損失函式中加入懲罰項，以降低學習到的模型的複雜度。
+* 保持模型簡單的一個特別的選擇是使用$L_2$懲罰的權重衰減。這會導致學習演算法更新步驟中的權重衰減。
+* 權重衰減功能在深度學習框架的最佳化器中提供。
+* 在同一訓練程式碼實現中，不同的引數集可以有不同的更新行為。
 
-## 练习
+## 練習
 
-1. 在本节的估计问题中使用$\lambda$的值进行实验。绘制训练和测试精度关于$\lambda$的函数。观察到了什么？
-1. 使用验证集来找到最佳值$\lambda$。它真的是最优值吗？这有关系吗？
-1. 如果我们使用$\sum_i |w_i|$作为我们选择的惩罚（$L_1$正则化），那么更新方程会是什么样子？
-1. 我们知道$\|\mathbf{w}\|^2 = \mathbf{w}^\top \mathbf{w}$。能找到类似的矩阵方程吗（见 :numref:`subsec_lin-algebra-norms` 中的Frobenius范数）？
-1. 回顾训练误差和泛化误差之间的关系。除了权重衰减、增加训练数据、使用适当复杂度的模型之外，还能想出其他什么方法来处理过拟合？
-1. 在贝叶斯统计中，我们使用先验和似然的乘积，通过公式$P(w \mid x) \propto P(x \mid w) P(w)$得到后验。如何得到带正则化的$P(w)$？
+1. 在本節的估計問題中使用$\lambda$的值進行實驗。繪製訓練和測試精度關於$\lambda$的函式。觀察到了什麼？
+1. 使用驗證集來找到最佳值$\lambda$。它真的是最優值嗎？這有關系嗎？
+1. 如果我們使用$\sum_i |w_i|$作為我們選擇的懲罰（$L_1$正則化），那麼更新方程會是什麼樣子？
+1. 我們知道$\|\mathbf{w}\|^2 = \mathbf{w}^\top \mathbf{w}$。能找到類似的矩陣方程嗎（見 :numref:`subsec_lin-algebra-norms` 中的Frobenius範數）？
+1. 回顧訓練誤差和泛化誤差之間的關係。除了權重衰減、增加訓練資料、使用適當複雜度的模型之外，還能想出其他什麼方法來處理過擬合？
+1. 在貝葉斯統計中，我們使用先驗和似然的乘積，透過公式$P(w \mid x) \propto P(x \mid w) P(w)$得到後驗。如何得到帶正則化的$P(w)$？
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/1810)

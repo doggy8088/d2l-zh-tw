@@ -125,7 +125,7 @@ excluding those of special tokens (special tokens are not predicted in the maske
 and `num_mlm_preds` indicates the number of predictions (recall 15% random tokens to predict).
 Following the definition of the masked language modeling task in :numref:`subsec_mlm`,
 at each prediction position, the input may be replaced by
-a special “&lt;mask&gt;” token or a random token, or remain unchanged.
+a special 『&lt;mask&gt;』 token or a random token, or remain unchanged.
 In the end, the function returns the input tokens after possible replacement,
 the token indices where predictions take place and labels for these predictions.
 
@@ -196,7 +196,7 @@ def _get_mlm_data_from_tokens(tokens, vocab):
 Now we are almost ready to customize a `Dataset` class for pretraining BERT.
 Before that, 
 we still need to define a helper function `_pad_bert_inputs`
-to append the special “&lt;mask&gt;” tokens to the inputs.
+to append the special 『&lt;mask&gt;』 tokens to the inputs.
 Its argument `examples` contain the outputs from the helper functions `_get_nsp_data_from_paragraph` and `_get_mlm_data_from_tokens` for the two pretraining tasks.
 
 ```{.python .input}

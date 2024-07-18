@@ -104,10 +104,10 @@ To do so, we first count the unique tokens in all the documents from the trainin
 namely a *corpus*,
 and then assign a numerical index to each unique token according to its frequency.
 Rarely appeared tokens are often removed to reduce the complexity.
-Any token that does not exist in the corpus or has been removed is mapped into a special unknown token “&lt;unk&gt;”.
+Any token that does not exist in the corpus or has been removed is mapped into a special unknown token 『&lt;unk&gt;』.
 We optionally add a list of reserved tokens, such as
-“&lt;pad&gt;” for padding,
-“&lt;bos&gt;” to present the beginning for a sequence, and “&lt;eos&gt;” for the end of a sequence.
+『&lt;pad&gt;』 for padding,
+『&lt;bos&gt;』 to present the beginning for a sequence, and 『&lt;eos&gt;』 for the end of a sequence.
 
 ```{.python .input}
 #@tab all

@@ -1,10 +1,10 @@
-# softmax回归的从零开始实现
+# softmax迴歸的從零開始實現
 :label:`sec_softmax_scratch`
 
-(**就像我们从零开始实现线性回归一样，**)
-我们认为softmax回归也是重要的基础，因此(**应该知道实现softmax回归的细节**)。
-本节我们将使用刚刚在 :numref:`sec_fashion_mnist`中引入的Fashion-MNIST数据集，
-并设置数据迭代器的批量大小为256。
+(**就像我們從零開始實現線性迴歸一樣，**)
+我們認為softmax迴歸也是重要的基礎，因此(**應該知道實現softmax迴歸的細節**)。
+本節我們將使用剛剛在 :numref:`sec_fashion_mnist`中引入的Fashion-MNIST資料集，
+並設定資料迭代器的批次大小為256。
 
 ```{.python .input}
 from d2l import mxnet as d2l
@@ -42,19 +42,19 @@ batch_size = 256
 train_iter, test_iter = d2l.load_data_fashion_mnist(batch_size)
 ```
 
-## 初始化模型参数
+## 初始化模型引數
 
-和之前线性回归的例子一样，这里的每个样本都将用固定长度的向量表示。
-原始数据集中的每个样本都是$28 \times 28$的图像。
-本节[**将展平每个图像，把它们看作长度为784的向量。**]
-在后面的章节中，我们将讨论能够利用图像空间结构的特征，
-但现在我们暂时只把每个像素位置看作一个特征。
+和之前線性迴歸的例子一樣，這裡的每個樣本都將用固定長度的向量表示。
+原始資料集中的每個樣本都是$28 \times 28$的影象。
+本節[**將展平每個影象，把它們看作長度為784的向量。**]
+在後麵的章節中，我們將討論能夠利用影象空間結構的特徵，
+但現在我們暫時只把每個畫素位置看作一個特徵。
 
-回想一下，在softmax回归中，我们的输出与类别一样多。
-(**因为我们的数据集有10个类别，所以网络输出维度为10**)。
-因此，权重将构成一个$784 \times 10$的矩阵，
-偏置将构成一个$1 \times 10$的行向量。
-与线性回归一样，我们将使用正态分布初始化我们的权重`W`，偏置初始化为0。
+回想一下，在softmax迴歸中，我們的輸出與類別一樣多。
+(**因為我們的資料集有10個類別，所以網路輸出維度為10**)。
+因此，權重將構成一個$784 \times 10$的矩陣，
+偏置將構成一個$1 \times 10$的行向量。
+與線性迴歸一樣，我們將使用常態分佈初始化我們的權重`W`，偏置初始化為0。
 
 ```{.python .input}
 num_inputs = 784
@@ -96,17 +96,17 @@ W.stop_gradient=False
 b.stop_gradient=False
 ```
 
-## 定义softmax操作
+## 定義softmax操作
 
-在实现softmax回归模型之前，我们简要回顾一下`sum`运算符如何沿着张量中的特定维度工作。
+在實現softmax迴歸模型之前，我們簡要回顧一下`sum`運算符如何沿著張量中的特定維度工作。
 如 :numref:`subseq_lin-alg-reduction`和
  :numref:`subseq_lin-alg-non-reduction`所述，
- [**给定一个矩阵`X`，我们可以对所有元素求和**]（默认情况下）。
- 也可以只求同一个轴上的元素，即同一列（轴0）或同一行（轴1）。
- 如果`X`是一个形状为`(2, 3)`的张量，我们对列进行求和，
- 则结果将是一个具有形状`(3,)`的向量。
- 当调用`sum`运算符时，我们可以指定保持在原始张量的轴数，而不折叠求和的维度。
- 这将产生一个具有形状`(1, 3)`的二维张量。
+ [**給定一個矩陣`X`，我們可以對所有元素求和**]（預設情況下）。
+ 也可以只求同一個軸上的元素，即同一列（軸0）或同一行（軸1）。
+ 如果`X`是一個形狀為`(2, 3)`的張量，我們對列進行求和，
+ 則結果將是一個具有形狀`(3,)`的向量。
+ 當呼叫`sum`運算符時，我們可以指定保持在原始張量的軸數，而不折疊求和的維度。
+ 這將產生一個具有形狀`(1, 3)`的二維張量。
 
 ```{.python .input}
 #@tab pytorch, paddle
@@ -120,13 +120,13 @@ X = d2l.tensor([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0]])
 d2l.reduce_sum(X, 0, keepdims=True), d2l.reduce_sum(X, 1, keepdims=True)
 ```
 
-回想一下，[**实现softmax**]由三个步骤组成：
+回想一下，[**實現softmax**]由三個步驟組成：
 
-1. 对每个项求幂（使用`exp`）；
-1. 对每一行求和（小批量中每个样本是一行），得到每个样本的规范化常数；
-1. 将每一行除以其规范化常数，确保结果的和为1。
+1. 對每個項求冪（使用`exp`）；
+1. 對每一行求和（小批次中每個樣本是一行），得到每個樣本的規範化常數；
+1. 將每一行除以其規範化常數，確保結果的和為1。
 
-在查看代码之前，我们回顾一下这个表达式：
+在檢視程式碼之前，我們回顧一下這個表示式：
 
 (**
 $$
@@ -134,15 +134,15 @@ $$
 $$
 **)
 
-分母或规范化常数，有时也称为*配分函数*（其对数称为对数-配分函数）。
-该名称来自[统计物理学](https://en.wikipedia.org/wiki/Partition_function_(statistical_mechanics))中一个模拟粒子群分布的方程。
+分母或規範化常數，有時也稱為*配分函式*（其對數稱為對數-配分函式）。
+該名稱來自[統計物理學](https://en.wikipedia.org/wiki/Partition_function_(statistical_mechanics))中一個模擬粒子群分佈的方程。
 
 ```{.python .input}
 #@tab mxnet, tensorflow
 def softmax(X):
     X_exp = d2l.exp(X)
     partition = d2l.reduce_sum(X_exp, 1, keepdims=True)
-    return X_exp / partition  # 这里应用了广播机制
+    return X_exp / partition  # 這裡應用了廣播機制
 ```
 
 ```{.python .input}
@@ -150,11 +150,11 @@ def softmax(X):
 def softmax(X):
     X_exp = d2l.exp(X)
     partition = d2l.reduce_sum(X_exp, 1, keepdim=True)
-    return X_exp / partition  # 这里应用了广播机制
+    return X_exp / partition  # 這裡應用了廣播機制
 ```
 
-正如上述代码，对于任何随机输入，[**我们将每个元素变成一个非负数。
-此外，依据概率原理，每行总和为1**]。
+正如上述程式碼，對於任何隨機輸入，[**我們將每個元素變成一個非負數。
+此外，依據機率原理，每行總和為1**]。
 
 ```{.python .input}
 #@tab mxnet, pytorch, paddle
@@ -170,14 +170,14 @@ X_prob = softmax(X)
 X_prob, tf.reduce_sum(X_prob, 1)
 ```
 
-注意，虽然这在数学上看起来是正确的，但我们在代码实现中有点草率。
-矩阵中的非常大或非常小的元素可能造成数值上溢或下溢，但我们没有采取措施来防止这点。
+注意，雖然這在數學上看起來是正確的，但我們在程式碼實現中有點草率。
+矩陣中的非常大或非常小的元素可能造成數值上溢或下溢，但我們沒有採取措施來防止這點。
 
-## 定义模型
+## 定義模型
 
-定义softmax操作后，我们可以[**实现softmax回归模型**]。
-下面的代码定义了输入如何通过网络映射到输出。
-注意，将数据传递到模型之前，我们使用`reshape`函数将每张原始图像展平为向量。
+定義softmax操作後，我們可以[**實現softmax迴歸模型**]。
+下面的程式碼定義了輸入如何透過網路對映到輸出。
+注意，將資料傳遞到模型之前，我們使用`reshape`函式將每張原始影象展平為向量。
 
 ```{.python .input}
 #@tab all
@@ -185,20 +185,20 @@ def net(X):
     return softmax(d2l.matmul(d2l.reshape(X, (-1, W.shape[0])), W) + b)
 ```
 
-## 定义损失函数
+## 定義損失函式
 
-接下来，我们实现 :numref:`sec_softmax`中引入的交叉熵损失函数。
-这可能是深度学习中最常见的损失函数，因为目前分类问题的数量远远超过回归问题的数量。
+接下來，我們實現 :numref:`sec_softmax`中引入的交叉熵損失函式。
+這可能是深度學習中最常見的損失函式，因為目前分類問題的數量遠遠超過迴歸問題的數量。
 
-回顾一下，交叉熵采用真实标签的预测概率的负对数似然。
-这里我们不使用Python的for循环迭代预测（这往往是低效的），
-而是通过一个运算符选择所有元素。
-下面，我们[**创建一个数据样本`y_hat`，其中包含2个样本在3个类别的预测概率，
-以及它们对应的标签`y`。**]
-有了`y`，我们知道在第一个样本中，第一类是正确的预测；
-而在第二个样本中，第三类是正确的预测。
-然后(**使用`y`作为`y_hat`中概率的索引**)，
-我们选择第一个样本中第一个类的概率和第二个样本中第三个类的概率。
+回顧一下，交叉熵採用真實標籤的預測機率的負對數似然。
+這裡我們不使用Python的for迴圈迭代預測（這往往是低效的），
+而是透過一個運算符選擇所有元素。
+下面，我們[**建立一個資料樣本`y_hat`，其中包含2個樣本在3個類別的預測機率，
+以及它們對應的標籤`y`。**]
+有了`y`，我們知道在第一個樣本中，第一類是正確的預測；
+而在第二個樣本中，第三類是正確的預測。
+然後(**使用`y`作為`y_hat`中機率的索引**)，
+我們選擇第一個樣本中第一個類別的機率和第二個樣本中第三個類別的機率。
 
 ```{.python .input}
 #@tab mxnet, pytorch, paddle
@@ -214,7 +214,7 @@ y = tf.constant([0, 2])
 tf.boolean_mask(y_hat, tf.one_hot(y, depth=y_hat.shape[-1]))
 ```
 
-现在我们只需一行代码就可以[**实现交叉熵损失函数**]。
+現在我們只需一行程式碼就可以[**實現交叉熵損失函式**]。
 
 ```{.python .input}
 #@tab mxnet, pytorch
@@ -241,32 +241,32 @@ def cross_entropy(y_hat, y):
 cross_entropy(y_hat, y)
 ```
 
-## 分类精度
+## 分類精度
 
-给定预测概率分布`y_hat`，当我们必须输出硬预测（hard prediction）时，
-我们通常选择预测概率最高的类。
-许多应用都要求我们做出选择。如Gmail必须将电子邮件分类为“Primary（主要邮件）”、
-“Social（社交邮件）”“Updates（更新邮件）”或“Forums（论坛邮件）”。
-Gmail做分类时可能在内部估计概率，但最终它必须在类中选择一个。
+給定預測機率分佈`y_hat`，當我們必須輸出硬預測（hard prediction）時，
+我們通常選擇預測機率最高的類。
+許多應用都要求我們做出選擇。如Gmail必須將電子郵件分類為『Primary（主要郵件）』、
+『Social（社交郵件）』『Updates（更新郵件）』或『Forums（論壇郵件）』。
+Gmail做分類時可能在內部估計機率，但最終它必須在類別中選擇一個。
 
-当预测与标签分类`y`一致时，即是正确的。
-分类精度即正确预测数量与总预测数量之比。
-虽然直接优化精度可能很困难（因为精度的计算不可导），
-但精度通常是我们最关心的性能衡量标准，我们在训练分类器时几乎总会关注它。
+當預測與標籤分類`y`一致時，即是正確的。
+分類精度即正確預測數量與總預測數量之比。
+雖然直接最佳化精度可能很困難（因為精度的計算不可導），
+但精度通常是我們最關心的效能衡量標準，我們在訓練分類器時幾乎總會關注它。
 
-为了计算精度，我们执行以下操作。
-首先，如果`y_hat`是矩阵，那么假定第二个维度存储每个类的预测分数。
-我们使用`argmax`获得每行中最大元素的索引来获得预测类别。
-然后我们[**将预测类别与真实`y`元素进行比较**]。
-由于等式运算符“`==`”对数据类型很敏感，
-因此我们将`y_hat`的数据类型转换为与`y`的数据类型一致。
-结果是一个包含0（错）和1（对）的张量。
-最后，我们求和会得到正确预测的数量。
+為了計算精度，我們執行以下操作。
+首先，如果`y_hat`是矩陣，那麼假定第二個維度儲存每個類別的預測分數。
+我們使用`argmax`獲得每行中最大元素的索引來獲得預測類別。
+然後我們[**將預測類別與真實`y`元素進行比較**]。
+由於等式運算符『`==`』對資料型別很敏感，
+因此我們將`y_hat`的資料型別轉換為與`y`的資料型別一致。
+結果是一個包含0（錯）和1（對）的張量。
+最後，我們求和會得到正確預測的數量。
 
 ```{.python .input}
 #@tab all
 def accuracy(y_hat, y):  #@save
-    """计算预测正确的数量"""
+    """計算預測正確的數量"""
     if len(y_hat.shape) > 1 and y_hat.shape[1] > 1:
         y_hat = d2l.argmax(y_hat, axis=1)
     cmp = d2l.astype(y_hat, y.dtype) == y
@@ -277,7 +277,7 @@ def accuracy(y_hat, y):  #@save
 #@tab paddle
 #@save
 def accuracy(y_hat, y):
-    """计算预测正确的数量"""
+    """計算預測正確的數量"""
     if len(y_hat.shape) > 1 and y_hat.shape[1] > 1:
         y_hat = y_hat.argmax(axis=1)
     if len(y_hat.shape) < len(y.shape):
@@ -287,24 +287,24 @@ def accuracy(y_hat, y):
     return float(cmp.astype(y.dtype).sum())
 ```
 
-我们将继续使用之前定义的变量`y_hat`和`y`分别作为预测的概率分布和标签。
-可以看到，第一个样本的预测类别是2（该行的最大元素为0.6，索引为2），这与实际标签0不一致。
-第二个样本的预测类别是2（该行的最大元素为0.5，索引为2），这与实际标签2一致。
-因此，这两个样本的分类精度率为0.5。
+我們將繼續使用之前定義的變數`y_hat`和`y`分別作為預測的機率分佈和標籤。
+可以看到，第一個樣本的預測類別是2（該行的最大元素為0.6，索引為2），這與實際標籤0不一致。
+第二個樣本的預測類別是2（該行的最大元素為0.5，索引為2），這與實際標籤2一致。
+因此，這兩個樣本的分類精度率為0.5。
 
 ```{.python .input}
 #@tab all
 accuracy(y_hat, y) / len(y)
 ```
 
-同样，对于任意数据迭代器`data_iter`可访问的数据集，
-[**我们可以评估在任意模型`net`的精度**]。
+同樣，對於任意資料迭代器`data_iter`可訪問的資料集，
+[**我們可以評估在任意模型`net`的精度**]。
 
 ```{.python .input}
 #@tab mxnet, tensorflow
 def evaluate_accuracy(net, data_iter):  #@save
-    """计算在指定数据集上模型的精度"""
-    metric = Accumulator(2)  # 正确预测数、预测总数
+    """計算在指定資料集上模型的精度"""
+    metric = Accumulator(2)  # 正確預測數、預測總數
     for X, y in data_iter:
         metric.add(accuracy(net(X), y), d2l.size(y))
     return metric[0] / metric[1]
@@ -313,10 +313,10 @@ def evaluate_accuracy(net, data_iter):  #@save
 ```{.python .input}
 #@tab pytorch
 def evaluate_accuracy(net, data_iter):  #@save
-    """计算在指定数据集上模型的精度"""
+    """計算在指定資料集上模型的精度"""
     if isinstance(net, torch.nn.Module):
-        net.eval()  # 将模型设置为评估模式
-    metric = Accumulator(2)  # 正确预测数、预测总数
+        net.eval()  # 將模型設定為評估模式
+    metric = Accumulator(2)  # 正確預測數、預測總數
     with torch.no_grad():
         for X, y in data_iter:
             metric.add(accuracy(net(X), y), d2l.size(y))
@@ -327,26 +327,26 @@ def evaluate_accuracy(net, data_iter):  #@save
 #@tab paddle
 #@save
 def evaluate_accuracy(net, data_iter):
-    """计算在指定数据集上模型的精度"""
+    """計算在指定資料集上模型的精度"""
     if isinstance(net, paddle.nn.Layer):
-        net.eval()  # 将模型设置为评估模式
-    metric = Accumulator(2)  # 正确预测数、预测总数
+        net.eval()  # 將模型設定為評估模式
+    metric = Accumulator(2)  # 正確預測數、預測總數
     with paddle.no_grad():
         for X, y in data_iter:
             metric.add(accuracy(net(X), y), d2l.size(y))
     return metric[0] / metric[1]
 ```
 
-这里定义一个实用程序类`Accumulator`，用于对多个变量进行累加。
-在上面的`evaluate_accuracy`函数中，
-我们在(**`Accumulator`实例中创建了2个变量，
-分别用于存储正确预测的数量和预测的总数量**)。
-当我们遍历数据集时，两者都将随着时间的推移而累加。
+這裡定義一個實用程式類`Accumulator`，用於對多個變數進行累加。
+在上面的`evaluate_accuracy`函式中，
+我們在(**`Accumulator`實例中建立了2個變數，
+分別用於儲存正確預測的數量和預測的總數量**)。
+當我們遍歷資料集時，兩者都將隨著時間的推移而累加。
 
 ```{.python .input}
 #@tab all
 class Accumulator:  #@save
-    """在n个变量上累加"""
+    """在n個變數上累加"""
     def __init__(self, n):
         self.data = [0.0] * n
 
@@ -360,82 +360,82 @@ class Accumulator:  #@save
         return self.data[idx]
 ```
 
-由于我们使用随机权重初始化`net`模型，
-因此该模型的精度应接近于随机猜测。
-例如在有10个类别情况下的精度为0.1。
+由於我們使用隨機權重初始化`net`模型，
+因此該模型的精度應接近於隨機猜測。
+例如在有10個類別情況下的精度為0.1。
 
 ```{.python .input}
 #@tab all
 evaluate_accuracy(net, test_iter)
 ```
 
-## 训练
+## 訓練
 
-在我们看过 :numref:`sec_linear_scratch`中的线性回归实现，
-[**softmax回归的训练**]过程代码应该看起来非常眼熟。
-在这里，我们重构训练过程的实现以使其可重复使用。
-首先，我们定义一个函数来训练一个迭代周期。
-请注意，`updater`是更新模型参数的常用函数，它接受批量大小作为参数。
-它可以是`d2l.sgd`函数，也可以是框架的内置优化函数。
+在我們看過 :numref:`sec_linear_scratch`中的線性迴歸實現，
+[**softmax迴歸的訓練**]過程程式碼應該看起來非常眼熟。
+在這裡，我們重構訓練過程的實現以使其可重複使用。
+首先，我們定義一個函式來訓練一個迭代週期。
+請注意，`updater`是更新模型引數的常用函式，它接受批次大小作為引數。
+它可以是`d2l.sgd`函式，也可以是框架的內建最佳化函式。
 
 ```{.python .input}
 def train_epoch_ch3(net, train_iter, loss, updater):  #@save
-    """训练模型一个迭代周期（定义见第3章）"""
-    # 训练损失总和、训练准确度总和、样本数
+    """訓練模型一個迭代週期（定義見第3章）"""
+    # 訓練損失總和、訓練準確度總和、樣本數
     metric = Accumulator(3)
     if isinstance(updater, gluon.Trainer):
         updater = updater.step
     for X, y in train_iter:
-        # 计算梯度并更新参数
+        # 計算梯度並更新引數
         with autograd.record():
             y_hat = net(X)
             l = loss(y_hat, y)
         l.backward()
         updater(X.shape[0])
         metric.add(float(l.sum()), accuracy(y_hat, y), y.size)
-    # 返回训练损失和训练精度
+    # 回傳訓練損失和訓練精度
     return metric[0] / metric[2], metric[1] / metric[2]
 ```
 
 ```{.python .input}
 #@tab pytorch
 def train_epoch_ch3(net, train_iter, loss, updater):  #@save
-    """训练模型一个迭代周期（定义见第3章）"""
-    # 将模型设置为训练模式
+    """訓練模型一個迭代週期（定義見第3章）"""
+    # 將模型設定為訓練模式
     if isinstance(net, torch.nn.Module):
         net.train()
-    # 训练损失总和、训练准确度总和、样本数
+    # 訓練損失總和、訓練準確度總和、樣本數
     metric = Accumulator(3)
     for X, y in train_iter:
-        # 计算梯度并更新参数
+        # 計算梯度並更新引數
         y_hat = net(X)
         l = loss(y_hat, y)
         if isinstance(updater, torch.optim.Optimizer):
-            # 使用PyTorch内置的优化器和损失函数
+            # 使用PyTorch內建的最佳化器和損失函式
             updater.zero_grad()
             l.mean().backward()
             updater.step()
         else:
-            # 使用定制的优化器和损失函数
+            # 使用定製的最佳化器和損失函式
             l.sum().backward()
             updater(X.shape[0])
         metric.add(float(l.sum()), accuracy(y_hat, y), y.numel())
-    # 返回训练损失和训练精度
+    # 回傳訓練損失和訓練精度
     return metric[0] / metric[2], metric[1] / metric[2]
 ```
 
 ```{.python .input}
 #@tab tensorflow
 def train_epoch_ch3(net, train_iter, loss, updater):  #@save
-    """训练模型一个迭代周期（定义见第3章）"""
-    # 训练损失总和、训练准确度总和、样本数
+    """訓練模型一個迭代週期（定義見第3章）"""
+    # 訓練損失總和、訓練準確度總和、樣本數
     metric = Accumulator(3)
     for X, y in train_iter:
-        # 计算梯度并更新参数
+        # 計算梯度並更新引數
         with tf.GradientTape() as tape:
             y_hat = net(X)
-            # Keras内置的损失接受的是（标签，预测），这不同于用户在本书中的实现。
-            # 本书的实现接受（预测，标签），例如我们上面实现的“交叉熵”
+            # Keras內建的損失接受的是（標籤，預測），這不同於使用者在本書中的實現。
+            # 本書的實現接受（預測，標籤），例如我們上面實現的『交叉熵』
             if isinstance(loss, tf.keras.losses.Loss):
                 l = loss(y, y_hat)
             else:
@@ -446,11 +446,11 @@ def train_epoch_ch3(net, train_iter, loss, updater):  #@save
             updater.apply_gradients(zip(grads, params))
         else:
             updater(X.shape[0], tape.gradient(l, updater.params))
-        # Keras的loss默认返回一个批量的平均损失
+        # Keras的loss預設回傳一個批次的平均損失
         l_sum = l * float(tf.size(y)) if isinstance(
             loss, tf.keras.losses.Loss) else tf.reduce_sum(l)
         metric.add(l_sum, accuracy(y_hat, y), tf.size(y))
-    # 返回训练损失和训练精度
+    # 回傳訓練損失和訓練精度
     return metric[0] / metric[2], metric[1] / metric[2]
 ```
 
@@ -458,55 +458,55 @@ def train_epoch_ch3(net, train_iter, loss, updater):  #@save
 #@tab paddle
 #@save
 def train_epoch_ch3(net, train_iter, loss, updater):
-    """训练模型一个迭代周期（定义见第3章）"""
-    # 将模型设置为训练模式
+    """訓練模型一個迭代週期（定義見第3章）"""
+    # 將模型設定為訓練模式
     if isinstance(net, paddle.nn.Layer):
         net.train()
-    # 训练损失总和、训练准确度总和、样本数
+    # 訓練損失總和、訓練準確度總和、樣本數
     metric = Accumulator(3)
 
     for X, y in train_iter:
-        # 计算梯度并更新参数
+        # 計算梯度並更新引數
         y_hat = net(X)
         l = loss(y_hat, y)
         if isinstance(updater, paddle.optimizer.Optimizer):
-            # 使用PaddlePaddle内置的优化器和损失函数
+            # 使用PaddlePaddle內建的最佳化器和損失函式
             updater.clear_grad()
             l.mean().backward()
             updater.step()
         else:
-            # 使用定制的优化器和损失函数
+            # 使用定製的最佳化器和損失函式
             l.sum().backward()
             updater(X.shape[0])
         metric.add(float(l.sum()), accuracy(y_hat, y), y.numel())
     return metric[0] / metric[2], metric[1] / metric[2]
 ```
 
-在展示训练函数的实现之前，我们[**定义一个在动画中绘制数据的实用程序类**]`Animator`，
-它能够简化本书其余部分的代码。
+在展示訓練函式的實現之前，我們[**定義一個在動畫中繪製資料的實用程式類**]`Animator`，
+它能夠簡化本書其餘部分的程式碼。
 
 ```{.python .input}
 #@tab all
 class Animator:  #@save
-    """在动画中绘制数据"""
+    """在動畫中繪製資料"""
     def __init__(self, xlabel=None, ylabel=None, legend=None, xlim=None,
                  ylim=None, xscale='linear', yscale='linear',
                  fmts=('-', 'm--', 'g-.', 'r:'), nrows=1, ncols=1,
                  figsize=(3.5, 2.5)):
-        # 增量地绘制多条线
+        # 增量地繪製多條線
         if legend is None:
             legend = []
         d2l.use_svg_display()
         self.fig, self.axes = d2l.plt.subplots(nrows, ncols, figsize=figsize)
         if nrows * ncols == 1:
             self.axes = [self.axes, ]
-        # 使用lambda函数捕获参数
+        # 使用lambda函式捕獲引數
         self.config_axes = lambda: d2l.set_axes(
             self.axes[0], xlabel, ylabel, xlim, ylim, xscale, yscale, legend)
         self.X, self.Y, self.fmts = None, None, fmts
 
     def add(self, x, y):
-        # 向图表中添加多个数据点
+        # 向圖表中新增多個資料點
         if not hasattr(y, "__len__"):
             y = [y]
         n = len(y)
@@ -528,16 +528,16 @@ class Animator:  #@save
         display.clear_output(wait=True)
 ```
 
-接下来我们实现一个[**训练函数**]，
-它会在`train_iter`访问到的训练数据集上训练一个模型`net`。
-该训练函数将会运行多个迭代周期（由`num_epochs`指定）。
-在每个迭代周期结束时，利用`test_iter`访问到的测试数据集对模型进行评估。
-我们将利用`Animator`类来可视化训练进度。
+接下來我們實現一個[**訓練函式**]，
+它會在`train_iter`訪問到的訓練資料集上訓練一個模型`net`。
+該訓練函式將會執行多個迭代週期（由`num_epochs`指定）。
+在每個迭代週期結束時，利用`test_iter`訪問到的測試資料集對模型進行評估。
+我們將利用`Animator`類來視覺化訓練進度。
 
 ```{.python .input}
 #@tab all
 def train_ch3(net, train_iter, test_iter, loss, num_epochs, updater):  #@save
-    """训练模型（定义见第3章）"""
+    """訓練模型（定義見第3章）"""
     animator = Animator(xlabel='epoch', xlim=[1, num_epochs], ylim=[0.3, 0.9],
                         legend=['train loss', 'train acc', 'test acc'])
     for epoch in range(num_epochs):
@@ -550,8 +550,8 @@ def train_ch3(net, train_iter, test_iter, loss, num_epochs, updater):  #@save
     assert test_acc <= 1 and test_acc > 0.7, test_acc
 ```
 
-作为一个从零开始的实现，我们使用 :numref:`sec_linear_scratch`中定义的
-[**小批量随机梯度下降来优化模型的损失函数**]，设置学习率为0.1。
+作為一個從零開始的實現，我們使用 :numref:`sec_linear_scratch`中定義的
+[**小批次隨機梯度下降來最佳化模型的損失函式**]，設定學習率為0.1。
 
 ```{.python .input}
 #@tab mxnet, pytorch, paddle
@@ -564,7 +564,7 @@ def updater(batch_size):
 ```{.python .input}
 #@tab tensorflow
 class Updater():  #@save
-    """用小批量随机梯度下降法更新参数"""
+    """用小批次隨機梯度下降法更新引數"""
     def __init__(self, params, lr):
         self.params = params
         self.lr = lr
@@ -575,9 +575,9 @@ class Updater():  #@save
 updater = Updater([W, b], lr=0.1)
 ```
 
-现在，我们[**训练模型10个迭代周期**]。
-请注意，迭代周期（`num_epochs`）和学习率（`lr`）都是可调节的超参数。
-通过更改它们的值，我们可以提高模型的分类精度。
+現在，我們[**訓練模型10個迭代週期**]。
+請注意，迭代週期（`num_epochs`）和學習率（`lr`）都是可調節的超引數。
+透過更改它們的值，我們可以提高模型的分類精度。
 
 ```{.python .input}
 #@tab all
@@ -585,15 +585,15 @@ num_epochs = 10
 train_ch3(net, train_iter, test_iter, cross_entropy, num_epochs, updater)
 ```
 
-## 预测
+## 預測
 
-现在训练已经完成，我们的模型已经准备好[**对图像进行分类预测**]。
-给定一系列图像，我们将比较它们的实际标签（文本输出的第一行）和模型预测（文本输出的第二行）。
+現在訓練已經完成，我們的模型已經準備好[**對影象進行分類預測**]。
+給定一系列影象，我們將比較它們的實際標籤（文字輸出的第一行）和模型預測（文字輸出的第二行）。
 
 ```{.python .input}
 #@tab all
 def predict_ch3(net, test_iter, n=6):  #@save
-    """预测标签（定义见第3章）"""
+    """預測標籤（定義見第3章）"""
     for X, y in test_iter:
         break
     trues = d2l.get_fashion_mnist_labels(y)
@@ -605,18 +605,18 @@ def predict_ch3(net, test_iter, n=6):  #@save
 predict_ch3(net, test_iter)
 ```
 
-## 小结
+## 小結
 
-* 借助softmax回归，我们可以训练多分类的模型。
-* 训练softmax回归循环模型与训练线性回归模型非常相似：先读取数据，再定义模型和损失函数，然后使用优化算法训练模型。大多数常见的深度学习模型都有类似的训练过程。
+* 藉助softmax迴歸，我們可以訓練多分類的模型。
+* 訓練softmax迴歸迴圈模型與訓練線性迴歸模型非常相似：先讀取資料，再定義模型和損失函式，然後使用最佳化演算法訓練模型。大多數常見的深度學習模型都有類似的訓練過程。
 
-## 练习
+## 練習
 
-1. 本节直接实现了基于数学定义softmax运算的`softmax`函数。这可能会导致什么问题？提示：尝试计算$\exp(50)$的大小。
-1. 本节中的函数`cross_entropy`是根据交叉熵损失函数的定义实现的。它可能有什么问题？提示：考虑对数的定义域。
-1. 请想一个解决方案来解决上述两个问题。
-1. 返回概率最大的分类标签总是最优解吗？例如，医疗诊断场景下可以这样做吗？
-1. 假设我们使用softmax回归来预测下一个单词，可选取的单词数目过多可能会带来哪些问题?
+1. 本節直接實現了基於數學定義softmax運算的`softmax`函式。這可能會導致什麼問題？提示：嘗試計算$\exp(50)$的大小。
+1. 本節中的函式`cross_entropy`是根據交叉熵損失函式的定義實現的。它可能有什麼問題？提示：考慮對數的定義域。
+1. 請想一個解決方案來解決上述兩個問題。
+1. 回傳機率最大的分類標籤總是最優解嗎？例如，醫療診斷場景下可以這樣做嗎？
+1. 假設我們使用softmax迴歸來預測下一個單詞，可選取的單詞數目過多可能會帶來哪些問題?
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/1791)

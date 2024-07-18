@@ -1,64 +1,64 @@
-# Adam算法
+# Adam演算法
 :label:`sec_adam`
 
-本章我们已经学习了许多有效优化的技术。
-在本节讨论之前，我们先详细回顾一下这些技术：
+本章我們已經學習了許多有效最佳化的技術。
+在本節討論之前，我們先詳細回顧一下這些技術：
 
-* 在 :numref:`sec_sgd`中，我们学习了：随机梯度下降在解决优化问题时比梯度下降更有效。
-* 在 :numref:`sec_minibatch_sgd`中，我们学习了：在一个小批量中使用更大的观测值集，可以通过向量化提供额外效率。这是高效的多机、多GPU和整体并行处理的关键。
-* 在 :numref:`sec_momentum`中我们添加了一种机制，用于汇总过去梯度的历史以加速收敛。
-* 在 :numref:`sec_adagrad`中，我们通过对每个坐标缩放来实现高效计算的预处理器。
-* 在 :numref:`sec_rmsprop`中，我们通过学习率的调整来分离每个坐标的缩放。
+* 在 :numref:`sec_sgd`中，我們學習了：隨機梯度下降在解決最佳化問題時比梯度下降更有效。
+* 在 :numref:`sec_minibatch_sgd`中，我們學習了：在一個小批次中使用更大的觀測值集，可以透過向量化提供額外效率。這是高效的多機、多GPU和整體並行處理的關鍵。
+* 在 :numref:`sec_momentum`中我們新增了一種機制，用於彙總過去梯度的歷史以加速收斂。
+* 在 :numref:`sec_adagrad`中，我們透過對每個坐標縮放來實現高效計算的預處理器。
+* 在 :numref:`sec_rmsprop`中，我們透過學習率的調整來分離每個坐標的縮放。
 
-Adam算法 :cite:`Kingma.Ba.2014`将所有这些技术汇总到一个高效的学习算法中。
-不出预料，作为深度学习中使用的更强大和有效的优化算法之一，它非常受欢迎。
-但是它并非没有问题，尤其是 :cite:`Reddi.Kale.Kumar.2019`表明，有时Adam算法可能由于方差控制不良而发散。
-在完善工作中， :cite:`Zaheer.Reddi.Sachan.ea.2018`给Adam算法提供了一个称为Yogi的热补丁来解决这些问题。
-下面我们了解一下Adam算法。
+Adam演算法 :cite:`Kingma.Ba.2014`將所有這些技術彙總到一個高效的學習演算法中。
+不出預料，作為深度學習中使用的更強大和有效的最佳化演算法之一，它非常受歡迎。
+但是它並非沒有問題，尤其是 :cite:`Reddi.Kale.Kumar.2019`表明，有時Adam演算法可能由於方差控制不良而發散。
+在完善工作中， :cite:`Zaheer.Reddi.Sachan.ea.2018`給Adam演算法提供了一個稱為Yogi的熱補丁來解決這些問題。
+下面我們瞭解一下Adam演算法。
 
-## 算法
+## 演算法
 
-Adam算法的关键组成部分之一是：它使用指数加权移动平均值来估算梯度的动量和二次矩，即它使用状态变量
+Adam演算法的關鍵組成部分之一是：它使用指數加權移動平均值來估算梯度的動量和二次矩，即它使用狀態變數
 
 $$\begin{aligned}
     \mathbf{v}_t & \leftarrow \beta_1 \mathbf{v}_{t-1} + (1 - \beta_1) \mathbf{g}_t, \\
     \mathbf{s}_t & \leftarrow \beta_2 \mathbf{s}_{t-1} + (1 - \beta_2) \mathbf{g}_t^2.
 \end{aligned}$$
 
-这里$\beta_1$和$\beta_2$是非负加权参数。
-常将它们设置为$\beta_1 = 0.9$和$\beta_2 = 0.999$。
-也就是说，方差估计的移动远远慢于动量估计的移动。
-注意，如果我们初始化$\mathbf{v}_0 = \mathbf{s}_0 = 0$，就会获得一个相当大的初始偏差。
-我们可以通过使用$\sum_{i=0}^t \beta^i = \frac{1 - \beta^t}{1 - \beta}$来解决这个问题。
-相应地，标准化状态变量由下式获得
+這裡$\beta_1$和$\beta_2$是非負加權引數。
+常將它們設定為$\beta_1 = 0.9$和$\beta_2 = 0.999$。
+也就是說，方差估計的移動遠遠慢於動量估計的移動。
+注意，如果我們初始化$\mathbf{v}_0 = \mathbf{s}_0 = 0$，就會獲得一個相當大的初始偏差。
+我們可以透過使用$\sum_{i=0}^t \beta^i = \frac{1 - \beta^t}{1 - \beta}$來解決這個問題。
+相應地，標準化狀態變數由下式獲得
 
 $$\hat{\mathbf{v}}_t = \frac{\mathbf{v}_t}{1 - \beta_1^t} \text{ and } \hat{\mathbf{s}}_t = \frac{\mathbf{s}_t}{1 - \beta_2^t}.$$
 
-有了正确的估计，我们现在可以写出更新方程。
-首先，我们以非常类似于RMSProp算法的方式重新缩放梯度以获得
+有了正確的估計，我們現在可以寫出更新方程。
+首先，我們以非常類似於RMSProp演算法的方式重新縮放梯度以獲得
 
 $$\mathbf{g}_t' = \frac{\eta \hat{\mathbf{v}}_t}{\sqrt{\hat{\mathbf{s}}_t} + \epsilon}.$$
 
-与RMSProp不同，我们的更新使用动量$\hat{\mathbf{v}}_t$而不是梯度本身。
-此外，由于使用$\frac{1}{\sqrt{\hat{\mathbf{s}}_t} + \epsilon}$而不是$\frac{1}{\sqrt{\hat{\mathbf{s}}_t + \epsilon}}$进行缩放，两者会略有差异。
-前者在实践中效果略好一些，因此与RMSProp算法有所区分。
-通常，我们选择$\epsilon = 10^{-6}$，这是为了在数值稳定性和逼真度之间取得良好的平衡。
+與RMSProp不同，我們的更新使用動量$\hat{\mathbf{v}}_t$而不是梯度本身。
+此外，由於使用$\frac{1}{\sqrt{\hat{\mathbf{s}}_t} + \epsilon}$而不是$\frac{1}{\sqrt{\hat{\mathbf{s}}_t + \epsilon}}$進行縮放，兩者會略有差異。
+前者在實踐中效果略好一些，因此與RMSProp演算法有所區分。
+通常，我們選擇$\epsilon = 10^{-6}$，這是為了在數值穩定性和逼真度之間取得良好的平衡。
 
-最后，我们简单更新：
+最後，我們簡單更新：
 
 $$\mathbf{x}_t \leftarrow \mathbf{x}_{t-1} - \mathbf{g}_t'.$$
 
-回顾Adam算法，它的设计灵感很清楚：
-首先，动量和规模在状态变量中清晰可见，
-它们相当独特的定义使我们移除偏项（这可以通过稍微不同的初始化和更新条件来修正）。
-其次，RMSProp算法中两项的组合都非常简单。
-最后，明确的学习率$\eta$使我们能够控制步长来解决收敛问题。
+回顧Adam演算法，它的設計靈感很清楚：
+首先，動量和規模在狀態變數中清晰可見，
+它們相當獨特的定義使我們移除偏項（這可以透過稍微不同的初始化和更新條件來修正）。
+其次，RMSProp演算法中兩項的組合都非常簡單。
+最後，明確的學習率$\eta$使我們能夠控制步長來解決收斂問題。
 
-## 实现
+## 實現
 
-从头开始实现Adam算法并不难。
-为方便起见，我们将时间步$t$存储在`hyperparams`字典中。
-除此之外，一切都很简单。
+從頭開始實現Adam演算法並不難。
+為方便起見，我們將時間步$t$儲存在`hyperparams`字典中。
+除此之外，一切都很簡單。
 
 ```{.python .input}
 %matplotlib inline
@@ -161,7 +161,7 @@ def adam(params, states, hyperparams):
     return a
 ```
 
-现在，我们用以上Adam算法来训练模型，这里我们使用$\eta = 0.01$的学习率。
+現在，我們用以上Adam演算法來訓練模型，這裡我們使用$\eta = 0.01$的學習率。
 
 ```{.python .input}
 #@tab all
@@ -170,7 +170,7 @@ d2l.train_ch11(adam, init_adam_states(feature_dim),
                {'lr': 0.01, 't': 1}, data_iter, feature_dim);
 ```
 
-此外，我们可以用深度学习框架自带算法应用Adam算法，这里我们只需要传递配置参数。
+此外，我們可以用深度學習框架自帶演算法應用Adam演算法，這裡我們只需要傳遞設定引數。
 
 ```{.python .input}
 d2l.train_concise_ch11('adam', {'learning_rate': 0.01}, data_iter)
@@ -196,20 +196,20 @@ d2l.train_concise_ch11(trainer, {'learning_rate': 0.01}, data_iter)
 
 ## Yogi
 
-Adam算法也存在一些问题：
-即使在凸环境下，当$\mathbf{s}_t$的二次矩估计值爆炸时，它可能无法收敛。
- :cite:`Zaheer.Reddi.Sachan.ea.2018`为$\mathbf{s}_t$提出了的改进更新和参数初始化。
-论文中建议我们重写Adam算法更新如下：
+Adam演算法也存在一些問題：
+即使在凸環境下，當$\mathbf{s}_t$的二次矩估計值爆炸時，它可能無法收斂。
+ :cite:`Zaheer.Reddi.Sachan.ea.2018`為$\mathbf{s}_t$提出了的改進更新和引數初始化。
+論文中建議我們重寫Adam演算法更新如下：
 
 $$\mathbf{s}_t \leftarrow \mathbf{s}_{t-1} + (1 - \beta_2) \left(\mathbf{g}_t^2 - \mathbf{s}_{t-1}\right).$$
 
-每当$\mathbf{g}_t^2$具有值很大的变量或更新很稀疏时，$\mathbf{s}_t$可能会太快地“忘记”过去的值。
-一个有效的解决方法是将$\mathbf{g}_t^2 - \mathbf{s}_{t-1}$替换为$\mathbf{g}_t^2 \odot \mathop{\mathrm{sgn}}(\mathbf{g}_t^2 - \mathbf{s}_{t-1})$。
-这就是Yogi更新，现在更新的规模不再取决于偏差的量。
+每當$\mathbf{g}_t^2$具有值很大的變數或更新很稀疏時，$\mathbf{s}_t$可能會太快地『忘記』過去的值。
+一個有效的解決方法是將$\mathbf{g}_t^2 - \mathbf{s}_{t-1}$替換為$\mathbf{g}_t^2 \odot \mathop{\mathrm{sgn}}(\mathbf{g}_t^2 - \mathbf{s}_{t-1})$。
+這就是Yogi更新，現在更新的規模不再取決於偏差的量。
 
 $$\mathbf{s}_t \leftarrow \mathbf{s}_{t-1} + (1 - \beta_2) \mathbf{g}_t^2 \odot \mathop{\mathrm{sgn}}(\mathbf{g}_t^2 - \mathbf{s}_{t-1}).$$
 
-论文中，作者还进一步建议用更大的初始批量来初始化动量，而不仅仅是初始的逐点估计。
+論文中，作者還進一步建議用更大的初始批次來初始化動量，而不僅僅是初始的逐點估計。
 
 ```{.python .input}
 def yogi(params, states, hyperparams):
@@ -292,19 +292,19 @@ d2l.train_ch11(yogi, init_adam_states(feature_dim),
                {'lr': 0.01, 't': 1}, data_iter, feature_dim);
 ```
 
-## 小结
+## 小結
 
-* Adam算法将许多优化算法的功能结合到了相当强大的更新规则中。
-* Adam算法在RMSProp算法基础上创建的，还在小批量的随机梯度上使用EWMA。
-* 在估计动量和二次矩时，Adam算法使用偏差校正来调整缓慢的启动速度。
-* 对于具有显著差异的梯度，我们可能会遇到收敛性问题。我们可以通过使用更大的小批量或者切换到改进的估计值$\mathbf{s}_t$来修正它们。Yogi提供了这样的替代方案。
+* Adam演算法將許多最佳化演算法的功能結合到了相當強大的更新規則中。
+* Adam演算法在RMSProp演算法基礎上建立的，還在小批次的隨機梯度上使用EWMA。
+* 在估計動量和二次矩時，Adam演算法使用偏差校正來調整緩慢的啟動速度。
+* 對於具有顯著差異的梯度，我們可能會遇到收斂性問題。我們可以透過使用更大的小批次或者切換到改進的估計值$\mathbf{s}_t$來修正它們。Yogi提供了這樣的替代方案。
 
-## 练习
+## 練習
 
-1. 调节学习率，观察并分析实验结果。
-1. 试着重写动量和二次矩更新，从而使其不需要偏差校正。
-1. 收敛时为什么需要降低学习率$\eta$？
-1. 尝试构造一个使用Adam算法会发散而Yogi会收敛的例子。
+1. 調節學習率，觀察並分析實驗結果。
+1. 試著重寫動量和二次矩更新，從而使其不需要偏差校正。
+1. 收斂時為什麼需要降低學習率$\eta$？
+1. 嘗試構造一個使用Adam演算法會發散而Yogi會收斂的例子。
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/4330)

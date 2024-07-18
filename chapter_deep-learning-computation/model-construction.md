@@ -1,59 +1,59 @@
-# 层和块
+# 層和區塊
 :label:`sec_model_construction`
 
-之前首次介绍神经网络时，我们关注的是具有单一输出的线性模型。
-在这里，整个模型只有一个输出。
-注意，单个神经网络
-（1）接受一些输入；
-（2）生成相应的标量输出；
-（3）具有一组相关 *参数*（parameters），更新这些参数可以优化某目标函数。
+之前首次介紹神經網路時，我們關注的是具有單一輸出的線性模型。
+在這裡，整個模型只有一個輸出。
+注意，單個神經網路
+（1）接受一些輸入；
+（2）生成相應的標量輸出；
+（3）具有一組相關 *引數*（parameters），更新這些引數可以最佳化某目標函式。
 
-然后，当考虑具有多个输出的网络时，
-我们利用矢量化算法来描述整层神经元。
-像单个神经元一样，层（1）接受一组输入，
-（2）生成相应的输出，
-（3）由一组可调整参数描述。
-当我们使用softmax回归时，一个单层本身就是模型。
-然而，即使我们随后引入了多层感知机，我们仍然可以认为该模型保留了上面所说的基本架构。
+然後，當考慮具有多個輸出的網路時，
+我們利用矢量化演算法來描述整層神經元。
+像單個神經元一樣，層（1）接受一組輸入，
+（2）生成相應的輸出，
+（3）由一組可調整引數描述。
+當我們使用softmax迴歸時，一個單層本身就是模型。
+然而，即使我們隨後引入了多層感知機，我們仍然可以認為該模型保留了上面所說的基本架構。
 
-对于多层感知机而言，整个模型及其组成层都是这种架构。
-整个模型接受原始输入（特征），生成输出（预测），
-并包含一些参数（所有组成层的参数集合）。
-同样，每个单独的层接收输入（由前一层提供），
-生成输出（到下一层的输入），并且具有一组可调参数，
-这些参数根据从下一层反向传播的信号进行更新。
+對於多層感知機而言，整個模型及其組成層都是這種架構。
+整個模型接受原始輸入（特徵），生成輸出（預測），
+幷包含一些引數（所有組成層的引數集合）。
+同樣，每個單獨的層接收輸入（由前一層提供），
+生成輸出（到下一層的輸入），並且具有一組可調引數，
+這些引數根據從下一層反向傳播的訊號進行更新。
 
-事实证明，研究讨论“比单个层大”但“比整个模型小”的组件更有价值。
-例如，在计算机视觉中广泛流行的ResNet-152架构就有数百层，
-这些层是由*层组*（groups of layers）的重复模式组成。
-这个ResNet架构赢得了2015年ImageNet和COCO计算机视觉比赛
-的识别和检测任务 :cite:`He.Zhang.Ren.ea.2016`。
-目前ResNet架构仍然是许多视觉任务的首选架构。
-在其他的领域，如自然语言处理和语音，
-层组以各种重复模式排列的类似架构现在也是普遍存在。
+事實證明，研究討論『比單個層大』但『比整個模型小』的元件更有價值。
+例如，在電腦視覺中廣泛流行的ResNet-152架構就有數百層，
+這些層是由*層組*（groups of layers）的重複模式組成。
+這個ResNet架構贏得了2015年ImageNet和COCO電腦視覺比賽
+的識別和檢測任務 :cite:`He.Zhang.Ren.ea.2016`。
+目前ResNet架構仍然是許多視覺任務的首選架構。
+在其他的領域，如自然語言處理和語音，
+層組以各種重複模式排列的類似架構現在也是普遍存在。
 
-为了实现这些复杂的网络，我们引入了神经网络*块*的概念。
-*块*（block）可以描述单个层、由多个层组成的组件或整个模型本身。
-使用块进行抽象的一个好处是可以将一些块组合成更大的组件，
-这一过程通常是递归的，如 :numref:`fig_blocks`所示。
-通过定义代码来按需生成任意复杂度的块，
-我们可以通过简洁的代码实现复杂的神经网络。
+為了實現這些複雜的網路，我們引入了神經網路*區塊*的概念。
+*區塊*（block）可以描述單個層、由多個層組成的元件或整個模型本身。
+使用區塊進行抽象的一個好處是可以將一些區塊組合成更大的元件，
+這一過程通常是遞迴的，如 :numref:`fig_blocks`所示。
+透過定義程式碼來按需生成任意複雜度的區塊，
+我們可以透過簡潔的程式碼實現複雜的神經網路。
 
-![多个层被组合成块，形成更大的模型](../img/blocks.svg)
+![多個層被組合成區塊，形成更大的模型](../img/blocks.svg)
 :label:`fig_blocks`
 
-从编程的角度来看，块由*类*（class）表示。
-它的任何子类都必须定义一个将其输入转换为输出的前向传播函数，
-并且必须存储任何必需的参数。
-注意，有些块不需要任何参数。
-最后，为了计算梯度，块必须具有反向传播函数。
-在定义我们自己的块时，由于自动微分（在 :numref:`sec_autograd` 中引入）
-提供了一些后端实现，我们只需要考虑前向传播函数和必需的参数。
+從程式設計的角度來看，區塊由*類*（class）表示。
+它的任何子類別都必須定義一個將其輸入轉換為輸出的前向傳播函式，
+並且必須儲存任何必需的引數。
+注意，有些區塊不需要任何引數。
+最後，為了計算梯度，區塊必須具有反向傳播函式。
+在定義我們自己的區塊時，由於自動微分（在 :numref:`sec_autograd` 中引入）
+提供了一些後端實現，我們只需要考慮前向傳播函式和必需的引數。
 
-在构造自定义块之前，(**我们先回顾一下多层感知机**)
-（ :numref:`sec_mlp_concise` ）的代码。
-下面的代码生成一个网络，其中包含一个具有256个单元和ReLU激活函数的全连接隐藏层，
-然后是一个具有10个隐藏单元且不带激活函数的全连接输出层。
+在構造自定義區塊之前，(**我們先回顧一下多層感知機**)
+（ :numref:`sec_mlp_concise` ）的程式碼。
+下面的程式碼生成一個網路，其中包含一個具有256個單元和ReLU啟用函式的全連線隱藏層，
+然後是一個具有10個隱藏單元且不帶啟用函式的全連線輸出層。
 
 ```{.python .input}
 from mxnet import np, npx
@@ -109,103 +109,103 @@ net(X)
 ```
 
 :begin_tab:`mxnet`
-在这个例子中，我们通过实例化`nn.Sequential`来构建我们的模型，
-返回的对象赋给`net`变量。
-接下来，我们反复调用`net`变量的`add`函数，按照想要执行的顺序添加层。
-简而言之，`nn.Sequential`定义了一种特殊类型的`Block`，
-即在Gluon中表示块的类，它维护`Block`的有序列表。
-`add`函数方便将每个连续的`Block`添加到列表中。
-请注意，每层都是`Dense`类的一个实例，`Dense`类本身就是`Block`的子类。
-到目前为止，我们一直在通过`net(X)`调用我们的模型来获得模型的输出。
-这实际上是`net.forward(X)`的简写，
-这是通过`Block`类的`__call__`函数实现的一个Python技巧。
-前向传播（`forward`）函数非常简单：它将列表中的每个`Block`连接在一起，
-将每个`Block`的输出作为输入传递给下一层。
+在這個例子中，我們透過實例化`nn.Sequential`來建立我們的模型，
+回傳的物件賦給`net`變數。
+接下來，我們反覆呼叫`net`變數的`add`函式，按照想要執行的順序新增層。
+簡而言之，`nn.Sequential`定義了一種特殊型別的`Block`，
+即在Gluon中表示區塊的類，它維護`Block`的有序清單。
+`add`函式方便將每個連續的`Block`新增到清單中。
+請注意，每層都是`Dense`類別的一個實例，`Dense`類本身就是`Block`的子類別。
+到目前為止，我們一直在透過`net(X)`呼叫我們的模型來獲得模型的輸出。
+這實際上是`net.forward(X)`的簡寫，
+這是透過`Block`類別的`__call__`函式實現的一個Python技巧。
+前向傳播（`forward`）函式非常簡單：它將清單中的每個`Block`連線在一起，
+將每個`Block`的輸出作為輸入傳遞給下一層。
 
 :end_tab:
 
 :begin_tab:`pytorch`
-在这个例子中，我们通过实例化`nn.Sequential`来构建我们的模型，
-层的执行顺序是作为参数传递的。
-简而言之，(**`nn.Sequential`定义了一种特殊的`Module`**)，
-即在PyTorch中表示一个块的类，
-它维护了一个由`Module`组成的有序列表。
-注意，两个全连接层都是`Linear`类的实例，
-`Linear`类本身就是`Module`的子类。
-另外，到目前为止，我们一直在通过`net(X)`调用我们的模型来获得模型的输出。
-这实际上是`net.__call__(X)`的简写。
-这个前向传播函数非常简单：
-它将列表中的每个块连接在一起，将每个块的输出作为下一个块的输入。
+在這個例子中，我們透過實例化`nn.Sequential`來建立我們的模型，
+層的執行順序是作為引數傳遞的。
+簡而言之，(**`nn.Sequential`定義了一種特殊的`Module`**)，
+即在PyTorch中表示一個區塊的類，
+它維護了一個由`Module`組成的有序清單。
+注意，兩個全連線層都是`Linear`類別的實例，
+`Linear`類本身就是`Module`的子類別。
+另外，到目前為止，我們一直在透過`net(X)`呼叫我們的模型來獲得模型的輸出。
+這實際上是`net.__call__(X)`的簡寫。
+這個前向傳播函式非常簡單：
+它將清單中的每個區塊連線在一起，將每個區塊的輸出作為下一個區塊的輸入。
 
 :end_tab:
 
 :begin_tab:`tensorflow`
-在这个例子中，我们通过实例化`keras.models.Sequential`来构建我们的模型，
-层的执行顺序是作为参数传递的。
-简而言之，`Sequential`定义了一种特殊的`keras.Model`，
-即在Keras中表示一个块的类。
-它维护了一个由`Model`组成的有序列表，
-注意两个全连接层都是`Model`类的实例，
-这个类本身就是`Model`的子类。
-前向传播（`call`）函数也非常简单：
-它将列表中的每个块连接在一起，将每个块的输出作为下一个块的输入。
-注意，到目前为止，我们一直在通过`net(X)`调用我们的模型来获得模型的输出。
-这实际上是`net.call(X)`的简写，
-这是通过Block类的`__call__`函数实现的一个Python技巧。
+在這個例子中，我們透過實例化`keras.models.Sequential`來建立我們的模型，
+層的執行順序是作為引數傳遞的。
+簡而言之，`Sequential`定義了一種特殊的`keras.Model`，
+即在Keras中表示一個區塊的類。
+它維護了一個由`Model`組成的有序清單，
+注意兩個全連線層都是`Model`類別的實例，
+這個類本身就是`Model`的子類別。
+前向傳播（`call`）函式也非常簡單：
+它將清單中的每個區塊連線在一起，將每個區塊的輸出作為下一個區塊的輸入。
+注意，到目前為止，我們一直在透過`net(X)`呼叫我們的模型來獲得模型的輸出。
+這實際上是`net.call(X)`的簡寫，
+這是透過Block類別的`__call__`函式實現的一個Python技巧。
 :end_tab:
 
 :begin_tab:`paddle`
-在这个例子中，我们通过实例化`nn.Sequential`来构建我们的模型，
-层的执行顺序是作为参数传递的。
-简而言之，(**`nn.Sequential`定义了一种特殊的`Layer`**)，
-即在PaddlePaddle中表示一个块的类，
-它维护了一个由`Layer`组成的有序列表。
-注意，两个全连接层都是`Linear`类的实例，
-`Linear`类本身就是`Layer`的子类。
-另外，到目前为止，我们一直在通过`net(X)`调用我们的模型来获得模型的输出。
-这实际上是`net.__call__(X)`的简写。
-这个前向传播函数非常简单：
-它将列表中的每个块连接在一起，将每个块的输出作为下一个块的输入。
+在這個例子中，我們透過實例化`nn.Sequential`來建立我們的模型，
+層的執行順序是作為引數傳遞的。
+簡而言之，(**`nn.Sequential`定義了一種特殊的`Layer`**)，
+即在PaddlePaddle中表示一個區塊的類，
+它維護了一個由`Layer`組成的有序清單。
+注意，兩個全連線層都是`Linear`類別的實例，
+`Linear`類本身就是`Layer`的子類別。
+另外，到目前為止，我們一直在透過`net(X)`呼叫我們的模型來獲得模型的輸出。
+這實際上是`net.__call__(X)`的簡寫。
+這個前向傳播函式非常簡單：
+它將清單中的每個區塊連線在一起，將每個區塊的輸出作為下一個區塊的輸入。
 :end_tab:
 
-## [**自定义块**]
+## [**自定義區塊**]
 
-要想直观地了解块是如何工作的，最简单的方法就是自己实现一个。
-在实现我们自定义块之前，我们简要总结一下每个块必须提供的基本功能。
+要想直觀地瞭解區塊是如何工作的，最簡單的方法就是自己實現一個。
+在實現我們自定義區塊之前，我們簡要總結一下每個區塊必須提供的基本功能。
 
 :begin_tab:`mxnet, tensorflow`
-1. 将输入数据作为其前向传播函数的参数。
-1. 通过前向传播函数来生成输出。请注意，输出的形状可能与输入的形状不同。例如，我们上面模型中的第一个全连接的层接收任意维的输入，但是返回一个维度256的输出。
-1. 计算其输出关于输入的梯度，可通过其反向传播函数进行访问。通常这是自动发生的。
-1. 存储和访问前向传播计算所需的参数。
-1. 根据需要初始化模型参数。
+1. 將輸入資料作為其前向傳播函式的引數。
+1. 透過前向傳播函式來生成輸出。請注意，輸出的形狀可能與輸入的形狀不同。例如，我們上面模型中的第一個全連線的層接收任意維的輸入，但是回傳一個維度256的輸出。
+1. 計算其輸出關於輸入的梯度，可透過其反向傳播函式進行訪問。通常這是自動發生的。
+1. 儲存和訪問前向傳播計算所需的引數。
+1. 根據需要初始化模型引數。
 :end_tab:
 
 :begin_tab:`pytorch, paddle`
-1. 将输入数据作为其前向传播函数的参数。
-1. 通过前向传播函数来生成输出。请注意，输出的形状可能与输入的形状不同。例如，我们上面模型中的第一个全连接的层接收一个20维的输入，但是返回一个维度为256的输出。
-1. 计算其输出关于输入的梯度，可通过其反向传播函数进行访问。通常这是自动发生的。
-1. 存储和访问前向传播计算所需的参数。
-1. 根据需要初始化模型参数。
+1. 將輸入資料作為其前向傳播函式的引數。
+1. 透過前向傳播函式來生成輸出。請注意，輸出的形狀可能與輸入的形狀不同。例如，我們上面模型中的第一個全連線的層接收一個20維的輸入，但是回傳一個維度為256的輸出。
+1. 計算其輸出關於輸入的梯度，可透過其反向傳播函式進行訪問。通常這是自動發生的。
+1. 儲存和訪問前向傳播計算所需的引數。
+1. 根據需要初始化模型引數。
 :end_tab:
 
 
-在下面的代码片段中，我们从零开始编写一个块。
-它包含一个多层感知机，其具有256个隐藏单元的隐藏层和一个10维输出层。
-注意，下面的`MLP`类继承了表示块的类。
-我们的实现只需要提供我们自己的构造函数（Python中的`__init__`函数）和前向传播函数。
+在下面的程式碼片段中，我們從零開始編寫一個區塊。
+它包含一個多層感知機，其具有256個隱藏單元的隱藏層和一個10維輸出層。
+注意，下面的`MLP`類繼承了表示區塊的類。
+我們的實現只需要提供我們自己的建構式函式（Python中的`__init__`函式）和前向傳播函式。
 
 ```{.python .input}
 class MLP(nn.Block):
-    # 用模型参数声明层。这里，我们声明两个全连接的层
+    # 用模型引數宣告層。這裡，我們宣告兩個全連線的層
     def __init__(self, **kwargs):
-        # 调用MLP的父类Block的构造函数来执行必要的初始化。
-        # 这样，在类实例化时也可以指定其他函数参数，例如模型参数params（稍后将介绍）
+        # 呼叫MLP的父類別Block的建構式函式來執行必要的初始化。
+        # 這樣，在類別實例化時也可以指定其他函式引數，例如模型引數params（稍後將介紹）
         super().__init__(**kwargs)
-        self.hidden = nn.Dense(256, activation='relu')  # 隐藏层
-        self.out = nn.Dense(10)  # 输出层
+        self.hidden = nn.Dense(256, activation='relu')  # 隱藏層
+        self.out = nn.Dense(10)  # 輸出層
 
-    # 定义模型的前向传播，即如何根据输入X返回所需的模型输出
+    # 定義模型的前向傳播，即如何根據輸入X回傳所需的模型輸出
     def forward(self, X):
         return self.out(self.hidden(X))
 ```
@@ -213,33 +213,33 @@ class MLP(nn.Block):
 ```{.python .input}
 #@tab pytorch
 class MLP(nn.Module):
-    # 用模型参数声明层。这里，我们声明两个全连接的层
+    # 用模型引數宣告層。這裡，我們宣告兩個全連線的層
     def __init__(self):
-        # 调用MLP的父类Module的构造函数来执行必要的初始化。
-        # 这样，在类实例化时也可以指定其他函数参数，例如模型参数params（稍后将介绍）
+        # 呼叫MLP的父類別Module的建構式函式來執行必要的初始化。
+        # 這樣，在類別實例化時也可以指定其他函式引數，例如模型引數params（稍後將介紹）
         super().__init__()
-        self.hidden = nn.Linear(20, 256)  # 隐藏层
-        self.out = nn.Linear(256, 10)  # 输出层
+        self.hidden = nn.Linear(20, 256)  # 隱藏層
+        self.out = nn.Linear(256, 10)  # 輸出層
 
-    # 定义模型的前向传播，即如何根据输入X返回所需的模型输出
+    # 定義模型的前向傳播，即如何根據輸入X回傳所需的模型輸出
     def forward(self, X):
-        # 注意，这里我们使用ReLU的函数版本，其在nn.functional模块中定义。
+        # 注意，這裡我們使用ReLU的函式版本，其在nn.functional模組中定義。
         return self.out(F.relu(self.hidden(X)))
 ```
 
 ```{.python .input}
 #@tab tensorflow
 class MLP(tf.keras.Model):
-    # 用模型参数声明层。这里，我们声明两个全连接的层
+    # 用模型引數宣告層。這裡，我們宣告兩個全連線的層
     def __init__(self):
-        # 调用MLP的父类Model的构造函数来执行必要的初始化。
-        # 这样，在类实例化时也可以指定其他函数参数，例如模型参数params（稍后将介绍）
+        # 呼叫MLP的父類別Model的建構式函式來執行必要的初始化。
+        # 這樣，在類別實例化時也可以指定其他函式引數，例如模型引數params（稍後將介紹）
         super().__init__()
         # Hiddenlayer
         self.hidden = tf.keras.layers.Dense(units=256, activation=tf.nn.relu)
         self.out = tf.keras.layers.Dense(units=10)  # Outputlayer
 
-    # 定义模型的前向传播，即如何根据输入X返回所需的模型输出
+    # 定義模型的前向傳播，即如何根據輸入X回傳所需的模型輸出
     def call(self, X):
         return self.out(self.hidden((X)))
 ```
@@ -247,39 +247,39 @@ class MLP(tf.keras.Model):
 ```{.python .input}
 #@tab paddle
 class MLP(nn.Layer):
-    # 用模型参数声明层。这里，我们声明两个全连接的层
+    # 用模型引數宣告層。這裡，我們宣告兩個全連線的層
     def __init__(self):
-        # 调用`MLP`的父类Layer的构造函数来执行必要的初始化。
-        # 这样，在类实例化时也可以指定其他函数参数，例如模型参数`params`（稍后将介绍）
+        # 呼叫`MLP`的父類別Layer的建構式函式來執行必要的初始化。
+        # 這樣，在類別實例化時也可以指定其他函式引數，例如模型引數`params`（稍後將介紹）
         super().__init__()
-        self.hidden = nn.Linear(20, 256)  # 隐藏层
-        self.out = nn.Linear(256, 10)  # 输出层
+        self.hidden = nn.Linear(20, 256)  # 隱藏層
+        self.out = nn.Linear(256, 10)  # 輸出層
 
-    # 定义模型的正向传播，即如何根据输入`X`返回所需的模型输出
+    # 定義模型的正向傳播，即如何根據輸入`X`回傳所需的模型輸出
     def forward(self, X):
-        # 注意，这里我们使用ReLU的函数版本，其在nn.functional模块中定义。
+        # 注意，這裡我們使用ReLU的函式版本，其在nn.functional模組中定義。
         return self.out(F.relu(self.hidden(X)))
 ```
 
-我们首先看一下前向传播函数，它以`X`作为输入，
-计算带有激活函数的隐藏表示，并输出其未规范化的输出值。
-在这个`MLP`实现中，两个层都是实例变量。
-要了解这为什么是合理的，可以想象实例化两个多层感知机（`net1`和`net2`），
-并根据不同的数据对它们进行训练。
-当然，我们希望它们学到两种不同的模型。
+我們首先看一下前向傳播函式，它以`X`作為輸入，
+計算帶有啟用函式的隱藏表示，並輸出其未規範化的輸出值。
+在這個`MLP`實現中，兩個層都是實例變數。
+要了解這為什麼是合理的，可以想象實例化兩個多層感知機（`net1`和`net2`），
+並根據不同的資料對它們進行訓練。
+當然，我們希望它們學到兩種不同的模型。
 
-接着我们[**实例化多层感知机的层，然后在每次调用前向传播函数时调用这些层**]。
-注意一些关键细节：
-首先，我们定制的`__init__`函数通过`super().__init__()`
-调用父类的`__init__`函数，
-省去了重复编写模版代码的痛苦。
-然后，我们实例化两个全连接层，
-分别为`self.hidden`和`self.out`。
-注意，除非我们实现一个新的运算符，
-否则我们不必担心反向传播函数或参数初始化，
-系统将自动生成这些。
+接著我們[**實例化多層感知機的層，然後在每次呼叫前向傳播函式時調用這些層**]。
+注意一些關鍵細節：
+首先，我們定製的`__init__`函式透過`super().__init__()`
+呼叫父類別的`__init__`函式，
+省去了重複編寫模版程式碼的痛苦。
+然後，我們實例化兩個全連線層，
+分別為`self.hidden`和`self.out`。
+注意，除非我們實現一個新的運算符，
+否則我們不必擔心反向傳播函式或引數初始化，
+系統將自動生成這些。
 
-我们来试一下这个函数：
+我們來試一下這個函式：
 
 ```{.python .input}
 net = MLP()
@@ -299,35 +299,35 @@ net = MLP()
 net(X)
 ```
 
-块的一个主要优点是它的多功能性。
-我们可以子类化块以创建层（如全连接层的类）、
-整个模型（如上面的`MLP`类）或具有中等复杂度的各种组件。
-我们在接下来的章节中充分利用了这种多功能性，
-比如在处理卷积神经网络时。
+區塊的一個主要優點是它的多功能性。
+我們可以子類別化區塊以建立層（如全連線層的類）、
+整個模型（如上面的`MLP`類）或具有中等複雜度的各種元件。
+我們在接下來的章節中充分利用了這種多功能性，
+比如在處理卷積神經網路時。
 
-## [**顺序块**]
+## [**順序區塊**]
 
-现在我们可以更仔细地看看`Sequential`类是如何工作的，
-回想一下`Sequential`的设计是为了把其他模块串起来。
-为了构建我们自己的简化的`MySequential`，
-我们只需要定义两个关键函数：
+現在我們可以更仔細地看看`Sequential`類是如何工作的，
+回想一下`Sequential`的設計是為了把其他模組串起來。
+為了建立我們自己的簡化的`MySequential`，
+我們只需要定義兩個關鍵函式：
 
-1. 一种将块逐个追加到列表中的函数；
-1. 一种前向传播函数，用于将输入按追加块的顺序传递给块组成的“链条”。
+1. 一種將區塊逐個追加到清單中的函式；
+1. 一種前向傳播函式，用於將輸入按追加區塊的順序傳遞給區塊組成的『鏈條』。
 
-下面的`MySequential`类提供了与默认`Sequential`类相同的功能。
+下面的`MySequential`類提供了與預設`Sequential`類相同的功能。
 
 ```{.python .input}
 class MySequential(nn.Block):
     def add(self, block):
-    # 这里，block是Block子类的一个实例，我们假设它有一个唯一的名称。我们把它
-    # 保存在'Block'类的成员变量_children中。block的类型是OrderedDict。
-    # 当MySequential实例调用initialize函数时，系统会自动初始化_children
-    # 的所有成员
+    # 這裡，block是Block子類別的一個實例，我們假設它有一個唯一的名稱。我們把它
+    # 儲存在'Block'類別的成員變數_children中。block的型別是OrderedDict。
+    # 當MySequential實例呼叫initialize函式時，系統會自動初始化_children
+    # 的所有成員
         self._children[block.name] = block
 
     def forward(self, X):
-        # OrderedDict保证了按照成员添加的顺序遍历它们
+        # OrderedDict保證了按照成員新增的順序遍歷它們
         for block in self._children.values():
             X = block(X)
         return X
@@ -339,12 +339,12 @@ class MySequential(nn.Module):
     def __init__(self, *args):
         super().__init__()
         for idx, module in enumerate(args):
-            # 这里，module是Module子类的一个实例。我们把它保存在'Module'类的成员
-            # 变量_modules中。_module的类型是OrderedDict
+            # 這裡，module是Module子類別的一個實例。我們把它儲存在'Module'類別的成員
+            # 變數_modules中。_module的型別是OrderedDict
             self._modules[str(idx)] = module
 
     def forward(self, X):
-        # OrderedDict保证了按照成员添加的顺序遍历它们
+        # OrderedDict保證了按照成員新增的順序遍歷它們
         for block in self._modules.values():
             X = block(X)
         return X
@@ -357,7 +357,7 @@ class MySequential(tf.keras.Model):
         super().__init__()
         self.modules = []
         for block in args:
-            # 这里，block是tf.keras.layers.Layer子类的一个实例
+            # 這裡，block是tf.keras.layers.Layer子類別的一個實例
             self.modules.append(block)
 
     def call(self, X):
@@ -371,52 +371,52 @@ class MySequential(tf.keras.Model):
 class MySequential(nn.Layer):
     def __init__(self, *layers):
         super(MySequential, self).__init__()
-        # 如果传入的是一个tuple
+        # 如果傳入的是一個tuple
         if len(layers) > 0 and isinstance(layers[0], tuple): 
             for name, layer in layers:
-                # add_sublayer方法会将layer添加到self._sub_layers(一个tuple)
+                # add_sublayer方法會將layer新增到self._sub_layers(一個tuple)
                 self.add_sublayer(name, layer)  
         else:
             for idx, layer in enumerate(layers):
                 self.add_sublayer(str(idx), layer)
 
     def forward(self, X):
-        # OrderedDict保证了按照成员添加的顺序遍历它们
+        # OrderedDict保證了按照成員新增的順序遍歷它們
         for layer in self._sub_layers.values():
             X = layer(X)
         return X
 ```
 
 :begin_tab:`mxnet`
-`add`函数向有序字典`_children`添加一个块。
-读者可能会好奇为什么每个Gluon中的`Block`都有一个`_children`属性？
-以及为什么我们使用它而不是自己定义一个Python列表？
-简而言之，`_children`的主要优点是：
-在块的参数初始化过程中，
-Gluon知道在`_children`字典中查找需要初始化参数的子块。
+`add`函式向有序字典`_children`新增一個區塊。
+讀者可能會好奇為什麼每個Gluon中的`Block`都有一個`_children`屬性？
+以及為什麼我們使用它而不是自己定義一個Python清單？
+簡而言之，`_children`的主要優點是：
+在區塊的引數初始化過程中，
+Gluon知道在`_children`字典中查詢需要初始化引數的子區塊。
 :end_tab:
 
 :begin_tab:`pytorch`
-`__init__`函数将每个模块逐个添加到有序字典`_modules`中。
-读者可能会好奇为什么每个`Module`都有一个`_modules`属性？
-以及为什么我们使用它而不是自己定义一个Python列表？
-简而言之，`_modules`的主要优点是：
-在模块的参数初始化过程中，
-系统知道在`_modules`字典中查找需要初始化参数的子块。
+`__init__`函式將每個模組逐個新增到有序字典`_modules`中。
+讀者可能會好奇為什麼每個`Module`都有一個`_modules`屬性？
+以及為什麼我們使用它而不是自己定義一個Python清單？
+簡而言之，`_modules`的主要優點是：
+在模組的引數初始化過程中，
+系統知道在`_modules`字典中查詢需要初始化引數的子區塊。
 :end_tab:
 
 :begin_tab:`paddle`
-`__init__`函数将每个模块逐个添加到有序字典`_sub_layers`中。
-你可能会好奇为什么每个`Layer`都有一个`_sub_layers`属性？
-以及为什么我们使用它而不是自己定义一个Python列表？
-简而言之，`_sub_layers`的主要优点是：
-在模块的参数初始化过程中，
-系统知道在`_sub_layers`字典中查找需要初始化参数的子块。
+`__init__`函式將每個模組逐個新增到有序字典`_sub_layers`中。
+你可能會好奇為什麼每個`Layer`都有一個`_sub_layers`屬性？
+以及為什麼我們使用它而不是自己定義一個Python清單？
+簡而言之，`_sub_layers`的主要優點是：
+在模組的引數初始化過程中，
+系統知道在`_sub_layers`字典中查詢需要初始化引數的子區塊。
 :end_tab:
 
-当`MySequential`的前向传播函数被调用时，
-每个添加的块都按照它们被添加的顺序执行。
-现在可以使用我们的`MySequential`类重新实现多层感知机。
+當`MySequential`的前向傳播函式被呼叫時，
+每個新增的區塊都按照它們被新增的順序執行。
+現在可以使用我們的`MySequential`類重新實現多層感知機。
 
 ```{.python .input}
 net = MySequential()
@@ -440,44 +440,44 @@ net = MySequential(
 net(X)
 ```
 
-请注意，`MySequential`的用法与之前为`Sequential`类编写的代码相同
+請注意，`MySequential`的用法與之前為`Sequential`類編寫的程式碼相同
 （如 :numref:`sec_mlp_concise` 中所述）。
 
-## [**在前向传播函数中执行代码**]
+## [**在前向傳播函式中執行程式碼**]
 
-`Sequential`类使模型构造变得简单，
-允许我们组合新的架构，而不必定义自己的类。
-然而，并不是所有的架构都是简单的顺序架构。
-当需要更强的灵活性时，我们需要定义自己的块。
-例如，我们可能希望在前向传播函数中执行Python的控制流。
-此外，我们可能希望执行任意的数学运算，
-而不是简单地依赖预定义的神经网络层。
+`Sequential`類使模型構造變得簡單，
+允許我們組合新的架構，而不必定義自己的類。
+然而，並不是所有的架構都是簡單的順序架構。
+當需要更強的靈活性時，我們需要定義自己的區塊。
+例如，我們可能希望在前向傳播函式中執行Python的控制流。
+此外，我們可能希望執行任意的數學運算，
+而不是簡單地依賴預定義的神經網路層。
 
-到目前为止，
-我们网络中的所有操作都对网络的激活值及网络的参数起作用。
-然而，有时我们可能希望合并既不是上一层的结果也不是可更新参数的项，
-我们称之为*常数参数*（constant parameter）。
-例如，我们需要一个计算函数
-$f(\mathbf{x},\mathbf{w}) = c \cdot \mathbf{w}^\top \mathbf{x}$的层，
-其中$\mathbf{x}$是输入，
-$\mathbf{w}$是参数，
-$c$是某个在优化过程中没有更新的指定常量。
-因此我们实现了一个`FixedHiddenMLP`类，如下所示：
+到目前為止，
+我們網路中的所有操作都對網路的啟用值及網路的引數起作用。
+然而，有時我們可能希望合併既不是上一層的結果也不是可更新引數的項，
+我們稱之為*常數引數*（constant parameter）。
+例如，我們需要一個計算函式
+$f(\mathbf{x},\mathbf{w}) = c \cdot \mathbf{w}^\top \mathbf{x}$的層，
+其中$\mathbf{x}$是輸入，
+$\mathbf{w}$是引數，
+$c$是某個在最佳化過程中沒有更新的指定常數。
+因此我們實現了一個`FixedHiddenMLP`類，如下所示：
 
 ```{.python .input}
 class FixedHiddenMLP(nn.Block):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        # 使用get_constant函数创建的随机权重参数在训练期间不会更新（即为常量参数）
+        # 使用get_constant函式建立的隨機權重引數在訓練期間不會更新（即為常數引數）
         self.rand_weight = self.params.get_constant(
             'rand_weight', np.random.uniform(size=(20, 20)))
         self.dense = nn.Dense(20, activation='relu')
 
     def forward(self, X):
         X = self.dense(X)
-        # 使用创建的常量参数以及relu和dot函数
+        # 使用建立的常數引數以及relu和dot函式
         X = npx.relu(np.dot(X, self.rand_weight.data()) + 1)
-        # 复用全连接层。这相当于两个全连接层共享参数
+        # 複用全連線層。這相當於兩個全連線層共享引數
         X = self.dense(X)
         # 控制流
         while np.abs(X).sum() > 1:
@@ -490,15 +490,15 @@ class FixedHiddenMLP(nn.Block):
 class FixedHiddenMLP(nn.Module):
     def __init__(self):
         super().__init__()
-        # 不计算梯度的随机权重参数。因此其在训练期间保持不变
+        # 不計算梯度的隨機權重引數。因此其在訓練期間保持不變
         self.rand_weight = torch.rand((20, 20), requires_grad=False)
         self.linear = nn.Linear(20, 20)
 
     def forward(self, X):
         X = self.linear(X)
-        # 使用创建的常量参数以及relu和mm函数
+        # 使用建立的常數引數以及relu和mm函式
         X = F.relu(torch.mm(X, self.rand_weight) + 1)
-        # 复用全连接层。这相当于两个全连接层共享参数
+        # 複用全連線層。這相當於兩個全連線層共享引數
         X = self.linear(X)
         # 控制流
         while X.abs().sum() > 1:
@@ -512,15 +512,15 @@ class FixedHiddenMLP(tf.keras.Model):
     def __init__(self):
         super().__init__()
         self.flatten = tf.keras.layers.Flatten()
-        # 使用tf.constant函数创建的随机权重参数在训练期间不会更新（即为常量参数）
+        # 使用tf.constant函式建立的隨機權重引數在訓練期間不會更新（即為常數引數）
         self.rand_weight = tf.constant(tf.random.uniform((20, 20)))
         self.dense = tf.keras.layers.Dense(20, activation=tf.nn.relu)
 
     def call(self, inputs):
         X = self.flatten(inputs)
-        # 使用创建的常量参数以及relu和matmul函数
+        # 使用建立的常數引數以及relu和matmul函式
         X = tf.nn.relu(tf.matmul(X, self.rand_weight) + 1)
-        # 复用全连接层。这相当于两个全连接层共享参数。
+        # 複用全連線層。這相當於兩個全連線層共享引數。
         X = self.dense(X)
         # 控制流
         while tf.reduce_sum(tf.math.abs(X)) > 1:
@@ -533,15 +533,15 @@ class FixedHiddenMLP(tf.keras.Model):
 class FixedHiddenMLP(nn.Layer):
     def __init__(self):
         super().__init__()
-        # 不计算梯度的随机权重参数。因此其在训练期间保持不变。
+        # 不計算梯度的隨機權重引數。因此其在訓練期間保持不變。
         self.rand_weight = paddle.rand([20, 20])
         self.linear = nn.Linear(20, 20)
 
     def forward(self, X):
         X = self.linear(X)
-        # 使用创建的常量参数以及relu和mm函数。
+        # 使用建立的常數引數以及relu和mm函式。
         X = F.relu(paddle.tensor.mm(X, self.rand_weight) + 1)
-        # 复用全连接层。这相当于两个全连接层共享参数。
+        # 複用全連線層。這相當於兩個全連線層共享引數。
         X = self.linear(X)
         # 控制流
         while X.abs().sum() > 1:
@@ -549,17 +549,17 @@ class FixedHiddenMLP(nn.Layer):
         return X.sum()
 ```
 
-在这个`FixedHiddenMLP`模型中，我们实现了一个隐藏层，
-其权重（`self.rand_weight`）在实例化时被随机初始化，之后为常量。
-这个权重不是一个模型参数，因此它永远不会被反向传播更新。
-然后，神经网络将这个固定层的输出通过一个全连接层。
+在這個`FixedHiddenMLP`模型中，我們實現了一個隱藏層，
+其權重（`self.rand_weight`）在實例化時被隨機初始化，之後為常數。
+這個權重不是一個模型引數，因此它永遠不會被反向傳播更新。
+然後，神經網路將這個固定層的輸出透過一個全連線層。
 
-注意，在返回输出之前，模型做了一些不寻常的事情：
-它运行了一个while循环，在$L_1$范数大于$1$的条件下，
-将输出向量除以$2$，直到它满足条件为止。
-最后，模型返回了`X`中所有项的和。
-注意，此操作可能不会常用于在任何实际任务中，
-我们只展示如何将任意代码集成到神经网络计算的流程中。
+注意，在回傳輸出之前，模型做了一些不尋常的事情：
+它執行了一個while迴圈，在$L_1$範數大於$1$的條件下，
+將輸出向量除以$2$，直到它滿足條件為止。
+最後，模型回傳了`X`中所有項的和。
+注意，此操作可能不會常用於在任何實際任務中，
+我們只展示如何將任意程式碼整合到神經網路計算的流程中。
 
 ```{.python .input}
 net = FixedHiddenMLP()
@@ -573,8 +573,8 @@ net = FixedHiddenMLP()
 net(X)
 ```
 
-我们可以[**混合搭配各种组合块的方法**]。
-在下面的例子中，我们以一些想到的方法嵌套块。
+我們可以[**混合搭配各種組合區塊的方法**]。
+在下面的例子中，我們以一些想到的方法巢狀區塊。
 
 ```{.python .input}
 class NestMLP(nn.Block):
@@ -649,62 +649,62 @@ chimera(X)
 ## 效率
 
 :begin_tab:`mxnet`
-读者可能会开始担心操作效率的问题。
-毕竟，我们在一个高性能的深度学习库中进行了大量的字典查找、
-代码执行和许多其他的Python代码。
-Python的问题[全局解释器锁](https://wiki.python.org/moin/GlobalInterpreterLock)
-是众所周知的。
-在深度学习环境中，我们担心速度极快的GPU可能要等到CPU运行Python代码后才能运行另一个作业。
+讀者可能會開始擔心操作效率的問題。
+畢竟，我們在一個高效能的深度學習庫中進行了大量的字典查詢、
+程式碼執行和許多其他的Python程式碼。
+Python的問題[全域直譯器鎖](https://wiki.python.org/moin/GlobalInterpreterLock)
+是眾所周知的。
+在深度學習環境中，我們擔心速度極快的GPU可能要等到CPU執行Python程式碼後才能執行另一個作業。
 
 提高Python速度的最好方法是完全避免使用Python。
-Gluon这样做的一个方法是允许*混合式编程*（hybridization），这将在后面描述。
-Python解释器在第一次调用块时执行它。
-Gluon运行时记录正在发生的事情，以及下一次它将对Python调用加速。
-在某些情况下，这可以大大加快运行速度，
-但当控制流（如上所述）在不同的网络通路上引导不同的分支时，需要格外小心。
-我们建议感兴趣的读者在读完本章后，阅读混合式编程部分（ :numref:`sec_hybridize` ）来了解编译。
+Gluon這樣做的一個方法是允許*混合式程式設計*（hybridization），這將在後面描述。
+Python直譯器在第一次呼叫區塊時執行它。
+Gluon執行時記錄正在發生的事情，以及下一次它將對Python呼叫加速。
+在某些情況下，這可以大大加快執行速度，
+但當控制流（如上所述）在不同的網路通路上引導不同的分支時，需要格外小心。
+我們建議感興趣的讀者在讀完本章後，閱讀混合式程式設計部分（ :numref:`sec_hybridize` ）來了解編譯。
 :end_tab:
 
 :begin_tab:`pytorch`
-读者可能会开始担心操作效率的问题。
-毕竟，我们在一个高性能的深度学习库中进行了大量的字典查找、
-代码执行和许多其他的Python代码。
-Python的问题[全局解释器锁](https://wiki.python.org/moin/GlobalInterpreterLock)
-是众所周知的。
-在深度学习环境中，我们担心速度极快的GPU可能要等到CPU运行Python代码后才能运行另一个作业。
+讀者可能會開始擔心操作效率的問題。
+畢竟，我們在一個高效能的深度學習庫中進行了大量的字典查詢、
+程式碼執行和許多其他的Python程式碼。
+Python的問題[全域直譯器鎖](https://wiki.python.org/moin/GlobalInterpreterLock)
+是眾所周知的。
+在深度學習環境中，我們擔心速度極快的GPU可能要等到CPU執行Python程式碼後才能執行另一個作業。
 :end_tab:
 
 :begin_tab:`tensorflow`
-读者可能会开始担心操作效率的问题。
-毕竟，我们在一个高性能的深度学习库中进行了大量的字典查找、
-代码执行和许多其他的Python代码。
-Python的问题[全局解释器锁](https://wiki.python.org/moin/GlobalInterpreterLock)
-是众所周知的。
-在深度学习环境中，我们担心速度极快的GPU可能要等到CPU运行Python代码后才能运行另一个作业。
+讀者可能會開始擔心操作效率的問題。
+畢竟，我們在一個高效能的深度學習庫中進行了大量的字典查詢、
+程式碼執行和許多其他的Python程式碼。
+Python的問題[全域直譯器鎖](https://wiki.python.org/moin/GlobalInterpreterLock)
+是眾所周知的。
+在深度學習環境中，我們擔心速度極快的GPU可能要等到CPU執行Python程式碼後才能執行另一個作業。
 :end_tab:
 
 :begin_tab:`paddle`
-你可能会开始担心操作效率的问题。
-毕竟，我们在一个高性能的深度学习库中进行了大量的字典查找、
-代码执行和许多其他的Python代码。
-Python的问题[全局解释器锁](https://wiki.python.org/moin/GlobalInterpreterLock)
-是众所周知的。
-在深度学习环境中，我们担心速度极快的GPU可能要等到CPU运行Python代码后才能运行另一个作业。
+你可能會開始擔心操作效率的問題。
+畢竟，我們在一個高效能的深度學習庫中進行了大量的字典查詢、
+程式碼執行和許多其他的Python程式碼。
+Python的問題[全域直譯器鎖](https://wiki.python.org/moin/GlobalInterpreterLock)
+是眾所周知的。
+在深度學習環境中，我們擔心速度極快的GPU可能要等到CPU執行Python程式碼後才能執行另一個作業。
 :end_tab:
 
 
-## 小结
+## 小結
 
-* 一个块可以由许多层组成；一个块可以由许多块组成。
-* 块可以包含代码。
-* 块负责大量的内部处理，包括参数初始化和反向传播。
-* 层和块的顺序连接由`Sequential`块处理。
+* 一個區塊可以由許多層組成；一個區塊可以由許多區塊組成。
+* 區塊可以包含程式碼。
+* 區塊負責大量的內部處理，包括引數初始化和反向傳播。
+* 層和區塊的順序連線由`Sequential`區塊處理。
 
-## 练习
+## 練習
 
-1. 如果将`MySequential`中存储块的方式更改为Python列表，会出现什么样的问题？
-1. 实现一个块，它以两个块为参数，例如`net1`和`net2`，并返回前向传播中两个网络的串联输出。这也被称为平行块。
-1. 假设我们想要连接同一网络的多个实例。实现一个函数，该函数生成同一个块的多个实例，并在此基础上构建更大的网络。
+1. 如果將`MySequential`中儲存區塊的方式更改為Python清單，會出現什麼樣的問題？
+1. 實現一個區塊，它以兩個區塊為引數，例如`net1`和`net2`，並回傳前向傳播中兩個網路的串聯輸出。這也被稱為平行區塊。
+1. 假設我們想要連線同一網路的多個實例。實現一個函式，該函式生成同一個區塊的多個實例，並在此基礎上建立更大的網路。
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/1828)

@@ -1,9 +1,9 @@
-# 情感分析：使用循环神经网络
+# 情感分析：使用迴圈神經網路
 :label:`sec_sentiment_rnn`
 
-与词相似度和类比任务一样，我们也可以将预先训练的词向量应用于情感分析。由于 :numref:`sec_sentiment`中的IMDb评论数据集不是很大，使用在大规模语料库上预训练的文本表示可以减少模型的过拟合。作为 :numref:`fig_nlp-map-sa-rnn`中所示的具体示例，我们将使用预训练的GloVe模型来表示每个词元，并将这些词元表示送入多层双向循环神经网络以获得文本序列表示，该文本序列表示将被转换为情感分析输出 :cite:`Maas.Daly.Pham.ea.2011`。对于相同的下游应用，我们稍后将考虑不同的架构选择。
+與詞相似度和類比任務一樣，我們也可以將預先訓練的詞向量應用於情感分析。由於 :numref:`sec_sentiment`中的IMDb評論資料集不是很大，使用在大規模語料庫上預訓練的文字表示可以減少模型的過擬合。作為 :numref:`fig_nlp-map-sa-rnn`中所示的具體範例，我們將使用預訓練的GloVe模型來表示每個詞元，並將這些詞元表示送入多層雙向迴圈神經網路以獲得文字序列表示，該文字序列表示將被轉換為情感分析輸出 :cite:`Maas.Daly.Pham.ea.2011`。對於相同的下游應用，我們稍後將考慮不同的架構選擇。
 
-![将GloVe送入基于循环神经网络的架构，用于情感分析](../img/nlp-map-sa-rnn.svg)
+![將GloVe送入基於迴圈神經網路的架構，用於情感分析](../img/nlp-map-sa-rnn.svg)
 :label:`fig_nlp-map-sa-rnn`
 
 ```{.python .input}
@@ -38,9 +38,9 @@ batch_size = 64
 train_iter, test_iter, vocab = d2l.load_data_imdb(batch_size)
 ```
 
-## 使用循环神经网络表示单个文本
+## 使用迴圈神經網路表示單個文字
 
-在文本分类任务（如情感分析）中，可变长度的文本序列将被转换为固定长度的类别。在下面的`BiRNN`类中，虽然文本序列的每个词元经由嵌入层（`self.embedding`）获得其单独的预训练GloVe表示，但是整个序列由双向循环神经网络（`self.encoder`）编码。更具体地说，双向长短期记忆网络在初始和最终时间步的隐状态（在最后一层）被连结起来作为文本序列的表示。然后，通过一个具有两个输出（“积极”和“消极”）的全连接层（`self.decoder`），将此单一文本表示转换为输出类别。
+在文字分類任務（如情感分析）中，可變長度的文字序列將被轉換為固定長度的類別。在下面的`BiRNN`類別中，雖然文字序列的每個詞元經由嵌入層（`self.embedding`）獲得其單獨的預訓練GloVe表示，但是整個序列由雙向迴圈神經網路（`self.encoder`）編碼。更具體地說，雙向長短期記憶網路在初始和最終時間步的隱狀態（在最後一層）被連結起來作為文字序列的表示。然後，透過一個具有兩個輸出（『積極』和『消極』）的全連線層（`self.decoder`），將此單一文字表示轉換為輸出類別。
 
 ```{.python .input}
 class BiRNN(nn.Block):
@@ -48,22 +48,22 @@ class BiRNN(nn.Block):
                  num_layers, **kwargs):
         super(BiRNN, self).__init__(**kwargs)
         self.embedding = nn.Embedding(vocab_size, embed_size)
-        # 将bidirectional设置为True以获取双向循环神经网络
+        # 將bidirectional設定為True以獲取雙向迴圈神經網路
         self.encoder = rnn.LSTM(num_hiddens, num_layers=num_layers,
                                 bidirectional=True, input_size=embed_size)
         self.decoder = nn.Dense(2)
 
     def forward(self, inputs):
-        # inputs的形状是（批量大小，时间步数）
-        # 因为长短期记忆网络要求其输入的第一个维度是时间维，
-        # 所以在获得词元表示之前，输入会被转置。
-        # 输出形状为（时间步数，批量大小，词向量维度）
+        # inputs的形狀是（批次大小，時間步數）
+        # 因為長短期記憶網路要求其輸入的第一個維度是時間維，
+        # 所以在獲得詞元表示之前，輸入會被轉置。
+        # 輸出形狀為（時間步數，批次大小，詞向量維度）
         embeddings = self.embedding(inputs.T)
-        # 返回上一个隐藏层在不同时间步的隐状态，
-        # outputs的形状是（时间步数，批量大小，2*隐藏单元数）
+        # 回傳上一個隱藏層在不同時間步的隱狀態，
+        # outputs的形狀是（時間步數，批次大小，2*隱藏單元數）
         outputs = self.encoder(embeddings)
-        # 连结初始和最终时间步的隐状态，作为全连接层的输入，
-        # 其形状为（批量大小，4*隐藏单元数）
+        # 連結初始和最終時間步的隱狀態，作為全連線層的輸入，
+        # 其形狀為（批次大小，4*隱藏單元數）
         encoding = np.concatenate((outputs[0], outputs[-1]), axis=1)
         outs = self.decoder(encoding)
         return outs
@@ -76,23 +76,23 @@ class BiRNN(nn.Module):
                  num_layers, **kwargs):
         super(BiRNN, self).__init__(**kwargs)
         self.embedding = nn.Embedding(vocab_size, embed_size)
-        # 将bidirectional设置为True以获取双向循环神经网络
+        # 將bidirectional設定為True以獲取雙向迴圈神經網路
         self.encoder = nn.LSTM(embed_size, num_hiddens, num_layers=num_layers,
                                 bidirectional=True)
         self.decoder = nn.Linear(4 * num_hiddens, 2)
 
     def forward(self, inputs):
-        # inputs的形状是（批量大小，时间步数）
-        # 因为长短期记忆网络要求其输入的第一个维度是时间维，
-        # 所以在获得词元表示之前，输入会被转置。
-        # 输出形状为（时间步数，批量大小，词向量维度）
+        # inputs的形狀是（批次大小，時間步數）
+        # 因為長短期記憶網路要求其輸入的第一個維度是時間維，
+        # 所以在獲得詞元表示之前，輸入會被轉置。
+        # 輸出形狀為（時間步數，批次大小，詞向量維度）
         embeddings = self.embedding(inputs.T)
         self.encoder.flatten_parameters()
-        # 返回上一个隐藏层在不同时间步的隐状态，
-        # outputs的形状是（时间步数，批量大小，2*隐藏单元数）
+        # 回傳上一個隱藏層在不同時間步的隱狀態，
+        # outputs的形狀是（時間步數，批次大小，2*隱藏單元數）
         outputs, _ = self.encoder(embeddings)
-        # 连结初始和最终时间步的隐状态，作为全连接层的输入，
-        # 其形状为（批量大小，4*隐藏单元数）
+        # 連結初始和最終時間步的隱狀態，作為全連線層的輸入，
+        # 其形狀為（批次大小，4*隱藏單元數）
         encoding = torch.cat((outputs[0], outputs[-1]), dim=1)
         outs = self.decoder(encoding)
         return outs
@@ -105,29 +105,29 @@ class BiRNN(nn.Layer):
                  num_layers, **kwargs):
         super(BiRNN, self).__init__(**kwargs)
         self.embedding = nn.Embedding(vocab_size, embed_size)
-        # 将direction设置为'bidirect'或'bidirectional'以获取双向循环神经网络
+        # 將direction設定為'bidirect'或'bidirectional'以獲取雙向迴圈神經網路
         self.encoder = nn.LSTM(embed_size, num_hiddens, num_layers=num_layers,
                                 direction='bidirect',time_major=True)
         self.decoder = nn.Linear(4 * num_hiddens, 2)
 
     def forward(self, inputs):
-        # inputs的形状是（批量大小，时间步数）
-        # 因为长短期记忆网络要求其输入的第一个维度是时间维，
-        # 所以在获得词元表示之前，输入会被转置。
-        # 输出形状为（时间步数，批量大小，词向量维度）
+        # inputs的形狀是（批次大小，時間步數）
+        # 因為長短期記憶網路要求其輸入的第一個維度是時間維，
+        # 所以在獲得詞元表示之前，輸入會被轉置。
+        # 輸出形狀為（時間步數，批次大小，詞向量維度）
         embeddings = self.embedding(inputs.T)
         self.encoder.flatten_parameters()
-        # 返回上一个隐藏层在不同时间步的隐状态，
-        # outputs的形状是（时间步数，批量大小，2*隐藏单元数）
+        # 回傳上一個隱藏層在不同時間步的隱狀態，
+        # outputs的形狀是（時間步數，批次大小，2*隱藏單元數）
         outputs, _ = self.encoder(embeddings)
-        # 连结初始和最终时间步的隐状态，作为全连接层的输入，
-        # 其形状为（批量大小，4*隐藏单元数）
+        # 連結初始和最終時間步的隱狀態，作為全連線層的輸入，
+        # 其形狀為（批次大小，4*隱藏單元數）
         encoding = paddle.concat((outputs[0], outputs[-1]), axis=1)
         outs = self.decoder(encoding)
         return outs
 ```
 
-让我们构造一个具有两个隐藏层的双向循环神经网络来表示单个文本以进行情感分析。
+讓我們構造一個具有兩個隱藏層的雙向迴圈神經網路來表示單個文字以進行情感分析。
 
 ```{.python .input}
 #@tab all
@@ -165,16 +165,16 @@ def init_weights(layer):
 net.apply(init_weights)
 ```
 
-## 加载预训练的词向量
+## 載入預訓練的詞向量
 
-下面，我们为词表中的单词加载预训练的100维（需要与`embed_size`一致）的GloVe嵌入。
+下面，我們為詞表中的單詞載入預訓練的100維（需要與`embed_size`一致）的GloVe嵌入。
 
 ```{.python .input}
 #@tab all
 glove_embedding = d2l.TokenEmbedding('glove.6b.100d')
 ```
 
-打印词表中所有词元向量的形状。
+列印詞表中所有詞元向量的形狀。
 
 ```{.python .input}
 #@tab all
@@ -182,7 +182,7 @@ embeds = glove_embedding[vocab.idx_to_token]
 embeds.shape
 ```
 
-我们使用这些预训练的词向量来表示评论中的词元，并且在训练期间不要更新这些向量。
+我們使用這些預訓練的詞向量來表示評論中的詞元，並且在訓練期間不要更新這些向量。
 
 ```{.python .input}
 net.embedding.weight.set_data(embeds)
@@ -201,9 +201,9 @@ net.embedding.weight.set_value(embeds)
 net.embedding.weight.stop_gradient = False
 ```
 
-## 训练和评估模型
+## 訓練和評估模型
 
-现在我们可以训练双向循环神经网络进行情感分析。
+現在我們可以訓練雙向迴圈神經網路進行情感分析。
 
 ```{.python .input}
 lr, num_epochs = 0.01, 5
@@ -231,12 +231,12 @@ d2l.train_ch13(net, train_iter, test_iter, loss, trainer, num_epochs,
     devices)
 ```
 
-我们定义以下函数来使用训练好的模型`net`预测文本序列的情感。
+我們定義以下函式來使用訓練好的模型`net`預測文字序列的情感。
 
 ```{.python .input}
 #@save
 def predict_sentiment(net, vocab, sequence):
-    """预测文本序列的情感"""
+    """預測文字序列的情感"""
     sequence = np.array(vocab[sequence.split()], ctx=d2l.try_gpu())
     label = np.argmax(net(sequence.reshape(1, -1)), axis=1)
     return 'positive' if label == 1 else 'negative'
@@ -246,7 +246,7 @@ def predict_sentiment(net, vocab, sequence):
 #@tab pytorch
 #@save
 def predict_sentiment(net, vocab, sequence):
-    """预测文本序列的情感"""
+    """預測文字序列的情感"""
     sequence = torch.tensor(vocab[sequence.split()], device=d2l.try_gpu())
     label = torch.argmax(net(sequence.reshape(1, -1)), dim=1)
     return 'positive' if label == 1 else 'negative'
@@ -256,13 +256,13 @@ def predict_sentiment(net, vocab, sequence):
 #@tab paddle
 #@save
 def predict_sentiment(net, vocab, sequence):
-    """预测文本序列的情感"""
+    """預測文字序列的情感"""
     sequence = paddle.to_tensor(vocab[sequence.split()], place=d2l.try_gpu())
     label = paddle.argmax(net(sequence.reshape((1, -1))), axis=1)
     return 'positive' if label == 1 else 'negative'
 ```
 
-最后，让我们使用训练好的模型对两个简单的句子进行情感预测。
+最後，讓我們使用訓練好的模型對兩個簡單的句子進行情感預測。
 
 ```{.python .input}
 #@tab all
@@ -274,16 +274,16 @@ predict_sentiment(net, vocab, 'this movie is so great')
 predict_sentiment(net, vocab, 'this movie is so bad')
 ```
 
-## 小结
+## 小結
 
-* 预训练的词向量可以表示文本序列中的各个词元。
-* 双向循环神经网络可以表示文本序列。例如通过连结初始和最终时间步的隐状态，可以使用全连接的层将该单个文本表示转换为类别。
+* 預訓練的詞向量可以表示文字序列中的各個詞元。
+* 雙向迴圈神經網路可以表示文字序列。例如透過連結初始和最終時間步的隱狀態，可以使用全連線的層將該單個文字表示轉換為類別。
 
-## 练习
+## 練習
 
-1. 增加迭代轮数可以提高训练和测试的准确性吗？调优其他超参数怎么样？
-1. 使用较大的预训练词向量，例如300维的GloVe嵌入。它是否提高了分类精度？
-1. 是否可以通过spaCy词元化来提高分类精度？需要安装Spacy（`pip install spacy`）和英语语言包（`python -m spacy download en`）。在代码中，首先导入Spacy（`import spacy`）。然后，加载Spacy英语软件包（`spacy_en = spacy.load('en')`）。最后，定义函数`def tokenizer(text): return [tok.text for tok in spacy_en.tokenizer(text)]`并替换原来的`tokenizer`函数。请注意GloVe和spaCy中短语标记的不同形式。例如，短语标记“new york”在GloVe中的形式是“new-york”，而在spaCy词元化之后的形式是“new york”。
+1. 增加迭代輪數可以提高訓練和測試的準確性嗎？調優其他超引數怎麼樣？
+1. 使用較大的預訓練詞向量，例如300維的GloVe嵌入。它是否提高了分類精度？
+1. 是否可以透過spaCy詞元化來提高分類精度？需要安裝Spacy（`pip install spacy`）和英語語言套件（`python -m spacy download en`）。在程式碼中，首先匯入Spacy（`import spacy`）。然後，載入Spacy英語軟體套件（`spacy_en = spacy.load('en')`）。最後，定義函式`def tokenizer(text): return [tok.text for tok in spacy_en.tokenizer(text)]`並替換原來的`tokenizer`函式。請注意GloVe和spaCy中短語標記的不同形式。例如，短語標記『new york』在GloVe中的形式是『new-york』，而在spaCy詞元化之後的形式是『new york』。
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/5723)

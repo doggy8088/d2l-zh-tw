@@ -287,7 +287,7 @@ fine-tuning BERT for natural language inference
 requires only an extra MLP consisting of two fully connected layers
 (see `self.hidden` and `self.output` in the following `BERTClassifier` class).
 This MLP transforms the
-BERT representation of the special “&lt;cls&gt;” token,
+BERT representation of the special 『&lt;cls&gt;』 token,
 which encodes the information of both the premise and the hypothesis,
 into three outputs of natural language inference:
 entailment, contradiction, and neutral.

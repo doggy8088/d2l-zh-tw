@@ -1,25 +1,25 @@
-# 含并行连结的网络（GoogLeNet）
+# 含並行連結的網路（GoogLeNet）
 :label:`sec_googlenet`
 
-在2014年的ImageNet图像识别挑战赛中，一个名叫*GoogLeNet* :cite:`Szegedy.Liu.Jia.ea.2015`的网络架构大放异彩。
-GoogLeNet吸收了NiN中串联网络的思想，并在此基础上做了改进。
-这篇论文的一个重点是解决了什么样大小的卷积核最合适的问题。
-毕竟，以前流行的网络使用小到$1 \times 1$，大到$11 \times 11$的卷积核。
-本文的一个观点是，有时使用不同大小的卷积核组合是有利的。
-本节将介绍一个稍微简化的GoogLeNet版本：我们省略了一些为稳定训练而添加的特殊特性，现在有了更好的训练方法，这些特性不是必要的。
+在2014年的ImageNet影象識別挑戰賽中，一個名叫*GoogLeNet* :cite:`Szegedy.Liu.Jia.ea.2015`的網路架構大放異彩。
+GoogLeNet吸收了NiN中串聯網路的思想，並在此基礎上做了改進。
+這篇論文的一個重點是解決了什麼樣大小的卷積核最合適的問題。
+畢竟，以前流行的網路使用小到$1 \times 1$，大到$11 \times 11$的卷積核。
+本文的一個觀點是，有時使用不同大小的卷積核組合是有利的。
+本節將介紹一個稍微簡化的GoogLeNet版本：我們省略了一些為穩定訓練而新增的特殊屬性，現在有了更好的訓練方法，這些屬性不是必要的。
 
-## (**Inception块**)
+## (**Inception區塊**)
 
-在GoogLeNet中，基本的卷积块被称为*Inception块*（Inception block）。这很可能得名于电影《盗梦空间》（Inception），因为电影中的一句话“我们需要走得更深”（“We need to go deeper”）。
+在GoogLeNet中，基本的卷積區塊被稱為*Inception區塊*（Inception block）。這很可能得名於電影《盜夢空間》（Inception），因為電影中的一句話『我們需要走得更深』（『We need to go deeper』）。
 
-![Inception块的架构。](../img/inception.svg)
+![Inception區塊的架構。](../img/inception.svg)
 :label:`fig_inception`
 
-如 :numref:`fig_inception`所示，Inception块由四条并行路径组成。
-前三条路径使用窗口大小为$1\times 1$、$3\times 3$和$5\times 5$的卷积层，从不同空间大小中提取信息。
-中间的两条路径在输入上执行$1\times 1$卷积，以减少通道数，从而降低模型的复杂性。
-第四条路径使用$3\times 3$最大汇聚层，然后使用$1\times 1$卷积层来改变通道数。
-这四条路径都使用合适的填充来使输入与输出的高和宽一致，最后我们将每条线路的输出在通道维度上连结，并构成Inception块的输出。在Inception块中，通常调整的超参数是每层输出通道数。
+如 :numref:`fig_inception`所示，Inception區塊由四條並行路徑組成。
+前三條路徑使用視窗大小為$1\times 1$、$3\times 3$和$5\times 5$的卷積層，從不同空間大小中提取訊息。
+中間的兩條路徑在輸入上執行$1\times 1$卷積，以減少通道數，從而降低模型的複雜性。
+第四條路徑使用$3\times 3$最大彙聚層，然後使用$1\times 1$卷積層來改變通道數。
+這四條路徑都使用合適的填充來使輸入與輸出的高和寬一致，最後我們將每條線路的輸出在通道維度上連結，並構成Inception區塊的輸出。在Inception塊中，通常調整的超引數是每層輸出通道數。
 
 ```{.python .input}
 from d2l import mxnet as d2l
@@ -28,20 +28,20 @@ from mxnet.gluon import nn
 npx.set_np()
 
 class Inception(nn.Block):
-    # c1--c4是每条路径的输出通道数
+    # c1--c4是每條路徑的輸出通道數
     def __init__(self, c1, c2, c3, c4, **kwargs):
         super(Inception, self).__init__(**kwargs)
-        # 线路1，单1x1卷积层
+        # 線路1，單1x1卷積層
         self.p1_1 = nn.Conv2D(c1, kernel_size=1, activation='relu')
-        # 线路2，1x1卷积层后接3x3卷积层
+        # 線路2，1x1卷積層後接3x3卷積層
         self.p2_1 = nn.Conv2D(c2[0], kernel_size=1, activation='relu')
         self.p2_2 = nn.Conv2D(c2[1], kernel_size=3, padding=1,
                               activation='relu')
-        # 线路3，1x1卷积层后接5x5卷积层
+        # 線路3，1x1卷積層後接5x5卷積層
         self.p3_1 = nn.Conv2D(c3[0], kernel_size=1, activation='relu')
         self.p3_2 = nn.Conv2D(c3[1], kernel_size=5, padding=2,
                               activation='relu')
-        # 线路4，3x3最大汇聚层后接1x1卷积层
+        # 線路4，3x3最大彙聚層後接1x1卷積層
         self.p4_1 = nn.MaxPool2D(pool_size=3, strides=1, padding=1)
         self.p4_2 = nn.Conv2D(c4, kernel_size=1, activation='relu')
 
@@ -50,7 +50,7 @@ class Inception(nn.Block):
         p2 = self.p2_2(self.p2_1(x))
         p3 = self.p3_2(self.p3_1(x))
         p4 = self.p4_2(self.p4_1(x))
-        # 在通道维度上连结输出
+        # 在通道維度上連結輸出
         return np.concatenate((p1, p2, p3, p4), axis=1)
 ```
 
@@ -62,18 +62,18 @@ from torch import nn
 from torch.nn import functional as F
 
 class Inception(nn.Module):
-    # c1--c4是每条路径的输出通道数
+    # c1--c4是每條路徑的輸出通道數
     def __init__(self, in_channels, c1, c2, c3, c4, **kwargs):
         super(Inception, self).__init__(**kwargs)
-        # 线路1，单1x1卷积层
+        # 線路1，單1x1卷積層
         self.p1_1 = nn.Conv2d(in_channels, c1, kernel_size=1)
-        # 线路2，1x1卷积层后接3x3卷积层
+        # 線路2，1x1卷積層後接3x3卷積層
         self.p2_1 = nn.Conv2d(in_channels, c2[0], kernel_size=1)
         self.p2_2 = nn.Conv2d(c2[0], c2[1], kernel_size=3, padding=1)
-        # 线路3，1x1卷积层后接5x5卷积层
+        # 線路3，1x1卷積層後接5x5卷積層
         self.p3_1 = nn.Conv2d(in_channels, c3[0], kernel_size=1)
         self.p3_2 = nn.Conv2d(c3[0], c3[1], kernel_size=5, padding=2)
-        # 线路4，3x3最大汇聚层后接1x1卷积层
+        # 線路4，3x3最大彙聚層後接1x1卷積層
         self.p4_1 = nn.MaxPool2d(kernel_size=3, stride=1, padding=1)
         self.p4_2 = nn.Conv2d(in_channels, c4, kernel_size=1)
 
@@ -82,7 +82,7 @@ class Inception(nn.Module):
         p2 = F.relu(self.p2_2(F.relu(self.p2_1(x))))
         p3 = F.relu(self.p3_2(F.relu(self.p3_1(x))))
         p4 = F.relu(self.p4_2(self.p4_1(x)))
-        # 在通道维度上连结输出
+        # 在通道維度上連結輸出
         return torch.cat((p1, p2, p3, p4), dim=1)
 ```
 
@@ -92,20 +92,20 @@ from d2l import tensorflow as d2l
 import tensorflow as tf
 
 class Inception(tf.keras.Model):
-    # c1--c4是每条路径的输出通道数
+    # c1--c4是每條路徑的輸出通道數
     def __init__(self, c1, c2, c3, c4):
         super().__init__()
-        # 线路1，单1x1卷积层
+        # 線路1，單1x1卷積層
         self.p1_1 = tf.keras.layers.Conv2D(c1, 1, activation='relu')
-        # 线路2，1x1卷积层后接3x3卷积层
+        # 線路2，1x1卷積層後接3x3卷積層
         self.p2_1 = tf.keras.layers.Conv2D(c2[0], 1, activation='relu')
         self.p2_2 = tf.keras.layers.Conv2D(c2[1], 3, padding='same',
                                            activation='relu')
-        # 线路3，1x1卷积层后接5x5卷积层
+        # 線路3，1x1卷積層後接5x5卷積層
         self.p3_1 = tf.keras.layers.Conv2D(c3[0], 1, activation='relu')
         self.p3_2 = tf.keras.layers.Conv2D(c3[1], 5, padding='same',
                                            activation='relu')
-        # 线路4，3x3最大汇聚层后接1x1卷积层
+        # 線路4，3x3最大彙聚層後接1x1卷積層
         self.p4_1 = tf.keras.layers.MaxPool2D(3, 1, padding='same')
         self.p4_2 = tf.keras.layers.Conv2D(c4, 1, activation='relu')
 
@@ -115,7 +115,7 @@ class Inception(tf.keras.Model):
         p2 = self.p2_2(self.p2_1(x))
         p3 = self.p3_2(self.p3_1(x))
         p4 = self.p4_2(self.p4_1(x))
-        # 在通道维度上连结输出
+        # 在通道維度上連結輸出
         return tf.keras.layers.Concatenate()([p1, p2, p3, p4])
 ```
 
@@ -129,18 +129,18 @@ import paddle.nn as nn
 import paddle.nn.functional as F
 
 class Inception(nn.Layer):
-    # c1--c4是每条路径的输出通道数
+    # c1--c4是每條路徑的輸出通道數
     def __init__(self, in_channels, c1, c2, c3, c4, **kwargs):
         super(Inception, self).__init__(**kwargs)
-        # 线路1，单1x1卷积层
+        # 線路1，單1x1卷積層
         self.p1_1 = nn.Conv2D(in_channels, c1, kernel_size=1)
-        # 线路2，1x1卷积层后接3x3卷积层
+        # 線路2，1x1卷積層後接3x3卷積層
         self.p2_1 = nn.Conv2D(in_channels, c2[0], kernel_size=1)
         self.p2_2 = nn.Conv2D(c2[0], c2[1], kernel_size=3, padding=1)
-        # 线路3，1x1卷积层后接5x5卷积层
+        # 線路3，1x1卷積層後接5x5卷積層
         self.p3_1 = nn.Conv2D(in_channels, c3[0], kernel_size=1)
         self.p3_2 = nn.Conv2D(c3[0], c3[1], kernel_size=5, padding=2)
-        # 线路4，3x3最大池化层后接1x1卷积层
+        # 線路4，3x3最大池化層後接1x1卷積層
         self.p4_1 = nn.MaxPool2D(kernel_size=3, stride=1, padding=1)
         self.p4_2 = nn.Conv2D(in_channels, c4, kernel_size=1)
 
@@ -149,23 +149,23 @@ class Inception(nn.Layer):
         p2 = F.relu(self.p2_2(F.relu(self.p2_1(x))))
         p3 = F.relu(self.p3_2(F.relu(self.p3_1(x))))
         p4 = F.relu(self.p4_2(self.p4_1(x)))
-        # 在通道维度上连结输出
+        # 在通道維度上連結輸出
         return paddle.concat(x=[p1, p2, p3, p4], axis=1)
 ```
 
-那么为什么GoogLeNet这个网络如此有效呢？
-首先我们考虑一下滤波器（filter）的组合，它们可以用各种滤波器尺寸探索图像，这意味着不同大小的滤波器可以有效地识别不同范围的图像细节。
-同时，我们可以为不同的滤波器分配不同数量的参数。
+那麼為什麼GoogLeNet這個網路如此有效呢？
+首先我們考慮一下濾波器（filter）的組合，它們可以用各種濾波器尺寸探索影象，這意味著不同大小的濾波器可以有效地識別不同範圍的影象細節。
+同時，我們可以為不同的濾波器分配不同數量的引數。
 
 ## [**GoogLeNet模型**]
 
-如 :numref:`fig_inception_full`所示，GoogLeNet一共使用9个Inception块和全局平均汇聚层的堆叠来生成其估计值。Inception块之间的最大汇聚层可降低维度。
-第一个模块类似于AlexNet和LeNet，Inception块的组合从VGG继承，全局平均汇聚层避免了在最后使用全连接层。
+如 :numref:`fig_inception_full`所示，GoogLeNet一共使用9個Inception區塊和全域平均彙聚層的堆疊來生成其估計值。Inception區塊之間的最大彙聚層可降低維度。
+第一個模組類似於AlexNet和LeNet，Inception區塊的組合從VGG繼承，全域平均彙聚層避免了在最後使用全連線層。
 
-![GoogLeNet架构。](../img/inception-full.svg)
+![GoogLeNet架構。](../img/inception-full.svg)
 :label:`fig_inception_full`
 
-现在，我们逐一实现GoogLeNet的每个模块。第一个模块使用64个通道、$7\times 7$卷积层。
+現在，我們逐一實現GoogLeNet的每個模組。第一個模組使用64個通道、$7\times 7$卷積層。
 
 ```{.python .input}
 b1 = nn.Sequential()
@@ -196,8 +196,8 @@ b1 = nn.Sequential(nn.Conv2D(1, 64, kernel_size=7, stride=2, padding=3),
                    nn.MaxPool2D(kernel_size=3, stride=2,padding=1))
 ```
 
-第二个模块使用两个卷积层：第一个卷积层是64个通道、$1\times 1$卷积层；第二个卷积层使用将通道数量增加三倍的$3\times 3$卷积层。
-这对应于Inception块中的第二条路径。
+第二個模組使用兩個卷積層：第一個卷積層是64個通道、$1\times 1$卷積層；第二個卷積層使用將通道數量增加三倍的$3\times 3$卷積層。
+這對應於Inception塊中的第二條路徑。
 
 ```{.python .input}
 b2 = nn.Sequential()
@@ -233,10 +233,10 @@ b2 = nn.Sequential(nn.Conv2D(64, 64, kernel_size=1),
                    nn.MaxPool2D(kernel_size=3, stride=2, padding=1))
 ```
 
-第三个模块串联两个完整的Inception块。
-第一个Inception块的输出通道数为$64+128+32+32=256$，四个路径之间的输出通道数量比为$64:128:32:32=2:4:1:1$。
-第二个和第三个路径首先将输入通道的数量分别减少到$96/192=1/2$和$16/192=1/12$，然后连接第二个卷积层。第二个Inception块的输出通道数增加到$128+192+96+64=480$，四个路径之间的输出通道数量比为$128:192:96:64 = 4:6:3:2$。
-第二条和第三条路径首先将输入通道的数量分别减少到$128/256=1/2$和$32/256=1/8$。
+第三個模組串聯兩個完整的Inception區塊。
+第一個Inception區塊的輸出通道數為$64+128+32+32=256$，四個路徑之間的輸出通道數量比為$64:128:32:32=2:4:1:1$。
+第二個和第三個路徑首先將輸入通道的數量分別減少到$96/192=1/2$和$16/192=1/12$，然後連線第二個卷積層。第二個Inception區塊的輸出通道數增加到$128+192+96+64=480$，四個路徑之間的輸出通道數量比為$128:192:96:64 = 4:6:3:2$。
+第二條和第三條路徑首先將輸入通道的數量分別減少到$128/256=1/2$和$32/256=1/8$。
 
 ```{.python .input}
 b3 = nn.Sequential()
@@ -268,11 +268,11 @@ b3 = nn.Sequential(Inception(192, 64, (96, 128), (16, 32), 32),
                    nn.MaxPool2D(kernel_size=3, stride=2, padding=1))
 ```
 
-第四模块更加复杂，
-它串联了5个Inception块，其输出通道数分别是$192+208+48+64=512$、$160+224+64+64=512$、$128+256+64+64=512$、$112+288+64+64=528$和$256+320+128+128=832$。
-这些路径的通道数分配和第三模块中的类似，首先是含$3×3$卷积层的第二条路径输出最多通道，其次是仅含$1×1$卷积层的第一条路径，之后是含$5×5$卷积层的第三条路径和含$3×3$最大汇聚层的第四条路径。
-其中第二、第三条路径都会先按比例减小通道数。
-这些比例在各个Inception块中都略有不同。
+第四模組更加複雜，
+它串聯了5個Inception區塊，其輸出通道數分別是$192+208+48+64=512$、$160+224+64+64=512$、$128+256+64+64=512$、$112+288+64+64=528$和$256+320+128+128=832$。
+這些路徑的通道數分配和第三模組中的類似，首先是含$3×3$卷積層的第二條路徑輸出最多通道，其次是僅含$1×1$卷積層的第一條路徑，之後是含$5×5$卷積層的第三條路徑和含$3×3$最大彙聚層的第四條路徑。
+其中第二、第三條路徑都會先按比例減小通道數。
+這些比例在各個Inception塊中都略有不同。
 
 ```{.python .input}
 b4 = nn.Sequential()
@@ -316,10 +316,10 @@ b4 = nn.Sequential(Inception(480, 192, (96, 208), (16, 48), 64),
                    nn.MaxPool2D(kernel_size=3, stride=2, padding=1))
 ```
 
-第五模块包含输出通道数为$256+320+128+128=832$和$384+384+128+128=1024$的两个Inception块。
-其中每条路径通道数的分配思路和第三、第四模块中的一致，只是在具体数值上有所不同。
-需要注意的是，第五模块的后面紧跟输出层，该模块同NiN一样使用全局平均汇聚层，将每个通道的高和宽变成1。
-最后我们将输出变成二维数组，再接上一个输出个数为标签类别数的全连接层。
+第五模組包含輸出通道數為$256+320+128+128=832$和$384+384+128+128=1024$的兩個Inception區塊。
+其中每條路徑通道數的分配思路和第三、第四模組中的一致，只是在具體數值上有所不同。
+需要注意的是，第五模組的後面緊跟輸出層，該模組同NiN一樣使用全域平均彙聚層，將每個通道的高和寬變成1。
+最後我們將輸出變成二維陣列，再接上一個輸出個數為標籤類別數的全連線層。
 
 ```{.python .input}
 b5 = nn.Sequential()
@@ -351,8 +351,8 @@ def b5():
         tf.keras.layers.Flatten()
     ])
 
-# “net”必须是一个将被传递给“d2l.train_ch6（）”的函数。
-# 为了利用我们现有的CPU/GPU设备，这样模型构建/编译需要在“strategy.scope()”
+# 『net』必須是一個將被傳遞給『d2l.train_ch6（）』的函式。
+# 為了利用我們現有的CPU/GPU裝置，這樣模型建立/編譯需要在『strategy.scope()』
 def net():
     return tf.keras.Sequential([b1(), b2(), b3(), b4(), b5(),
                                 tf.keras.layers.Dense(10)])
@@ -368,8 +368,8 @@ b5 = nn.Sequential(Inception(832, 256, (160, 320), (32, 128), 128),
 net = nn.Sequential(b1, b2, b3, b4, b5, nn.Linear(1024, 10))
 ```
 
-GoogLeNet模型的计算复杂，而且不如VGG那样便于修改通道数。
-[**为了使Fashion-MNIST上的训练短小精悍，我们将输入的高和宽从224降到96**]，这简化了计算。下面演示各个模块输出的形状变化。
+GoogLeNet模型的計算複雜，而且不如VGG那樣便於修改通道數。
+[**為了使Fashion-MNIST上的訓練短小精悍，我們將輸入的高和寬從224降到96**]，這簡化了計算。下面示範各個模組輸出的形狀變化。
 
 ```{.python .input}
 X = np.random.uniform(size=(1, 1, 96, 96))
@@ -403,9 +403,9 @@ for layer in net:
     print(layer.__class__.__name__,'output shape:\t', X.shape)
 ```
 
-## [**训练模型**]
+## [**訓練模型**]
 
-和以前一样，我们使用Fashion-MNIST数据集来训练我们的模型。在训练之前，我们将图片转换为$96 \times 96$分辨率。
+和以前一樣，我們使用Fashion-MNIST資料集來訓練我們的模型。在訓練之前，我們將圖片轉換為$96 \times 96$解析度。
 
 ```{.python .input}
 #@tab all
@@ -414,21 +414,21 @@ train_iter, test_iter = d2l.load_data_fashion_mnist(batch_size, resize=96)
 d2l.train_ch6(net, train_iter, test_iter, num_epochs, lr, d2l.try_gpu())
 ```
 
-## 小结
+## 小結
 
-* Inception块相当于一个有4条路径的子网络。它通过不同窗口形状的卷积层和最大汇聚层来并行抽取信息，并使用$1×1$卷积层减少每像素级别上的通道维数从而降低模型复杂度。
-*  GoogLeNet将多个设计精细的Inception块与其他层（卷积层、全连接层）串联起来。其中Inception块的通道数分配之比是在ImageNet数据集上通过大量的实验得来的。
-* GoogLeNet和它的后继者们一度是ImageNet上最有效的模型之一：它以较低的计算复杂度提供了类似的测试精度。
+* Inception區塊相當於一個有4條路徑的子網路。它透過不同視窗形狀的卷積層和最大彙聚層來並行抽取訊息，並使用$1×1$卷積層減少每畫素級別上的通道維數從而降低模型複雜度。
+*  GoogLeNet將多個設計精細的Inception區塊與其他層（卷積層、全連線層）串聯起來。其中Inception區塊的通道數分配之比是在ImageNet資料集上透過大量的實驗得來的。
+* GoogLeNet和它的後繼者們一度是ImageNet上最有效的模型之一：它以較低的計算複雜度提供了類似的測試精度。
 
-## 练习
+## 練習
 
-1. GoogLeNet有一些后续版本。尝试实现并运行它们，然后观察实验结果。这些后续版本包括：
-    * 添加批量规范化层 :cite:`Ioffe.Szegedy.2015`（batch normalization），在 :numref:`sec_batch_norm`中将介绍；
-    * 对Inception模块进行调整 :cite:`Szegedy.Vanhoucke.Ioffe.ea.2016`；
-    * 使用标签平滑（label smoothing）进行模型正则化 :cite:`Szegedy.Vanhoucke.Ioffe.ea.2016`；
-    * 加入残差连接 :cite:`Szegedy.Ioffe.Vanhoucke.ea.2017`。（ :numref:`sec_resnet`将介绍）。
-1. 使用GoogLeNet的最小图像大小是多少？
-1. 将AlexNet、VGG和NiN的模型参数大小与GoogLeNet进行比较。后两个网络架构是如何显著减少模型参数大小的？
+1. GoogLeNet有一些後續版本。嘗試實現並執行它們，然後觀察實驗結果。這些後續版本包括：
+    * 新增批次規範化層 :cite:`Ioffe.Szegedy.2015`（batch normalization），在 :numref:`sec_batch_norm`中將介紹；
+    * 對Inception模組進行調整 :cite:`Szegedy.Vanhoucke.Ioffe.ea.2016`；
+    * 使用標籤平滑（label smoothing）進行模型正則化 :cite:`Szegedy.Vanhoucke.Ioffe.ea.2016`；
+    * 加入殘差連線 :cite:`Szegedy.Ioffe.Vanhoucke.ea.2017`。（ :numref:`sec_resnet`將介紹）。
+1. 使用GoogLeNet的最小影象大小是多少？
+1. 將AlexNet、VGG和NiN的模型引數大小與GoogLeNet進行比較。後兩個網路架構是如何顯著減少模型引數大小的？
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/1873)

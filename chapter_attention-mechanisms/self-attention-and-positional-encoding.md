@@ -1,15 +1,15 @@
-# 自注意力和位置编码
+# 自注意力和位置編碼
 :label:`sec_self-attention-and-positional-encoding`
 
-在深度学习中，经常使用卷积神经网络（CNN）或循环神经网络（RNN）对序列进行编码。
-想象一下，有了注意力机制之后，我们将词元序列输入注意力池化中，
-以便同一组词元同时充当查询、键和值。
-具体来说，每个查询都会关注所有的键－值对并生成一个注意力输出。
-由于查询、键和值来自同一组输入，因此被称为
+在深度學習中，經常使用卷積神經網路（CNN）或迴圈神經網路（RNN）對序列進行編碼。
+想象一下，有了注意力機制之後，我們將詞元序列輸入注意力池化中，
+以便同一組詞元同時充當查詢、鍵和值。
+具體來說，每個查詢都會關注所有的鍵－值對並生成一個注意力輸出。
+由於查詢、鍵和值來自同一組輸入，因此被稱為
 *自注意力*（self-attention）
  :cite:`Lin.Feng.Santos.ea.2017,Vaswani.Shazeer.Parmar.ea.2017`，
-也被称为*内部注意力*（intra-attention） :cite:`Cheng.Dong.Lapata.2016,Parikh.Tackstrom.Das.ea.2016,Paulus.Xiong.Socher.2017`。
-本节将使用自注意力进行序列编码，以及如何使用序列的顺序作为补充信息。
+也被稱為*內部注意力*（intra-attention） :cite:`Cheng.Dong.Lapata.2016,Parikh.Tackstrom.Das.ea.2016,Paulus.Xiong.Socher.2017`。
+本節將使用自注意力進行序列編碼，以及如何使用序列的順序作為補充訊息。
 
 ```{.python .input}
 from d2l import mxnet as d2l
@@ -46,17 +46,17 @@ from paddle import nn
 
 ## [**自注意力**]
 
-给定一个由词元组成的输入序列$\mathbf{x}_1, \ldots, \mathbf{x}_n$，
+給定一個由詞元組成的輸入序列$\mathbf{x}_1, \ldots, \mathbf{x}_n$，
 其中任意$\mathbf{x}_i \in \mathbb{R}^d$（$1 \leq i \leq n$）。
-该序列的自注意力输出为一个长度相同的序列
+該序列的自注意力輸出為一個長度相同的序列
 $\mathbf{y}_1, \ldots, \mathbf{y}_n$，其中：
 
 $$\mathbf{y}_i = f(\mathbf{x}_i, (\mathbf{x}_1, \mathbf{x}_1), \ldots, (\mathbf{x}_n, \mathbf{x}_n)) \in \mathbb{R}^d$$
 
-根据 :eqref:`eq_attn-pooling`中定义的注意力汇聚函数$f$。
-下面的代码片段是基于多头注意力对一个张量完成自注意力的计算，
-张量的形状为（批量大小，时间步的数目或词元序列的长度，$d$）。
-输出与输入的张量形状相同。
+根據 :eqref:`eq_attn-pooling`中定義的注意力彙聚函式$f$。
+下面的程式碼片段是基於多頭注意力對一個張量完成自注意力的計算，
+張量的形狀為（批次大小，時間步的數目或詞元序列的長度，$d$）。
+輸出與輸入的張量形狀相同。
 
 ```{.python .input}
 num_hiddens, num_heads = 100, 5
@@ -101,75 +101,75 @@ X = tf.ones((batch_size, num_queries, num_hiddens))
 attention(X, X, X, valid_lens, training=False).shape
 ```
 
-## 比较卷积神经网络、循环神经网络和自注意力
+## 比較卷積神經網路、迴圈神經網路和自注意力
 :label:`subsec_cnn-rnn-self-attention`
 
-接下来比较下面几个架构，目标都是将由$n$个词元组成的序列映射到另一个长度相等的序列，其中的每个输入词元或输出词元都由$d$维向量表示。具体来说，将比较的是卷积神经网络、循环神经网络和自注意力这几个架构的计算复杂性、顺序操作和最大路径长度。请注意，顺序操作会妨碍并行计算，而任意的序列位置组合之间的路径越短，则能更轻松地学习序列中的远距离依赖关系 :cite:`Hochreiter.Bengio.Frasconi.ea.2001`。
+接下來比較下面幾個架構，目標都是將由$n$個詞元組成的序列對映到另一個長度相等的序列，其中的每個輸入詞元或輸出詞元都由$d$維向量表示。具體來說，將比較的是卷積神經網路、迴圈神經網路和自注意力這幾個架構的計算複雜性、順序操作和最大路徑長度。請注意，順序操作會妨礙並行計算，而任意的序列位置組合之間的路徑越短，則能更輕鬆地學習序列中的遠距離依賴關係 :cite:`Hochreiter.Bengio.Frasconi.ea.2001`。
 
-![比较卷积神经网络（填充词元被忽略）、循环神经网络和自注意力三种架构](../img/cnn-rnn-self-attention.svg)
+![比較卷積神經網路（填充詞元被忽略）、迴圈神經網路和自注意力三種架構](../img/cnn-rnn-self-attention.svg)
 :label:`fig_cnn-rnn-self-attention`
 
-考虑一个卷积核大小为$k$的卷积层。
-在后面的章节将提供关于使用卷积神经网络处理序列的更多详细信息。
-目前只需要知道的是，由于序列长度是$n$，输入和输出的通道数量都是$d$，
-所以卷积层的计算复杂度为$\mathcal{O}(knd^2)$。
+考慮一個卷積核大小為$k$的卷積層。
+在後麵的章節將提供關於使用卷積神經網路處理序列的更多詳細訊息。
+目前只需要知道的是，由於序列長度是$n$，輸入和輸出的通道數量都是$d$，
+所以卷積層的計算複雜度為$\mathcal{O}(knd^2)$。
 如 :numref:`fig_cnn-rnn-self-attention`所示，
-卷积神经网络是分层的，因此为有$\mathcal{O}(1)$个顺序操作，
-最大路径长度为$\mathcal{O}(n/k)$。
-例如，$\mathbf{x}_1$和$\mathbf{x}_5$处于
- :numref:`fig_cnn-rnn-self-attention`中卷积核大小为3的双层卷积神经网络的感受野内。
+卷積神經網路是分層的，因此為有$\mathcal{O}(1)$個順序操作，
+最大路徑長度為$\mathcal{O}(n/k)$。
+例如，$\mathbf{x}_1$和$\mathbf{x}_5$處於
+ :numref:`fig_cnn-rnn-self-attention`中卷積核大小為3的雙層卷積神經網路的感受野內。
 
-当更新循环神经网络的隐状态时，
-$d \times d$权重矩阵和$d$维隐状态的乘法计算复杂度为$\mathcal{O}(d^2)$。
-由于序列长度为$n$，因此循环神经网络层的计算复杂度为$\mathcal{O}(nd^2)$。
-根据 :numref:`fig_cnn-rnn-self-attention`，
-有$\mathcal{O}(n)$个顺序操作无法并行化，最大路径长度也是$\mathcal{O}(n)$。
+當更新迴圈神經網路的隱狀態時，
+$d \times d$權重矩陣和$d$維隱狀態的乘法計算複雜度為$\mathcal{O}(d^2)$。
+由於序列長度為$n$，因此迴圈神經網路層的計算複雜度為$\mathcal{O}(nd^2)$。
+根據 :numref:`fig_cnn-rnn-self-attention`，
+有$\mathcal{O}(n)$個順序操作無法並行化，最大路徑長度也是$\mathcal{O}(n)$。
 
-在自注意力中，查询、键和值都是$n \times d$矩阵。
-考虑 :eqref:`eq_softmax_QK_V`中缩放的”点－积“注意力，
-其中$n \times d$矩阵乘以$d \times n$矩阵。
-之后输出的$n \times n$矩阵乘以$n \times d$矩阵。
-因此，自注意力具有$\mathcal{O}(n^2d)$计算复杂性。
-正如在 :numref:`fig_cnn-rnn-self-attention`中所讲，
-每个词元都通过自注意力直接连接到任何其他词元。
-因此，有$\mathcal{O}(1)$个顺序操作可以并行计算，
-最大路径长度也是$\mathcal{O}(1)$。
+在自注意力中，查詢、鍵和值都是$n \times d$矩陣。
+考慮 :eqref:`eq_softmax_QK_V`中縮放的』點－積『注意力，
+其中$n \times d$矩陣乘以$d \times n$矩陣。
+之後輸出的$n \times n$矩陣乘以$n \times d$矩陣。
+因此，自注意力具有$\mathcal{O}(n^2d)$計算複雜性。
+正如在 :numref:`fig_cnn-rnn-self-attention`中所講，
+每個詞元都透過自注意力直接連線到任何其他詞元。
+因此，有$\mathcal{O}(1)$個順序操作可以並行計算，
+最大路徑長度也是$\mathcal{O}(1)$。
 
-总而言之，卷积神经网络和自注意力都拥有并行计算的优势，
-而且自注意力的最大路径长度最短。
-但是因为其计算复杂度是关于序列长度的二次方，所以在很长的序列中计算会非常慢。
+總而言之，卷積神經網路和自注意力都擁有並行計算的優勢，
+而且自注意力的最大路徑長度最短。
+但是因為其計算複雜度是關於序列長度的二次方，所以在很長的序列中計算會非常慢。
 
-## [**位置编码**]
+## [**位置編碼**]
 :label:`subsec_positional-encoding`
 
-在处理词元序列时，循环神经网络是逐个的重复地处理词元的，
-而自注意力则因为并行计算而放弃了顺序操作。
-为了使用序列的顺序信息，通过在输入表示中添加
-*位置编码*（positional encoding）来注入绝对的或相对的位置信息。
-位置编码可以通过学习得到也可以直接固定得到。
-接下来描述的是基于正弦函数和余弦函数的固定位置编码
+在處理詞元序列時，迴圈神經網路是逐個的重複地處理詞元的，
+而自注意力則因為並行計算而放棄了順序操作。
+為了使用序列的順序訊息，透過在輸入表示中新增
+*位置編碼*（positional encoding）來注入絕對的或相對的位置訊息。
+位置編碼可以透過學習得到也可以直接固定得到。
+接下來描述的是基於正弦函式和餘弦函式的固定位置編碼
  :cite:`Vaswani.Shazeer.Parmar.ea.2017`。
 
-假设输入表示$\mathbf{X} \in \mathbb{R}^{n \times d}$
-包含一个序列中$n$个词元的$d$维嵌入表示。
-位置编码使用相同形状的位置嵌入矩阵
-$\mathbf{P} \in \mathbb{R}^{n \times d}$输出$\mathbf{X} + \mathbf{P}$，
-矩阵第$i$行、第$2j$列和$2j+1$列上的元素为：
+假設輸入表示$\mathbf{X} \in \mathbb{R}^{n \times d}$
+包含一個序列中$n$個詞元的$d$維嵌入表示。
+位置編碼使用相同形狀的位置嵌入矩陣
+$\mathbf{P} \in \mathbb{R}^{n \times d}$輸出$\mathbf{X} + \mathbf{P}$，
+矩陣第$i$行、第$2j$列和$2j+1$列上的元素為：
 
 $$\begin{aligned} p_{i, 2j} &= \sin\left(\frac{i}{10000^{2j/d}}\right),\\p_{i, 2j+1} &= \cos\left(\frac{i}{10000^{2j/d}}\right).\end{aligned}$$
 :eqlabel:`eq_positional-encoding-def`
 
-乍一看，这种基于三角函数的设计看起来很奇怪。
-在解释这个设计之前，让我们先在下面的`PositionalEncoding`类中实现它。
+乍一看，這種基於三角函數的設計看起來很奇怪。
+在解釋這個設計之前，讓我們先在下面的`PositionalEncoding`類別中實現它。
 
 ```{.python .input}
 #@save
 class PositionalEncoding(nn.Block):
-    """位置编码"""
+    """位置編碼"""
     def __init__(self, num_hiddens, dropout, max_len=1000):
         super(PositionalEncoding, self).__init__()
         self.dropout = nn.Dropout(dropout)
-        # 创建一个足够长的P
+        # 建立一個足夠長的P
         self.P = d2l.zeros((1, max_len, num_hiddens))
         X = d2l.arange(max_len).reshape(-1, 1) / np.power(
             10000, np.arange(0, num_hiddens, 2) / num_hiddens)
@@ -185,11 +185,11 @@ class PositionalEncoding(nn.Block):
 #@tab pytorch
 #@save
 class PositionalEncoding(nn.Module):
-    """位置编码"""
+    """位置編碼"""
     def __init__(self, num_hiddens, dropout, max_len=1000):
         super(PositionalEncoding, self).__init__()
         self.dropout = nn.Dropout(dropout)
-        # 创建一个足够长的P
+        # 建立一個足夠長的P
         self.P = d2l.zeros((1, max_len, num_hiddens))
         X = d2l.arange(max_len, dtype=torch.float32).reshape(
             -1, 1) / torch.pow(10000, torch.arange(
@@ -206,11 +206,11 @@ class PositionalEncoding(nn.Module):
 #@tab tensorflow
 #@save
 class PositionalEncoding(tf.keras.layers.Layer):
-    """位置编码"""
+    """位置編碼"""
     def __init__(self, num_hiddens, dropout, max_len=1000):
         super().__init__()
         self.dropout = tf.keras.layers.Dropout(dropout)
-        # 创建一个足够长的P
+        # 建立一個足夠長的P
         self.P = np.zeros((1, max_len, num_hiddens))
         X = np.arange(max_len, dtype=np.float32).reshape(
             -1,1)/np.power(10000, np.arange(
@@ -227,11 +227,11 @@ class PositionalEncoding(tf.keras.layers.Layer):
 #@tab paddle
 #@save
 class PositionalEncoding(nn.Layer):
-    """位置编码"""
+    """位置編碼"""
     def __init__(self, num_hiddens, dropout, max_len=1000):
         super(PositionalEncoding, self).__init__()
         self.dropout = nn.Dropout(dropout)
-        # 创建一个足够长的P
+        # 建立一個足夠長的P
         self.P = paddle.zeros((1, max_len, num_hiddens))
         X = paddle.arange(max_len, dtype=paddle.float32).reshape(
             (-1, 1)) / paddle.pow(paddle.to_tensor([10000.0]), paddle.arange(
@@ -244,10 +244,10 @@ class PositionalEncoding(nn.Layer):
         return self.dropout(X)
 ```
 
-在位置嵌入矩阵$\mathbf{P}$中，
-[**行代表词元在序列中的位置，列代表位置编码的不同维度**]。
-从下面的例子中可以看到位置嵌入矩阵的第$6$列和第$7$列的频率高于第$8$列和第$9$列。
-第$6$列和第$7$列之间的偏移量（第$8$列和第$9$列相同）是由于正弦函数和余弦函数的交替。
+在位置嵌入矩陣$\mathbf{P}$中，
+[**行代表詞元在序列中的位置，列代表位置編碼的不同維度**]。
+從下面的例子中可以看到位置嵌入矩陣的第$6$列和第$7$列的頻率高於第$8$列和第$9$列。
+第$6$列和第$7$列之間的偏移量（第$8$列和第$9$列相同）是由於正弦函式和餘弦函式的交替。
 
 ```{.python .input}
 encoding_dim, num_steps = 32, 60
@@ -291,22 +291,22 @@ d2l.plot(paddle.arange(num_steps), P[0, :, 6:10].T, xlabel='Row (position)',
          figsize=(6, 2.5), legend=["Col %d" % d for d in paddle.arange(6, 10)])
 ```
 
-### 绝对位置信息
+### 絕對位置訊息
 
-为了明白沿着编码维度单调降低的频率与绝对位置信息的关系，
-让我们打印出$0, 1, \ldots, 7$的[**二进制表示**]形式。
-正如所看到的，每个数字、每两个数字和每四个数字上的比特值
-在第一个最低位、第二个最低位和第三个最低位上分别交替。
+為了明白沿著編碼維度單調降低的頻率與絕對位置訊息的關係，
+讓我們列印出$0, 1, \ldots, 7$的[**二進位表示**]形式。
+正如所看到的，每個數字、每兩個數字和每四個數字上的比特值
+在第一個最低位、第二個最低位和第三個最低位上分別交替。
 
 ```{.python .input}
 #@tab all
 for i in range(8):
-    print(f'{i}的二进制是：{i:>03b}')
+    print(f'{i}的二進位是：{i:>03b}')
 ```
 
-在二进制表示中，较高比特位的交替频率低于较低比特位，
-与下面的热图所示相似，只是位置编码通过使用三角函数[**在编码维度上降低频率**]。
-由于输出是浮点数，因此此类连续表示比二进制表示法更节省空间。
+在二進位表示中，較高比特位的交替頻率低於較低比特位，
+與下面的熱圖所示相似，只是位置編碼透過使用三角函數[**在編碼維度上降低頻率**]。
+由於輸出是浮點數，因此此類連續表示比二進位表示法更節省空間。
 
 ```{.python .input}
 P = np.expand_dims(np.expand_dims(P[0, :, :], 0), 0)
@@ -335,16 +335,16 @@ d2l.show_heatmaps(P, xlabel='Column (encoding dimension)',
                   ylabel='Row (position)', figsize=(3.5, 4), cmap='Blues')
 ```
 
-### 相对位置信息
+### 相對位置訊息
 
-除了捕获绝对位置信息之外，上述的位置编码还允许模型学习得到输入序列中相对位置信息。
-这是因为对于任何确定的位置偏移$\delta$，位置$i + \delta$处
-的位置编码可以线性投影位置$i$处的位置编码来表示。
+除了捕獲絕對位置訊息之外，上述的位置編碼還允許模型學習得到輸入序列中相對位置訊息。
+這是因為對於任何確定的位置偏移$\delta$，位置$i + \delta$處
+的位置編碼可以線性投影位置$i$處的位置編碼來表示。
 
-这种投影的数学解释是，令$\omega_j = 1/10000^{2j/d}$，
-对于任何确定的位置偏移$\delta$，
- :eqref:`eq_positional-encoding-def`中的任何一对
-$(p_{i, 2j}, p_{i, 2j+1})$都可以线性投影到
+這種投影的數學解釋是，令$\omega_j = 1/10000^{2j/d}$，
+對於任何確定的位置偏移$\delta$，
+ :eqref:`eq_positional-encoding-def`中的任何一對
+$(p_{i, 2j}, p_{i, 2j+1})$都可以線性投影到
 $(p_{i+\delta, 2j}, p_{i+\delta, 2j+1})$：
 
 $$\begin{aligned}
@@ -356,18 +356,18 @@ $$\begin{aligned}
 \begin{bmatrix} p_{i+\delta, 2j} \\  p_{i+\delta, 2j+1} \\ \end{bmatrix},
 \end{aligned}$$
 
-$2\times 2$投影矩阵不依赖于任何位置的索引$i$。
+$2\times 2$投影矩陣不依賴於任何位置的索引$i$。
 
-## 小结
+## 小結
 
-* 在自注意力中，查询、键和值都来自同一组输入。
-* 卷积神经网络和自注意力都拥有并行计算的优势，而且自注意力的最大路径长度最短。但是因为其计算复杂度是关于序列长度的二次方，所以在很长的序列中计算会非常慢。
-* 为了使用序列的顺序信息，可以通过在输入表示中添加位置编码，来注入绝对的或相对的位置信息。
+* 在自注意力中，查詢、鍵和值都來自同一組輸入。
+* 卷積神經網路和自注意力都擁有並行計算的優勢，而且自注意力的最大路徑長度最短。但是因為其計算複雜度是關於序列長度的二次方，所以在很長的序列中計算會非常慢。
+* 為了使用序列的順序訊息，可以透過在輸入表示中新增位置編碼，來注入絕對的或相對的位置訊息。
 
-## 练习
+## 練習
 
-1. 假设设计一个深度架构，通过堆叠基于位置编码的自注意力层来表示序列。可能会存在什么问题？
-1. 请设计一种可学习的位置编码方法。
+1. 假設設計一個深度架構，透過堆疊基於位置編碼的自注意力層來表示序列。可能會存在什麼問題？
+1. 請設計一種可學習的位置編碼方法。
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/5761)

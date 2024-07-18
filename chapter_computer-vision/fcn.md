@@ -1,10 +1,10 @@
-# 全卷积网络
+# 全卷積網路
 :label:`sec_fcn`
 
-如 :numref:`sec_semantic_segmentation`中所介绍的那样，语义分割是对图像中的每个像素分类。
-*全卷积网络*（fully convolutional network，FCN）采用卷积神经网络实现了从图像像素到像素类别的变换 :cite:`Long.Shelhamer.Darrell.2015`。
-与我们之前在图像分类或目标检测部分介绍的卷积神经网络不同，全卷积网络将中间层特征图的高和宽变换回输入图像的尺寸：这是通过在 :numref:`sec_transposed_conv`中引入的*转置卷积*（transposed convolution）实现的。
-因此，输出的类别预测与输入图像在像素级别上具有一一对应关系：通道维的输出即该位置对应像素的类别预测。
+如 :numref:`sec_semantic_segmentation`中所介紹的那樣，語義分割是對影象中的每個畫素分類。
+*全卷積網路*（fully convolutional network，FCN）採用卷積神經網路實現了從影象畫素到畫素類別的變換 :cite:`Long.Shelhamer.Darrell.2015`。
+與我們之前在影象分類或目標檢測部分介紹的卷積神經網路不同，全卷積網路將中間層特徵圖的高和寬變換回輸入影象的尺寸：這是透過在 :numref:`sec_transposed_conv`中引入的*轉置卷積*（transposed convolution）實現的。
+因此，輸出的類別預測與輸入影象在畫素級別上具有一一對應關係：通道維的輸出即該位置對應畫素的類別預測。
 
 ```{.python .input}
 %matplotlib inline
@@ -37,17 +37,17 @@ from paddle.nn import functional as F
 import paddle.vision as paddlevision
 ```
 
-## 构造模型
+## 構造模型
 
-下面我们了解一下全卷积网络模型最基本的设计。
-如 :numref:`fig_fcn`所示，全卷积网络先使用卷积神经网络抽取图像特征，然后通过$1\times 1$卷积层将通道数变换为类别个数，最后在 :numref:`sec_transposed_conv`中通过转置卷积层将特征图的高和宽变换为输入图像的尺寸。
-因此，模型输出与输入图像的高和宽相同，且最终输出通道包含了该空间位置像素的类别预测。
+下面我們瞭解一下全卷積網路模型最基本的設計。
+如 :numref:`fig_fcn`所示，全卷積網路先使用卷積神經網路抽取影象特徵，然後透過$1\times 1$卷積層將通道數變換為類別個數，最後在 :numref:`sec_transposed_conv`中透過轉置卷積層將特徵圖的高和寬變換為輸入影象的尺寸。
+因此，模型輸出與輸入影象的高和寬相同，且最終輸出通道包含了該空間位置畫素的類別預測。
 
-![全卷积网络](../img/fcn.svg)
+![全卷積網路](../img/fcn.svg)
 :label:`fig_fcn`
 
-下面，我们[**使用在ImageNet数据集上预训练的ResNet-18模型来提取图像特征**]，并将该网络记为`pretrained_net`。
-ResNet-18模型的最后几层包括全局平均汇聚层和全连接层，然而全卷积网络中不需要它们。
+下面，我們[**使用在ImageNet資料集上預訓練的ResNet-18模型來提取影象特徵**]，並將該網路記為`pretrained_net`。
+ResNet-18模型的最後幾層包括全域平均彙聚層和全連線層，然而全卷積網路中不需要它們。
 
 ```{.python .input}
 pretrained_net = gluon.model_zoo.vision.resnet18_v2(pretrained=True)
@@ -66,8 +66,8 @@ pretrained_net = paddlevision.models.resnet18(pretrained=True)
 list(pretrained_net.children())[-3:]
 ```
 
-接下来，我们[**创建一个全卷积网络`net`**]。
-它复制了ResNet-18中大部分的预训练层，除了最后的全局平均汇聚层和最接近输出的全连接层。
+接下來，我們[**建立一個全卷積網路`net`**]。
+它複製了ResNet-18中大部分的預訓練層，除了最後的全域平均彙聚層和最接近輸出的全連線層。
 
 ```{.python .input}
 net = nn.HybridSequential()
@@ -80,7 +80,7 @@ for layer in pretrained_net.features[:-2]:
 net = nn.Sequential(*list(pretrained_net.children())[:-2])
 ```
 
-给定高度为320和宽度为480的输入，`net`的前向传播将输入的高和宽减小至原来的$1/32$，即10和15。
+給定高度為320和寬度為480的輸入，`net`的前向傳播將輸入的高和寬減小至原來的$1/32$，即10和15。
 
 ```{.python .input}
 X = np.random.uniform(size=(1, 3, 320, 480))
@@ -99,11 +99,11 @@ X = paddle.rand(shape=(1, 3, 320, 480))
 net(X).shape
 ```
 
-接下来[**使用$1\times1$卷积层将输出通道数转换为Pascal VOC2012数据集的类数（21类）。**]
-最后需要(**将特征图的高度和宽度增加32倍**)，从而将其变回输入图像的高和宽。
-回想一下 :numref:`sec_padding`中卷积层输出形状的计算方法：
-由于$(320-64+16\times2+32)/32=10$且$(480-64+16\times2+32)/32=15$，我们构造一个步幅为$32$的转置卷积层，并将卷积核的高和宽设为$64$，填充为$16$。
-我们可以看到如果步幅为$s$，填充为$s/2$（假设$s/2$是整数）且卷积核的高和宽为$2s$，转置卷积核会将输入的高和宽分别放大$s$倍。
+接下來[**使用$1\times1$卷積層將輸出通道數轉換為Pascal VOC2012資料集的類數（21類）。**]
+最後需要(**將特徵圖的高度和寬度增加32倍**)，從而將其變回輸入影象的高和寬。
+回想一下 :numref:`sec_padding`中卷積層輸出形狀的計算方法：
+由於$(320-64+16\times2+32)/32=10$且$(480-64+16\times2+32)/32=15$，我們構造一個步幅為$32$的轉置卷積層，並將卷積核的高和寬設為$64$，填充為$16$。
+我們可以看到如果步幅為$s$，填充為$s/2$（假設$s/2$是整數）且卷積核的高和寬為$2s$，轉置卷積核會將輸入的高和寬分別放大$s$倍。
 
 ```{.python .input}
 num_classes = 21
@@ -128,22 +128,22 @@ net.add_sublayer('transpose_conv', nn.Conv2DTranspose(num_classes, num_classes,
                                     kernel_size=64, padding=16, stride=32))
 ```
 
-## [**初始化转置卷积层**]
+## [**初始化轉置卷積層**]
 
-在图像处理中，我们有时需要将图像放大，即*上采样*（upsampling）。
-*双线性插值*（bilinear interpolation）
-是常用的上采样方法之一，它也经常用于初始化转置卷积层。
+在影象處理中，我們有時需要將影象放大，即*上取樣*（upsampling）。
+*雙線性內嵌*（bilinear interpolation）
+是常用的上取樣方法之一，它也經常用於初始化轉置卷積層。
 
-为了解释双线性插值，假设给定输入图像，我们想要计算上采样输出图像上的每个像素。
+為了解釋雙線性內嵌，假設給定輸入影象，我們想要計算上取樣輸出影象上的每個畫素。
 
-1. 将输出图像的坐标$(x,y)$映射到输入图像的坐标$(x',y')$上。
-例如，根据输入与输出的尺寸之比来映射。
-请注意，映射后的$x′$和$y′$是实数。
-2. 在输入图像上找到离坐标$(x',y')$最近的4个像素。
-3. 输出图像在坐标$(x,y)$上的像素依据输入图像上这4个像素及其与$(x',y')$的相对距离来计算。
+1. 將輸出影象的坐標$(x,y)$對映到輸入影象的坐標$(x',y')$上。
+例如，根據輸入與輸出的尺寸之比來對映。
+請注意，對映後的$x′$和$y′$是實數。
+2. 在輸入影象上找到離坐標$(x',y')$最近的4個畫素。
+3. 輸出影象在坐標$(x,y)$上的畫素依據輸入影象上這4個畫素及其與$(x',y')$的相對距離來計算。
 
-双线性插值的上采样可以通过转置卷积层实现，内核由以下`bilinear_kernel`函数构造。
-限于篇幅，我们只给出`bilinear_kernel`函数的实现，不讨论算法的原理。
+雙線性內嵌的上取樣可以透過轉置卷積層實現，核心由以下`bilinear_kernel`函式構造。
+限於篇幅，我們只給出`bilinear_kernel`函式的實現，不討論演算法的原理。
 
 ```{.python .input}
 def bilinear_kernel(in_channels, out_channels, kernel_size):
@@ -197,8 +197,8 @@ def bilinear_kernel(in_channels, out_channels, kernel_size):
     return weight
 ```
 
-让我们用[**双线性插值的上采样实验**]它由转置卷积层实现。
-我们构造一个将输入的高和宽放大2倍的转置卷积层，并将其卷积核用`bilinear_kernel`函数初始化。
+讓我們用[**雙線性內嵌的上取樣實驗**]它由轉置卷積層實現。
+我們構造一個將輸入的高和寬放大2倍的轉置卷積層，並將其卷積核用`bilinear_kernel`函式初始化。
 
 ```{.python .input}
 conv_trans = nn.Conv2DTranspose(3, kernel_size=4, padding=1, strides=2)
@@ -219,7 +219,7 @@ conv_trans = nn.Conv2DTranspose(3, 3, kernel_size=4, padding=1, stride=2,
 conv_trans.weight.set_value(bilinear_kernel(3, 3, 4));
 ```
 
-读取图像`X`，将上采样的结果记作`Y`。为了打印图像，我们需要调整通道维的位置。
+讀取影象`X`，將上取樣的結果記作`Y`。為了列印影象，我們需要調整通道維的位置。
 
 ```{.python .input}
 img = image.imread('../img/catdog.jpg')
@@ -244,8 +244,8 @@ Y = conv_trans(X)
 out_img = Y[0].transpose([1, 2, 0]).detach()
 ```
 
-可以看到，转置卷积层将图像的高和宽分别放大了2倍。
-除了坐标刻度不同，双线性插值放大的图像和在 :numref:`sec_bbox`中打印出的原图看上去没什么两样。
+可以看到，轉置卷積層將影象的高和寬分別放大了2倍。
+除了坐標刻度不同，雙線性內嵌放大的影象和在 :numref:`sec_bbox`中列印出的原圖看上去沒什麼兩樣。
 
 ```{.python .input}
 d2l.set_figsize()
@@ -273,7 +273,7 @@ print('output image shape:', out_img.shape)
 d2l.plt.imshow(out_img);
 ```
 
-全卷积网络[**用双线性插值的上采样初始化转置卷积层。对于$1\times 1$卷积层，我们使用Xavier初始化参数。**]
+全卷積網路[**用雙線性內嵌的上取樣初始化轉置卷積層。對於$1\times 1$卷積層，我們使用Xavier初始化引數。**]
 
 ```{.python .input}
 W = bilinear_kernel(num_classes, num_classes, 64)
@@ -293,10 +293,10 @@ W = bilinear_kernel(num_classes, num_classes, 64)
 net.transpose_conv.weight.set_value(W);
 ```
 
-## [**读取数据集**]
+## [**讀取資料集**]
 
-我们用 :numref:`sec_semantic_segmentation`中介绍的语义分割读取数据集。
-指定随机裁剪的输出图像的形状为$320\times 480$：高和宽都可以被$32$整除。
+我們用 :numref:`sec_semantic_segmentation`中介紹的語義分割讀取資料集。
+指定隨機裁剪的輸出影象的形狀為$320\times 480$：高和寬都可以被$32$整除。
 
 ```{.python .input}
 #@tab mxnet, pytorch
@@ -308,7 +308,7 @@ train_iter, test_iter = d2l.load_data_voc(batch_size, crop_size)
 #@tab paddle
 import os    
 def load_data_voc(batch_size, crop_size):
-    """加载VOC语义分割数据集
+    """載入VOC語義分割資料集
     Defined in :numref:`sec_semantic_segmentation`"""
     voc_dir = d2l.download_extract('voc2012', os.path.join(
         'VOCdevkit', 'VOC2012'))
@@ -324,11 +324,11 @@ batch_size, crop_size = 32, (320, 480)
 train_iter, test_iter = load_data_voc(batch_size, crop_size)
 ```
 
-## [**训练**]
+## [**訓練**]
 
-现在我们可以训练全卷积网络了。
-这里的损失函数和准确率计算与图像分类中的并没有本质上的不同，因为我们使用转置卷积层的通道来预测像素的类别，所以需要在损失计算中指定通道维。
-此外，模型基于每个像素的预测类别是否正确来计算准确率。
+現在我們可以訓練全卷積網路了。
+這裡的損失函式和準確率計算與影象分類中的並沒有本質上的不同，因為我們使用轉置卷積層的通道來預測畫素的類別，所以需要在損失計算中指定通道維。
+此外，模型基於每個畫素的預測類別是否正確來計算準確率。
 
 ```{.python .input}
 num_epochs, lr, wd, devices = 5, 0.1, 1e-3, d2l.try_all_gpus()
@@ -359,9 +359,9 @@ trainer = paddle.optimizer.SGD(learning_rate=lr, parameters=net.parameters(), we
 d2l.train_ch13(net, train_iter, test_iter, loss, trainer, num_epochs, devices[:1])
 ```
 
-## [**预测**]
+## [**預測**]
 
-在预测时，我们需要将输入图像在各个通道做标准化，并转成卷积神经网络所需要的四维输入格式。
+在預測時，我們需要將輸入影象在各個通道做標準化，並轉成卷積神經網路所需要的四維輸入格式。
 
 ```{.python .input}
 def predict(img):
@@ -387,7 +387,7 @@ def predict(img):
     return pred.reshape([pred.shape[1], pred.shape[2]])
 ```
 
-为了[**可视化预测的类别**]给每个像素，我们将预测类别映射回它们在数据集中的标注颜色。
+為了[**視覺化預測的類別**]給每個畫素，我們將預測類別對映回它們在資料集中的標註顏色。
 
 ```{.python .input}
 def label2image(pred):
@@ -412,14 +412,14 @@ def label2image(pred):
     return colormap[X]
 ```
 
-测试数据集中的图像大小和形状各异。
-由于模型使用了步幅为32的转置卷积层，因此当输入图像的高或宽无法被32整除时，转置卷积层输出的高或宽会与输入图像的尺寸有偏差。
-为了解决这个问题，我们可以在图像中截取多块高和宽为32的整数倍的矩形区域，并分别对这些区域中的像素做前向传播。
-请注意，这些区域的并集需要完整覆盖输入图像。
-当一个像素被多个区域所覆盖时，它在不同区域前向传播中转置卷积层输出的平均值可以作为`softmax`运算的输入，从而预测类别。
+測試資料集中的影象大小和形狀各異。
+由於模型使用了步幅為32的轉置卷積層，因此當輸入影象的高或寬無法被32整除時，轉置卷積層輸出的高或寬會與輸入影象的尺寸有偏差。
+為了解決這個問題，我們可以在影象中擷取多區塊高和寬為32的整數倍的矩形區域，並分別對這些區域中的畫素做前向傳播。
+請注意，這些區域的並集需要完整覆蓋輸入影象。
+當一個畫素被多個區域所覆蓋時，它在不同區域前向傳播中轉置卷積層輸出的平均值可以作為`softmax`運算的輸入，從而預測類別。
 
-为简单起见，我们只读取几张较大的测试图像，并从图像的左上角开始截取形状为$320\times480$的区域用于预测。
-对于这些测试图像，我们逐一打印它们截取的区域，再打印预测结果，最后打印标注的类别。
+為簡單起見，我們只讀取幾張較大的測試影象，並從影象的左上角開始擷取形狀為$320\times480$的區域用於預測。
+對於這些測試影象，我們逐一列印它們擷取的區域，再列印預測結果，最後列印標註的類別。
 
 ```{.python .input}
 voc_dir = d2l.download_extract('voc2012', 'VOCdevkit/VOC2012')
@@ -463,17 +463,17 @@ for i in range(n):
 d2l.show_images(imgs[::3] + imgs[1::3] + imgs[2::3], 3, n, scale=2);
 ```
 
-## 小结
+## 小結
 
-* 全卷积网络先使用卷积神经网络抽取图像特征，然后通过$1\times 1$卷积层将通道数变换为类别个数，最后通过转置卷积层将特征图的高和宽变换为输入图像的尺寸。
-* 在全卷积网络中，我们可以将转置卷积层初始化为双线性插值的上采样。
+* 全卷積網路先使用卷積神經網路抽取影象特徵，然後透過$1\times 1$卷積層將通道數變換為類別個數，最後透過轉置卷積層將特徵圖的高和寬變換為輸入影象的尺寸。
+* 在全卷積網路中，我們可以將轉置卷積層初始化為雙線性內嵌的上取樣。
 
-## 练习
+## 練習
 
-1. 如果将转置卷积层改用Xavier随机初始化，结果有什么变化？
-1. 调节超参数，能进一步提升模型的精度吗？
-1. 预测测试图像中所有像素的类别。
-1. 最初的全卷积网络的论文中 :cite:`Long.Shelhamer.Darrell.2015`还使用了某些卷积神经网络中间层的输出。试着实现这个想法。
+1. 如果將轉置卷積層改用Xavier隨機初始化，結果有什麼變化？
+1. 調節超引數，能進一步提升模型的精度嗎？
+1. 預測測試影象中所有畫素的類別。
+1. 最初的全卷積網路的論文中 :cite:`Long.Shelhamer.Darrell.2015`還使用了某些卷積神經網路中間層的輸出。試著實現這個想法。
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/3298)

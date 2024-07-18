@@ -135,13 +135,13 @@ the input is a pair of text sequences.
 The BERT input sequence unambiguously represents both single text and text pairs.
 In the former,
 the BERT input sequence is the concatenation of
-the special classification token “&lt;cls&gt;”,
+the special classification token 『&lt;cls&gt;』,
 tokens of a text sequence,
-and the special separation token “&lt;sep&gt;”.
+and the special separation token 『&lt;sep&gt;』.
 In the latter,
 the BERT input sequence is the concatenation of
-“&lt;cls&gt;”, tokens of the first text sequence,
-“&lt;sep&gt;”, tokens of the second text sequence, and “&lt;sep&gt;”.
+『&lt;cls&gt;』, tokens of the first text sequence,
+『&lt;sep&gt;』, tokens of the second text sequence, and 『&lt;sep&gt;』.
 We will consistently distinguish the terminology "BERT input sequence"
 from other types of "sequences".
 For instance, one *BERT input sequence* may include either one *text sequence* or two *text sequences*.
@@ -295,7 +295,7 @@ encoded_X.shape
 
 The forward inference of `BERTEncoder` gives the BERT representation
 of each token of the input text and the inserted
-special tokens “&lt;cls&gt;” and “&lt;seq&gt;”.
+special tokens 『&lt;cls&gt;』 and 『&lt;seq&gt;』.
 Next, we will use these representations to compute the loss function
 for pretraining BERT.
 The pretraining is composed of the following two tasks:
@@ -314,14 +314,14 @@ This task is referred to as a *masked language model*.
 In this pretraining task,
 15% of tokens will be selected at random as the masked tokens for prediction.
 To predict a masked token without cheating by using the label,
-one straightforward approach is to always replace it with a special “&lt;mask&gt;” token in the BERT input sequence.
-However, the artificial special token “&lt;mask&gt;” will never appear
+one straightforward approach is to always replace it with a special 『&lt;mask&gt;』 token in the BERT input sequence.
+However, the artificial special token 『&lt;mask&gt;』 will never appear
 in fine-tuning.
 To avoid such a mismatch between pretraining and fine-tuning,
 if a token is masked for prediction (e.g., "great" is selected to be masked and predicted in "this movie is great"),
 in the input it will be replaced with:
 
-* a special “&lt;mask&gt;” token for 80% of the time (e.g., "this movie is great" becomes "this movie is &lt;mask&gt;");
+* a special 『&lt;mask&gt;』 token for 80% of the time (e.g., "this movie is great" becomes "this movie is &lt;mask&gt;");
 * a random token for 10% of the time (e.g., "this movie is great" becomes "this movie is drink");
 * the unchanged label token for 10% of the time (e.g., "this movie is great" becomes "this movie is great").
 
@@ -446,10 +446,10 @@ The following `NextSentencePred` class uses a one-hidden-layer MLP
 to predict whether the second sentence is the next sentence of the first
 in the BERT input sequence.
 Due to self-attention in the transformer encoder,
-the BERT representation of the special token “&lt;cls&gt;”
+the BERT representation of the special token 『&lt;cls&gt;』
 encodes both the two sentences from the input.
 Hence, the output layer (`self.output`) of the MLP classifier takes `X` as the input,
-where `X` is the output of the MLP hidden layer whose input is the encoded “&lt;cls&gt;” token.
+where `X` is the output of the MLP hidden layer whose input is the encoded 『&lt;cls&gt;』 token.
 
 ```{.python .input}
 #@save

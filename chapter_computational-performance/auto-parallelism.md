@@ -1,11 +1,11 @@
-# 自动并行
+# 自動並行
 :label:`sec_auto_para`
 
-深度学习框架（例如，MxNet、飞桨和PyTorch）会在后端自动构建计算图。利用计算图，系统可以了解所有依赖关系，并且可以选择性地并行执行多个不相互依赖的任务以提高速度。例如， :numref:`sec_async`中的 :numref:`fig_asyncgraph`独立初始化两个变量。因此，系统可以选择并行执行它们。
+深度學習框架（例如，MxNet、飛槳和PyTorch）會在後端自動建立計算圖。利用計算圖，系統可以瞭解所有依賴關係，並且可以選擇性地並行執行多個不相互依賴的任務以提高速度。例如， :numref:`sec_async`中的 :numref:`fig_asyncgraph`獨立初始化兩個變數。因此，系統可以選擇並行執行它們。
 
-通常情况下单个操作符将使用所有CPU或单个GPU上的所有计算资源。例如，即使在一台机器上有多个CPU处理器，`dot`操作符也将使用所有CPU上的所有核心（和线程）。这样的行为同样适用于单个GPU。因此，并行化对单设备计算机来说并不是很有用，而并行化对于多个设备就很重要了。虽然并行化通常应用在多个GPU之间，但增加本地CPU以后还将提高少许性能。例如， :cite:`Hadjis.Zhang.Mitliagkas.ea.2016`则把结合GPU和CPU的训练应用到计算机视觉模型中。借助自动并行化框架的便利性，我们可以依靠几行Python代码实现相同的目标。对自动并行计算的讨论主要集中在使用CPU和GPU的并行计算上，以及计算和通信的并行化内容。
+通常情況下單個運算子將使用所有CPU或單個GPU上的所有計算資源。例如，即使在一台機器上有多個CPU處理器，`dot`運算子也將使用所有CPU上的所有核心（和執行緒）。這樣的行為同樣適用於單個GPU。因此，並行化對單裝置電腦來說並不是很有用，而並行化對於多個裝置就很重要了。雖然並行化通常應用在多個GPU之間，但增加本地CPU以後還將提高少許效能。例如， :cite:`Hadjis.Zhang.Mitliagkas.ea.2016`則把結合GPU和CPU的訓練應用到電腦視覺模型中。藉助自動並行化框架的便利性，我們可以依靠幾行Python程式碼實現相同的目標。對自動並行計算的討論主要集中在使用CPU和GPU的並行計算上，以及計算和通訊的並行化內容。
 
-请注意，本节中的实验至少需要两个GPU来运行。
+請注意，本節中的實驗至少需要兩個GPU來執行。
 
 ```{.python .input}
 from d2l import mxnet as d2l
@@ -28,9 +28,9 @@ import paddle
 import numpy as np
 ```
 
-## 基于GPU的并行计算
+## 基於GPU的並行計算
 
-从定义一个具有参考性的用于测试的工作负载开始：下面的`run`函数将执行$10$次*矩阵－矩阵*乘法时需要使用的数据分配到两个变量（`x_gpu1`和`x_gpu2`）中，这两个变量分别位于选择的不同设备上。
+從定義一個具有參考性的用於測試的工作負載開始：下面的`run`函式將執行$10$次*矩陣－矩陣*乘法時需要使用的資料分配到兩個變數（`x_gpu1`和`x_gpu2`）中，這兩個變數分別位於選擇的不同裝置上。
 
 ```{.python .input}
 devices = d2l.try_all_gpus()
@@ -64,27 +64,27 @@ x_gpu2 = paddle.to_tensor(data, place=devices[1])
 ```
 
 :begin_tab:`mxnet`
-现在使用函数来处理数据。通过在测量之前需要预热设备（对设备执行一次传递）来确保缓存的作用不影响最终的结果。
+現在使用函式來處理資料。透過在測量之前需要預熱裝置（對裝置執行一次傳遞）來確保快取的作用不影響最終的結果。
 :end_tab:
 
 :begin_tab:`pytorch`
-现在使用函数来处理数据。通过在测量之前需要预热设备（对设备执行一次传递）来确保缓存的作用不影响最终的结果。`torch.cuda.synchronize()`函数将会等待一个CUDA设备上的所有流中的所有核心的计算完成。函数接受一个`device`参数，代表是哪个设备需要同步。如果device参数是`None`（默认值），它将使用`current_device()`找出的当前设备。
+現在使用函式來處理資料。透過在測量之前需要預熱裝置（對裝置執行一次傳遞）來確保快取的作用不影響最終的結果。`torch.cuda.synchronize()`函式將會等待一個CUDA裝置上的所有流中的所有核心的計算完成。函式接受一個`device`引數，代表是哪個裝置需要同步。如果device引數是`None`（預設值），它將使用`current_device()`找出的當前裝置。
 :end_tab:
 
 :begin_tab:`paddle`
-现在我们使用函数来数据。我们通过在测量之前预热设备（对设备执行一次传递）来确保缓存的作用不影响最终的结果。`paddle.device.cuda.synchronize()`函数将会等待一个CUDA设备上的所有流中的所有核心的计算完成。函数接受一个`device`参数，代表是哪个设备需要同步。如果device参数是`None`（默认值），它将使用`current_device()`找出的当前设备。
+現在我們使用函式來資料。我們透過在測量之前預熱裝置（對裝置執行一次傳遞）來確保快取的作用不影響最終的結果。`paddle.device.cuda.synchronize()`函式將會等待一個CUDA裝置上的所有流中的所有核心的計算完成。函式接受一個`device`引數，代表是哪個裝置需要同步。如果device引數是`None`（預設值），它將使用`current_device()`找出的當前裝置。
 :end_tab:
 
 ```{.python .input}
-run(x_gpu1)  # 预热设备
+run(x_gpu1)  # 預熱裝置
 run(x_gpu2)
 npx.waitall()  
 
-with d2l.Benchmark('GPU1 时间'):
+with d2l.Benchmark('GPU1 時間'):
     run(x_gpu1)
     npx.waitall()
 
-with d2l.Benchmark('GPU2 时间'):
+with d2l.Benchmark('GPU2 時間'):
     run(x_gpu2)
     npx.waitall()
 ```
@@ -92,7 +92,7 @@ with d2l.Benchmark('GPU2 时间'):
 ```{.python .input}
 #@tab pytorch
 run(x_gpu1)
-run(x_gpu2)  # 预热设备
+run(x_gpu2)  # 預熱裝置
 torch.cuda.synchronize(devices[0])
 torch.cuda.synchronize(devices[1])
 
@@ -108,7 +108,7 @@ with d2l.Benchmark('GPU2 time'):
 ```{.python .input}
 #@tab paddle
 run(x_gpu1, 0)
-run(x_gpu2, 1)  # 预热设备
+run(x_gpu2, 1)  # 預熱裝置
 paddle.device.cuda.synchronize(devices[0])
 paddle.device.cuda.synchronize(devices[1])
 
@@ -122,15 +122,15 @@ with d2l.Benchmark('GPU2 time'):
 ```
 
 :begin_tab:`mxnet`
-如果删除两个任务之间的`waitall`语句，系统就可以在两个设备上自动实现并行计算。
+如果刪除兩個任務之間的`waitall`語句，系統就可以在兩個裝置上自動實現並行計算。
 :end_tab:
 
 :begin_tab:`pytorch`
-如果删除两个任务之间的`synchronize`语句，系统就可以在两个设备上自动实现并行计算。
+如果刪除兩個任務之間的`synchronize`語句，系統就可以在兩個裝置上自動實現並行計算。
 :end_tab:
 
 :begin_tab:`paddle`
-如果我们删除两个任务之间的`synchronize`语句，系统就可以在两个设备上自动实现并行计算。
+如果我們刪除兩個任務之間的`synchronize`語句，系統就可以在兩個裝置上自動實現並行計算。
 :end_tab:
 
 ```{.python .input}
@@ -156,21 +156,21 @@ with d2l.Benchmark('GPU1 & GPU2'):
     paddle.device.cuda.synchronize()
 ```
 
-在上述情况下，总执行时间小于两个部分执行时间的总和，因为深度学习框架自动调度两个GPU设备上的计算，而不需要用户编写复杂的代码。
+在上述情況下，總執行時間小於兩個部分執行時間的總和，因為深度學習框架自動排程兩個GPU裝置上的計算，而不需要使用者編寫複雜的程式碼。
 
-## 并行计算与通信
+## 並行計算與通訊
 
-在许多情况下，我们需要在不同的设备之间移动数据，比如在CPU和GPU之间，或者在不同的GPU之间。例如，当执行分布式优化时，就需要移动数据来聚合多个加速卡上的梯度。让我们通过在GPU上计算，然后将结果复制回CPU来模拟这个过程。
+在許多情況下，我們需要在不同的裝置之間移動資料，比如在CPU和GPU之間，或者在不同的GPU之間。例如，當執行分散式最佳化時，就需要移動資料來聚合多個加速卡上的梯度。讓我們透過在GPU上計算，然後將結果複製回CPU來模擬這個過程。
 
 ```{.python .input}
 def copy_to_cpu(x):
     return [y.copyto(npx.cpu()) for y in x]
 
-with d2l.Benchmark('在GPU1上运行'):
+with d2l.Benchmark('在GPU1上執行'):
     y = run(x_gpu1)
     npx.waitall()
 
-with d2l.Benchmark('复制到CPU'):
+with d2l.Benchmark('複製到CPU'):
     y_cpu = copy_to_cpu(y)
     npx.waitall()
 ```
@@ -180,11 +180,11 @@ with d2l.Benchmark('复制到CPU'):
 def copy_to_cpu(x, non_blocking=False):
     return [y.to('cpu', non_blocking=non_blocking) for y in x]
 
-with d2l.Benchmark('在GPU1上运行'):
+with d2l.Benchmark('在GPU1上執行'):
     y = run(x_gpu1)
     torch.cuda.synchronize()
 
-with d2l.Benchmark('复制到CPU'):
+with d2l.Benchmark('複製到CPU'):
     y_cpu = copy_to_cpu(y)
     torch.cuda.synchronize()
 ```
@@ -194,29 +194,29 @@ with d2l.Benchmark('复制到CPU'):
 def copy_to_cpu(x):
     return [paddle.to_tensor(y, place=paddle.CPUPlace()) for y in x]
 
-with d2l.Benchmark('在GPU1上运行'):
+with d2l.Benchmark('在GPU1上執行'):
     y = run(x_gpu1, 0)
     paddle.device.cuda.synchronize()
     
-with d2l.Benchmark('复制到CPU'):
+with d2l.Benchmark('複製到CPU'):
     y_cpu = copy_to_cpu(y)
     paddle.device.cuda.synchronize()
 ```
 
 :begin_tab:`mxnet`
-这种方式效率不高。注意到当列表中的其余部分还在计算时，我们可能就已经开始将`y`的部分复制到CPU了。例如，当计算一个小批量的梯度时，某些参数的梯度将比其他参数的梯度更早可用。因此，在GPU仍在运行时就开始使用PCI-Express总线带宽来移动数据是有利的。删除这两个部分之间的`waitall`以模拟这个场景。
+這種方式效率不高。注意到當清單中的其餘部分還在計算時，我們可能就已經開始將`y`的部分複製到CPU了。例如，當計算一個小批次的梯度時，某些引數的梯度將比其他引數的梯度更早可用。因此，在GPU仍在執行時就開始使用PCI-Express匯流排頻寬來移動資料是有利的。刪除這兩個部分之間的`waitall`以模擬這個場景。
 :end_tab:
 
 :begin_tab:`pytorch`
-这种方式效率不高。注意到当列表中的其余部分还在计算时，我们可能就已经开始将`y`的部分复制到CPU了。例如，当计算一个小批量的（反传）梯度时。某些参数的梯度将比其他参数的梯度更早可用。因此，在GPU仍在运行时就开始使用PCI-Express总线带宽来移动数据是有利的。在PyTorch中，`to()`和`copy_()`等函数都允许显式的`non_blocking`参数，这允许在不需要同步时调用方可以绕过同步。设置`non_blocking=True`以模拟这个场景。
+這種方式效率不高。注意到當清單中的其餘部分還在計算時，我們可能就已經開始將`y`的部分複製到CPU了。例如，當計算一個小批次的（反傳）梯度時。某些引數的梯度將比其他引數的梯度更早可用。因此，在GPU仍在執行時就開始使用PCI-Express匯流排頻寬來移動資料是有利的。在PyTorch中，`to()`和`copy_()`等函式都允許顯式的`non_blocking`引數，這允許在不需要同步時調用方可以繞過同步。設定`non_blocking=True`以模擬這個場景。
 :end_tab:
 
 :begin_tab:`paddle`
-这种方式效率不高。注意到当列表中的其余部分还在计算时，我们可能就已经开始将`y`的部分复制到CPU了。例如，当我们计算一个小批量的（反传）梯度时。某些参数的梯度将比其他参数的梯度更早可用。因此，在GPU仍在运行时就开始使用PCI-Express总线带宽来移动数据对我们是有利的。
+這種方式效率不高。注意到當清單中的其餘部分還在計算時，我們可能就已經開始將`y`的部分複製到CPU了。例如，當我們計算一個小批次的（反傳）梯度時。某些引數的梯度將比其他引數的梯度更早可用。因此，在GPU仍在執行時就開始使用PCI-Express匯流排頻寬來移動資料對我們是有利的。
 :end_tab:
 
 ```{.python .input}
-with d2l.Benchmark('在GPU1上运行并复制到CPU'):
+with d2l.Benchmark('在GPU1上執行並複製到CPU'):
     y = run(x_gpu1)
     y_cpu = copy_to_cpu(y)
     npx.waitall()
@@ -224,7 +224,7 @@ with d2l.Benchmark('在GPU1上运行并复制到CPU'):
 
 ```{.python .input}
 #@tab pytorch
-with d2l.Benchmark('在GPU1上运行并复制到CPU'):
+with d2l.Benchmark('在GPU1上執行並複製到CPU'):
     y = run(x_gpu1)
     y_cpu = copy_to_cpu(y, True)
     torch.cuda.synchronize()
@@ -232,32 +232,32 @@ with d2l.Benchmark('在GPU1上运行并复制到CPU'):
 
 ```{.python .input}
 #@tab paddle
-with d2l.Benchmark('在GPU1上运行并复制到CPU'):
+with d2l.Benchmark('在GPU1上執行並複製到CPU'):
     y = run(x_gpu1)
     y_cpu = copy_to_cpu(y)
     paddle.device.cuda.synchronize()
 ```
 
-两个操作所需的总时间少于它们各部分操作所需时间的总和。请注意，与并行计算的区别是通信操作使用的资源：CPU和GPU之间的总线。事实上，我们可以在两个设备上同时进行计算和通信。如上所述，计算和通信之间存在的依赖关系是必须先计算`y[i]`，然后才能将其复制到CPU。幸运的是，系统可以在计算`y[i]`的同时复制`y[i-1]`，以减少总的运行时间。
+兩個操作所需的總時間少於它們各部分操作所需時間的總和。請注意，與並行計算的區別是通訊操作使用的資源：CPU和GPU之間的匯流排。事實上，我們可以在兩個裝置上同時進行計算和通訊。如上所述，計算和通訊之間存在的依賴關係是必須先計算`y[i]`，然後才能將其複製到CPU。幸運的是，系統可以在計算`y[i]`的同時複製`y[i-1]`，以減少總的執行時間。
 
-最后，本节给出了一个简单的两层多层感知机在CPU和两个GPU上训练时的计算图及其依赖关系的例子，如 :numref:`fig_twogpu`所示。手动调度由此产生的并行程序将是相当痛苦的。这就是基于图的计算后端进行优化的优势所在。
+最後，本節給出了一個簡單的兩層多層感知機在CPU和兩個GPU上訓練時的計算圖及其依賴關係的例子，如 :numref:`fig_twogpu`所示。手動排程由此產生的並行程序將是相當痛苦的。這就是基於圖的計算後端進行最佳化的優勢所在。
 
-![在一个CPU和两个GPU上的两层的多层感知机的计算图及其依赖关系](../img/twogpu.svg)
+![在一個CPU和兩個GPU上的兩層的多層感知機的計算圖及其依賴關係](../img/twogpu.svg)
 :label:`fig_twogpu`
 
-## 小结
+## 小結
 
-* 现代系统拥有多种设备，如多个GPU和多个CPU，还可以并行地、异步地使用它们。
-* 现代系统还拥有各种通信资源，如PCI Express、存储（通常是固态硬盘或网络存储）和网络带宽，为了达到最高效率可以并行使用它们。
-* 后端可以通过自动化地并行计算和通信来提高性能。
+* 現代系統擁有多種裝置，如多個GPU和多個CPU，還可以並行地、非同步地使用它們。
+* 現代系統還擁有各種通訊資源，如PCI Express、儲存（通常是固態硬碟或網路儲存）和網路頻寬，為了達到最高效率可以並行使用它們。
+* 後端可以透過自動化地並行計算和通訊來提高效能。
 
-## 练习
+## 練習
 
-1. 在本节定义的`run`函数中执行了八个操作，并且操作之间没有依赖关系。设计一个实验，看看深度学习框架是否会自动地并行地执行它们。
-1. 当单个操作符的工作量足够小，即使在单个CPU或GPU上，并行化也会有所帮助。设计一个实验来验证这一点。
-1. 设计一个实验，在CPU和GPU这两种设备上使用并行计算和通信。
-1. 使用诸如NVIDIA的[Nsight](https://developer.nvidia.com/nsight-compute-2019_5)之类的调试器来验证代码是否有效。
-1. 设计并实验具有更加复杂的数据依赖关系的计算任务，以查看是否可以在提高性能的同时获得正确的结果。
+1. 在本節定義的`run`函式中執行了八個操作，並且操作之間沒有依賴關係。設計一個實驗，看看深度學習框架是否會自動地並行地執行它們。
+1. 當單個運算子的工作量足夠小，即使在單個CPU或GPU上，並行化也會有所幫助。設計一個實驗來驗證這一點。
+1. 設計一個實驗，在CPU和GPU這兩種裝置上使用並行計算和通訊。
+1. 使用諸如NVIDIA的[Nsight](https://developer.nvidia.com/nsight-compute-2019_5)之類的除錯器來驗證程式碼是否有效。
+1. 設計並實驗具有更加複雜的資料依賴關係的計算任務，以檢視是否可以在提高效能的同時獲得正確的結果。
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/2795)

@@ -40,7 +40,7 @@ Unlike linear models, neural networks
 are not confined to looking at each feature individually.
 They can learn interactions among groups of features.
 For example, they might infer that
-“Nigeria” and “Western Union” appearing
+『Nigeria』 and 『Western Union』 appearing
 together in an email indicates spam
 but that separately they do not.
 

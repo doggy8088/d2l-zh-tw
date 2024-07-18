@@ -1,25 +1,25 @@
-# 网络中的网络（NiN）
+# 網路中的網路（NiN）
 :label:`sec_nin`
 
-LeNet、AlexNet和VGG都有一个共同的设计模式：通过一系列的卷积层与汇聚层来提取空间结构特征；然后通过全连接层对特征的表征进行处理。
-AlexNet和VGG对LeNet的改进主要在于如何扩大和加深这两个模块。
-或者，可以想象在这个过程的早期使用全连接层。然而，如果使用了全连接层，可能会完全放弃表征的空间结构。
-*网络中的网络*（*NiN*）提供了一个非常简单的解决方案：在每个像素的通道上分别使用多层感知机 :cite:`Lin.Chen.Yan.2013`
+LeNet、AlexNet和VGG都有一個共同的設計模式：透過一系列的卷積層與彙聚層來提取空間結構特徵；然後透過全連線層對特徵的表徵進行處理。
+AlexNet和VGG對LeNet的改進主要在於如何擴大和加深這兩個模組。
+或者，可以想象在這個過程的早期使用全連線層。然而，如果使用了全連線層，可能會完全放棄表徵的空間結構。
+*網路中的網路*（*NiN*）提供了一個非常簡單的解決方案：在每個畫素的通道上分別使用多層感知機 :cite:`Lin.Chen.Yan.2013`
 
-## (**NiN块**)
+## (**NiN區塊**)
 
-回想一下，卷积层的输入和输出由四维张量组成，张量的每个轴分别对应样本、通道、高度和宽度。
-另外，全连接层的输入和输出通常是分别对应于样本和特征的二维张量。
-NiN的想法是在每个像素位置（针对每个高度和宽度）应用一个全连接层。
-如果我们将权重连接到每个空间位置，我们可以将其视为$1\times 1$卷积层（如 :numref:`sec_channels`中所述），或作为在每个像素位置上独立作用的全连接层。
-从另一个角度看，即将空间维度中的每个像素视为单个样本，将通道维度视为不同特征（feature）。
+回想一下，卷積層的輸入和輸出由四維張量組成，張量的每個軸分別對應樣本、通道、高度和寬度。
+另外，全連線層的輸入和輸出通常是分別對應於樣本和特徵的二維張量。
+NiN的想法是在每個畫素位置（針對每個高度和寬度）應用一個全連線層。
+如果我們將權重連線到每個空間位置，我們可以將其視為$1\times 1$卷積層（如 :numref:`sec_channels`中所述），或作為在每個畫素位置上獨立作用的全連線層。
+從另一個角度看，即將空間維度中的每個畫素視為單個樣本，將通道維度視為不同特徵（feature）。
 
- :numref:`fig_nin`说明了VGG和NiN及它们的块之间主要架构差异。
-NiN块以一个普通卷积层开始，后面是两个$1 \times 1$的卷积层。这两个$1 \times 1$卷积层充当带有ReLU激活函数的逐像素全连接层。
-第一层的卷积窗口形状通常由用户设置。
-随后的卷积窗口形状固定为$1 \times 1$。
+ :numref:`fig_nin`說明了VGG和NiN及它們的區塊之間主要架構差異。
+NiN區塊以一個普通卷積層開始，後面是兩個$1 \times 1$的卷積層。這兩個$1 \times 1$卷積層充當帶有ReLU啟用函式的逐畫素全連線層。
+第一層的卷積視窗形狀通常由使用者設定。
+隨後的卷積視窗形狀固定為$1 \times 1$。
 
-![对比 VGG 和 NiN 及它们的块之间主要架构差异。](../img/nin.svg)
+![對比 VGG 和 NiN 及它們的區塊之間主要架構差異。](../img/nin.svg)
 :width:`600px`
 :label:`fig_nin`
 
@@ -87,12 +87,12 @@ def nin_block(in_channels, out_channels, kernel_size, strides, padding):
 
 ## [**NiN模型**]
 
-最初的NiN网络是在AlexNet后不久提出的，显然从中得到了一些启示。
-NiN使用窗口形状为$11\times 11$、$5\times 5$和$3\times 3$的卷积层，输出通道数量与AlexNet中的相同。
-每个NiN块后有一个最大汇聚层，汇聚窗口形状为$3\times 3$，步幅为2。
+最初的NiN網路是在AlexNet後不久提出的，顯然從中得到了一些啟示。
+NiN使用視窗形狀為$11\times 11$、$5\times 5$和$3\times 3$的卷積層，輸出通道數量與AlexNet中的相同。
+每個NiN區塊後有一個最大彙聚層，彙聚視窗形狀為$3\times 3$，步幅為2。
 
-NiN和AlexNet之间的一个显著区别是NiN完全取消了全连接层。
-相反，NiN使用一个NiN块，其输出通道数等于标签类别的数量。最后放一个*全局平均汇聚层*（global average pooling layer），生成一个对数几率	（logits）。NiN设计的一个优点是，它显著减少了模型所需参数的数量。然而，在实践中，这种设计有时会增加训练模型的时间。
+NiN和AlexNet之間的一個顯著區別是NiN完全取消了全連線層。
+相反，NiN使用一個NiN區塊，其輸出通道數等於標籤類別的數量。最後放一個*全域平均彙聚層*（global average pooling layer），生成一個對數機率	（logits）。NiN設計的一個優點是，它顯著減少了模型所需引數的數量。然而，在實踐中，這種設計有時會增加訓練模型的時間。
 
 ```{.python .input}
 net = nn.Sequential()
@@ -103,11 +103,11 @@ net.add(nin_block(96, kernel_size=11, strides=4, padding=0),
         nin_block(384, kernel_size=3, strides=1, padding=1),
         nn.MaxPool2D(pool_size=3, strides=2),
         nn.Dropout(0.5),
-        # 标签类别数是10
+        # 標籤類別數是10
         nin_block(10, kernel_size=3, strides=1, padding=1),
-        # 全局平均汇聚层将窗口形状自动设置成输入的高和宽
+        # 全域平均彙聚層將視窗形狀自動設定成輸入的高和寬
         nn.GlobalAvgPool2D(),
-        # 将四维的输出转成二维的输出，其形状为(批量大小,10)
+        # 將四維的輸出轉成二維的輸出，其形狀為(批次大小,10)
         nn.Flatten())
 ```
 
@@ -121,10 +121,10 @@ net = nn.Sequential(
     nin_block(256, 384, kernel_size=3, strides=1, padding=1),
     nn.MaxPool2d(3, stride=2),
     nn.Dropout(0.5),
-    # 标签类别数是10
+    # 標籤類別數是10
     nin_block(384, 10, kernel_size=3, strides=1, padding=1),
     nn.AdaptiveAvgPool2d((1, 1)),
-    # 将四维的输出转成二维的输出，其形状为(批量大小,10)
+    # 將四維的輸出轉成二維的輸出，其形狀為(批次大小,10)
     nn.Flatten())
 ```
 
@@ -139,11 +139,11 @@ def net():
         nin_block(384, kernel_size=3, strides=1, padding='same'),
         tf.keras.layers.MaxPool2D(pool_size=3, strides=2),
         tf.keras.layers.Dropout(0.5),
-        # 标签类别数是10
+        # 標籤類別數是10
         nin_block(10, kernel_size=3, strides=1, padding='same'),
         tf.keras.layers.GlobalAveragePooling2D(),
         tf.keras.layers.Reshape((1, 1, 10)),
-        # 将四维的输出转成二维的输出，其形状为(批量大小,10)
+        # 將四維的輸出轉成二維的輸出，其形狀為(批次大小,10)
         tf.keras.layers.Flatten(),
         ])
 ```
@@ -157,14 +157,14 @@ net = nn.Sequential(
     nn.MaxPool2D(3, stride=2),
     nin_block(256, 384, kernel_size=3, strides=1, padding=1),
     nn.MaxPool2D(3, stride=2), nn.Dropout(0.5),
-    # 标签类别数是10
+    # 標籤類別數是10
     nin_block(384, 10, kernel_size=3, strides=1, padding=1),
     nn.AdaptiveAvgPool2D((1, 1)),
-    # 将四维的输出转成二维的输出，其形状为(批量大小,10)
+    # 將四維的輸出轉成二維的輸出，其形狀為(批次大小,10)
     nn.Flatten())
 ```
 
-我们创建一个数据样本来[**查看每个块的输出形状**]。
+我們建立一個資料樣本來[**檢視每個區塊的輸出形狀**]。
 
 ```{.python .input}
 X = np.random.uniform(size=(1, 1, 224, 224))
@@ -198,9 +198,9 @@ for layer in net:
     print(layer.__class__.__name__,'output shape:\t', X.shape)
 ```
 
-## [**训练模型**]
+## [**訓練模型**]
 
-和以前一样，我们使用Fashion-MNIST来训练模型。训练NiN与训练AlexNet、VGG时相似。
+和以前一樣，我們使用Fashion-MNIST來訓練模型。訓練NiN與訓練AlexNet、VGG時相似。
 
 ```{.python .input}
 #@tab all
@@ -209,23 +209,23 @@ train_iter, test_iter = d2l.load_data_fashion_mnist(batch_size, resize=224)
 d2l.train_ch6(net, train_iter, test_iter, num_epochs, lr, d2l.try_gpu())
 ```
 
-## 小结
+## 小結
 
-* NiN使用由一个卷积层和多个$1\times 1$卷积层组成的块。该块可以在卷积神经网络中使用，以允许更多的每像素非线性。
-* NiN去除了容易造成过拟合的全连接层，将它们替换为全局平均汇聚层（即在所有位置上进行求和）。该汇聚层通道数量为所需的输出数量（例如，Fashion-MNIST的输出为10）。
-* 移除全连接层可减少过拟合，同时显著减少NiN的参数。
-* NiN的设计影响了许多后续卷积神经网络的设计。
+* NiN使用由一個卷積層和多個$1\times 1$卷積層組成的區塊。該區塊可以在卷積神經網路中使用，以允許更多的每畫素非線性。
+* NiN去除了容易造成過擬合的全連線層，將它們替換為全域平均彙聚層（即在所有位置上進行求和）。該彙聚層通道數量為所需的輸出數量（例如，Fashion-MNIST的輸出為10）。
+* 移除全連線層可減少過擬合，同時顯著減少NiN的引數。
+* NiN的設計影響了許多後續卷積神經網路的設計。
 
-## 练习
+## 練習
 
-1. 调整NiN的超参数，以提高分类准确性。
-1. 为什么NiN块中有两个$1\times 1$卷积层？删除其中一个，然后观察和分析实验现象。
-1. 计算NiN的资源使用情况。
-    1. 参数的数量是多少？
-    1. 计算量是多少？
-    1. 训练期间需要多少显存？
-    1. 预测期间需要多少显存？
-1. 一次性直接将$384 \times 5 \times 5$的表示缩减为$10 \times 5 \times 5$的表示，会存在哪些问题？
+1. 調整NiN的超引數，以提高分類準確性。
+1. 為什麼NiN塊中有兩個$1\times 1$卷積層？刪除其中一個，然後觀察和分析實驗現象。
+1. 計算NiN的資源使用情況。
+    1. 引數的數量是多少？
+    1. 計算量是多少？
+    1. 訓練期間需要多少顯存？
+    1. 預測期間需要多少顯存？
+1. 一次性直接將$384 \times 5 \times 5$的表示縮減為$10 \times 5 \times 5$的表示，會存在哪些問題？
 
 :begin_tab:`mxnet`
 [Discussions](https://discuss.d2l.ai/t/1870)

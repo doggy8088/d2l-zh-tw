@@ -254,10 +254,10 @@ def get_bert_encoding(net, tokens_a, tokens_b=None):
 
 Consider the sentence "a crane is flying".
 Recall the input representation of BERT as discussed in :numref:`subsec_bert_input_rep`.
-After inserting special tokens “&lt;cls&gt;” (used for classification)
-and “&lt;sep&gt;” (used for separation),
+After inserting special tokens 『&lt;cls&gt;』 (used for classification)
+and 『&lt;sep&gt;』 (used for separation),
 the BERT input sequence has a length of six.
-Since zero is the index of the “&lt;cls&gt;” token,
+Since zero is the index of the 『&lt;cls&gt;』 token,
 `encoded_text[:, 0, :]` is the BERT representation of the entire input sentence.
 To evaluate the polysemy token "crane",
 we also print out the first three elements of the BERT representation of the token.

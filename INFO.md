@@ -1,8 +1,8 @@
-## 编译HTML版本
+## 編譯HTML版本
 
-所有markdown文件需要在提交前清除output，它们会在服务器上重新执行生成结果。所以需要保证每个notebook执行不要太久，目前限制是20min。
+所有markdown檔案需要在送出前清除output，它們會在服務器上重新執行生成結果。所以需要保證每個notebook執行不要太久，目前限制是20min。
 
-在本地可以如下build html（需要GPU支持）
+在本地可以如下build html（需要GPU支援）
 
 ```
 conda env update -f build/env.yml
@@ -10,19 +10,19 @@ source activate d2l-zh-build
 make html
 ```
 
-生成的html会在`_build/html`。
+生成的html會在`_build/html`。
 
-如果没有改动notebook里面源代码，所以不想执行notebook，可以使用
+如果沒有改動notebook裡面原始碼，所以不想執行notebook，可以使用
 
 ```
 make html EVAL=0
 ```
 
-但这样生成的html将不含有输出结果。
+但這樣生成的html將不含有輸出結果。
 
-## 编译PDF版本
+## 編譯PDF版本
 
-编译pdf版本需要xelatex、librsvg2-bin（svg图片转pdf）和思源字体。在Ubuntu可以这样安装。
+編譯pdf版本需要xelatex、librsvg2-bin（svg圖片轉pdf）和思源字型。在Ubuntu可以這樣安裝。
 
 ```
 sudo apt-get install texlive-full
@@ -41,9 +41,9 @@ sudo fc-cache -f -v
 ```
 
 
-这时候可以通过 `fc-list :lang=zh` 来查看安装的中文字体。
+這時候可以透過 `fc-list :lang=zh` 來檢視安裝的中文字型。
 
-同样的去下载和安装英文字体
+同樣的去下載和安裝英文字型
 
 ```
 wget -O source-serif-pro.zip https://www.fontsquirrel.com/fonts/download/source-serif-pro
@@ -61,22 +61,22 @@ sudo mv source-code-pro /usr/share/fonts/opentype/
 sudo fc-cache -f -v
 ```
 
-然后就可以编译了。
+然後就可以編譯了。
 
 ```
 make pdf
 ```
 
-## 其他安装
+## 其他安裝
 
 ```
 python -m spacy download en # 需已 pip install spacy
 ```
 
-## 样式规范
+## 樣式規範
 
-贡献请遵照本教程的[样式规范](STYLE_GUIDE.md)。
+貢獻請遵照本教程的[樣式規範](STYLE_GUIDE.md)。
 
-## 中英文术语对照
+## 中英文術語對照
 
-翻译请参照[中英文术语对照](TERMINOLOGY.md)。
+翻譯請參照[中英文術語對照](TERMINOLOGY.md)。
